@@ -1,0 +1,259 @@
+/* ── Techno-Premium SF VC x Bloomberg Style ── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;800&display=swap');
+
+/* ── Root Variables ── */
+:root {
+    --bg-primary: #05050a;
+    --bg-secondary: #0a0f19;
+    --accent-primary: #00f2ff; /* Electric Cyan */
+    --accent-secondary: #ff9d00; /* Cyber Orange */
+    --accent-tertiary: #8a2be2; /* Ghost Purple */
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --glass-bg: rgba(10, 15, 25, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --card-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.4);
+    --font-main: 'Inter', sans-serif;
+    --font-heading: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ── Global Overrides ── */
+.stApp {
+    background-color: var(--bg-primary);
+    background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
+    background-size: 32px 32px;
+    color: var(--text-primary);
+}
+
+/* ── Typography ── */
+h1, h2, h3 {
+    font-family: var(--font-heading) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em !important;
+}
+
+h4, h5, h6 {
+    font-family: var(--font-heading) !important;
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+}
+
+p, span, div, li {
+    font-family: var(--font-main);
+    color: var(--text-secondary);
+}
+
+/* ── Metrics (The Bloomberg Look) ── */
+[data-testid="stMetricValue"] {
+    font-family: var(--font-mono) !important;
+    font-weight: 600 !important;
+    font-size: 2.2rem !important;
+    color: var(--accent-primary) !important;
+    letter-spacing: -0.05em !important;
+}
+
+[data-testid="stMetricLabel"] {
+    font-family: var(--font-heading) !important;
+    text-transform: uppercase !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.1em !important;
+    color: var(--text-secondary) !important;
+}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background-color: #030307 !important;
+    border-right: 1px solid var(--glass-border) !important;
+}
+
+[data-testid="stSidebar"] h2 {
+    font-size: 1.2rem !important;
+}
+
+/* ── Sidebar Navigation Overrides ── */
+[data-testid="stSidebarNav"] {
+    padding-top: 2rem !important;
+}
+
+[data-testid="stSidebarNav"] ul {
+    gap: 0.5rem !important;
+}
+
+/* Base link style */
+[data-testid="stSidebarNav"] a {
+    color: #ffffff !important; /* White on Black as requested */
+    font-family: var(--font-main) !important;
+    font-weight: 500 !important;
+    font-size: 0.95rem !important;
+    padding: 10px 16px !important;
+    transition: all 0.2s ease !important;
+    background-color: transparent !important;
+    opacity: 0.85; /* Subtle distinction from active state */
+}
+
+/* Hover state */
+[data-testid="stSidebarNav"] a:hover {
+    color: #ffffff !important;
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Active state */
+[data-testid="stSidebarNav"] [aria-current="page"] {
+    background-color: rgba(0, 242, 255, 0.1) !important;
+    border-left: 4px solid var(--accent-primary) !important;
+    color: var(--accent-primary) !important;
+    font-weight: 700 !important;
+}
+
+[data-testid="stSidebarNav"] [aria-current="page"] span {
+    color: var(--accent-primary) !important;
+}
+
+/* Base link text color (White on Black) */
+[data-testid="stSidebarNav"] a span {
+    color: #ffffff !important;
+}
+
+/* ── Multiselect & Tags (Filter UI) ── */
+.stMultiSelect [data-baseweb="tag"] {
+    background-color: #1e3a8a !important; /* Dark Blue */
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 4px !important;
+}
+
+.stMultiSelect [data-baseweb="tag"] span {
+    color: #ffffff !important; /* White Font */
+    font-family: var(--font-mono) !important;
+    font-size: 0.8rem !important;
+}
+
+.stMultiSelect [data-baseweb="tag"] div:hover {
+    background-color: #2563eb !important; /* Slightly brighter blue on hover */
+}
+
+/* Ensure remove icon is visible */
+.stMultiSelect [data-baseweb="tag"] div[role="button"] svg {
+    fill: white !important;
+}
+
+/* Fix for the multi-select dropdown labels */
+[data-testid="stSidebar"] div[data-baseweb="select"] {
+    background-color: rgba(255,255,255,0.02) !important;
+    border: 1px solid var(--glass-border) !important;
+}
+
+/* ── Custom Component Classes ── */
+.techno-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 4px; /* More terminal-esque than rounder ones */
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.techno-card:hover {
+    border-color: rgba(0, 242, 255, 0.3);
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+}
+
+.terminal-header {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.5rem;
+    border-left: 2px solid var(--accent-secondary);
+    padding-left: 10px;
+}
+
+/* ── Tabs ── */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background-color: transparent !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background-color: rgba(255,255,255,0.02) !important;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 4px 4px 0 0 !important;
+    padding: 8px 16px !important;
+    color: var(--text-secondary) !important;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: rgba(0, 242, 255, 0.05) !important;
+    border-bottom: 2px solid var(--accent-primary) !important;
+    color: var(--accent-primary) !important;
+}
+
+/* ── Expanders ── */
+.styled-expander {
+    border: 1px solid var(--glass-border) !important;
+    background: rgba(255,255,255,0.01) !important;
+    border-radius: 4px !important;
+}
+
+/* Data Override Expander Header Override */
+[data-testid="stExpander"] summary {
+    background-color: #202028 !important; /* Muted Dark instead of Bright Green, avoiding applying bright green to home page expanders */
+    color: #00f2ff !important; /* Cyan text */
+    border-radius: 4px 4px 0 0 !important;
+    font-weight: 700 !important;
+    font-family: var(--font-mono) !important;
+    padding: 0.5rem 1rem !important;
+    border: 1px solid var(--accent-primary) !important;
+}
+
+[data-testid="stExpander"] summary:hover {
+    background-color: #2a2a35 !important;
+}
+
+[data-testid="stExpander"] summary svg {
+    fill: #00f2ff !important;
+}
+
+/* ── Global Button Styling ── */
+.stButton > button {
+    background-color: #22c55e !important; /* Green */
+    color: #000000 !important; /* Black */
+    border: none !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+.stButton > button:hover {
+    background-color: #16a34a !important; /* Darker green */
+    color: #000000 !important;
+}
+
+.stButton > button p {
+    color: #000000 !important;
+    font-weight: 700 !important;
+}
+
+/* ── Plotly Container Fixes ── */
+.js-plotly-plot {
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    background: rgba(0,0,0,0.2);
+}
+
+/* ── Hide Streamlit branding ── */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
