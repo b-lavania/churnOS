@@ -8,7 +8,7 @@ import streamlit as st
 from pathlib import Path
 
 # Data schema version - bump when changing expected columns
-DATA_VERSION = "1.0"
+DATA_VERSION = "1.1"
 
 # ── Page Configuration ──
 st.set_page_config(
@@ -156,6 +156,7 @@ pg = st.navigation([
     st.Page("pages/2_Retention.py", title="Retention"),
     st.Page("pages/3_Conversion_Optimization.py", title="Conversion Optimization"),
     st.Page("pages/4_Pricing_Analytics.py", title="Pricing Analytics"),
+    st.Page("pages/5_Marketplace.py", title="Marketplace"),
     st.Page("pages/6_README.py", title="README"),
 ])
 

@@ -230,16 +230,79 @@ def generate_marketplace_pricing(n_sellers: int = 500, take_rate_multiplier: flo
     return pd.DataFrame(rows)
 
 
+def generate_buyers(n_buyers: int = 10000, seed: int = SEED) -> pd.DataFrame:
+    """Generate marketplace buyer data with purchase behavior metrics."""
+    rng = np.random.default_rng(seed)
+
+    acquisition_channels = ["Organic", "Paid Search", "Social Media", "Referral", "Email", "Affiliate"]
+    channel_weights = [0.30, 0.25, 0.20, 0.10, 0.10, 0.05]
+    
+    start_date = pd.Timestamp("2023-01-01")
+    end_date = pd.Timestamp("2025-12-31")
+    date_range_days = (end_date - start_date).days
+
+    signup_dates = start_date + pd.to_timedelta(
+        rng.integers(0, date_range_days, size=n_buyers), unit="D"
+    )
+
+    # Segment-based purchase behavior
+    segments = ["Budget", "Mid-Range", "Premium", "Enterprise"]
+    segment_weights = [0.35, 0.35, 0.20, 0.10]
+    segments_arr = rng.choice(segments, size=n_buyers, p=segment_weights)
+    
+    channels_arr = rng.choice(acquisition_channels, size=n_buyers, p=channel_weights)
+    
+    # Monthly purchase amounts by segment
+    segment_spend = {"Budget": (20, 60), "Mid-Range": (60, 200), "Premium": (200, 600), "Enterprise": (600, 2500)}
+    monthly_spend = np.array([rng.uniform(*segment_spend[seg]) for seg in segments_arr])
+    
+    # Number of orders
+    orders = rng.poisson(monthly_spend / 80, size=n_buyers).clip(min=1, max=50)
+    
+    # Retention metrics
+    is_retained_1m = rng.random(size=n_buyers) < 0.65
+    is_retained_1y = rng.random(size=n_buyers) < 0.35
+    
+    # CAC values
+    cac_paid = np.where(rng.random(size=n_buyers) < 0.4, rng.uniform(15, 80, size=n_buyers), 0)
+    cac_total = cac_paid + rng.uniform(5, 25, size=n_buyers)  # blended with organic
+    
+    # NPS scores
+    nps = rng.integers(0, 11, size=n_buyers)
+    
+    # Category diversity (percentage of buyers who buy from multiple categories)
+    category_diversity = rng.random(size=n_buyers)
+
+    df = pd.DataFrame({
+        "buyer_id": [f"BUY-{i:06d}" for i in range(n_buyers)],
+        "signup_date": signup_dates,
+        "acquisition_channel": channels_arr,
+        "segment": segments_arr,
+        "monthly_spend": np.round(monthly_spend, 2),
+        "total_orders": orders,
+        "is_retained_1m": is_retained_1m,
+        "is_retained_1y": is_retained_1y,
+        "cac_total": np.round(cac_total, 2),
+        "cac_paid": np.round(cac_paid, 2),
+        "nps": nps,
+        "category_diversity_pct": np.round(category_diversity * 100, 1),
+        "repeat_buyer": rng.random(size=n_buyers) < 0.45,
+    })
+    return df
+
+
 # Convenience function to generate all datasets
 def generate_all_data(seed: int = SEED):
-    """Return all four datasets as a dict."""
+    """Return all datasets as a dict."""
     customers = generate_customers(seed=seed)
     transactions = generate_transactions(customers, seed=seed)
     funnel = generate_funnel_events(seed=seed)
     marketplace = generate_marketplace_pricing(seed=seed)
+    buyers = generate_buyers(seed=seed)
     return {
         "customers": customers,
         "transactions": transactions,
         "funnel": funnel,
         "marketplace": marketplace,
+        "buyers": buyers,
     }
