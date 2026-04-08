@@ -52,9 +52,46 @@ from analytics.marketplace import (
     get_category_performance,
 )
 
+# --- Advanced marketplace configuration (user-adjustable defaults) ---
+with st.expander("Advanced Marketplace Config", expanded=False):
+    tiers_list = sorted(marketplace["commission_tier"].unique().tolist())
+    default_tier_cac = {"Starter": 25, "Growth": 50, "Pro": 120, "Enterprise": 300}
+    tier_cac_map = {}
+    for t in tiers_list:
+        tier_cac_map[t] = st.number_input(f"CAC for tier: {t}", min_value=0, max_value=10000, value=default_tier_cac.get(t, 50), key=f"cac_{t}")
+
+    r1m_high_pct = st.slider("Retention 1m (high tiers) %", 0, 100, 85)
+    r1m_low_pct = st.slider("Retention 1m (low tiers) %", 0, 100, 70)
+    r1y_high_pct = st.slider("Retention 1y (high tiers) %", 0, 100, 55)
+    r1y_low_pct = st.slider("Retention 1y (low tiers) %", 0, 100, 35)
+
+    pct_paid_acq = st.slider("Pct Paid Acquisition (%)", 0.0, 100.0, 45.0)
+    top_percent_pct = st.slider("Top sellers percent (%)", 0.0, 100.0, 20.0)
+    new_buyer_rate_pct = st.number_input("New buyer rate (monthly %)", value=8.333, step=0.1)
+    buyer_growth_mom = st.number_input("Buyer growth MoM (%)", value=8.5)
+    buyer_growth_yoy = st.number_input("Buyer growth YoY (%)", value=45.2)
+    high_retention_tiers = st.multiselect("High retention tiers", options=tiers_list, default=[t for t in tiers_list if t in ["Pro", "Enterprise"]])
+
+    marketplace_config = {
+        "tier_cac": tier_cac_map,
+        "retention_1m_high": r1m_high_pct / 100.0,
+        "retention_1m_low": r1m_low_pct / 100.0,
+        "retention_1y_high": r1y_high_pct / 100.0,
+        "retention_1y_low": r1y_low_pct / 100.0,
+        "pct_paid_acquisition": pct_paid_acq,
+        "top_percent": top_percent_pct / 100.0,
+        "new_buyer_rate": new_buyer_rate_pct / 100.0,
+        "buyer_growth_mom": buyer_growth_mom,
+        "buyer_growth_yoy": buyer_growth_yoy,
+        "high_retention_tiers": high_retention_tiers,
+    }
+
+    st.markdown("_Marketplace config is applied to seller/buyer metric calculations._")
+
+# Calculate baseline metrics (respecting any user config)
 overall = calculate_overall_metrics(marketplace, buyers, transactions)
-seller_metrics = calculate_seller_metrics(marketplace)
-buyer_metrics = calculate_buyer_metrics(buyers)
+seller_metrics = calculate_seller_metrics(marketplace, config=marketplace_config if 'marketplace_config' in locals() else None)
+buyer_metrics = calculate_buyer_metrics(buyers, config=marketplace_config if 'marketplace_config' in locals() else None)
 
 # ── Interactive Scenario Simulator ──
 st.markdown('<div class="terminal-header">SCENARIO SIMULATOR</div>', unsafe_allow_html=True)
@@ -127,8 +164,8 @@ filtered_buyers = buyers[buyers["segment"].isin(sel_segments)]
 
 # Recalculate metrics based on filters
 overall = calculate_overall_metrics(filtered_mp, filtered_buyers, transactions)
-seller_metrics = calculate_seller_metrics(filtered_mp)
-buyer_metrics = calculate_buyer_metrics(filtered_buyers)
+seller_metrics = calculate_seller_metrics(filtered_mp, config=marketplace_config if 'marketplace_config' in locals() else None)
+buyer_metrics = calculate_buyer_metrics(filtered_buyers, config=marketplace_config if 'marketplace_config' in locals() else None)
 
 # ── Section A: Overall Marketplace Metrics ──
 with st.expander("A. OVERALL MARKETPLACE METRICS", expanded=True):

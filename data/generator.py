@@ -189,43 +189,84 @@ def generate_funnel_events(n_sessions: int = 30000, checkout_dropoff_modifier: f
     return pd.DataFrame(rows)
 
 
-def generate_marketplace_pricing(n_sellers: int = 500, take_rate_multiplier: float = 1.0, buyer_fee_split: float = 0.4, fixed_fee: float = 0.0, seed: int = SEED) -> pd.DataFrame:
-    """Generate marketplace seller data with GMV, take rates, and commission tiers."""
+def generate_marketplace_pricing(
+    n_sellers: int = 500,
+    take_rate_multiplier: float = 1.0,
+    buyer_fee_split: float = 0.4,
+    fixed_fee: float = 0.0,
+    categories: list | None = None,
+    tiers: list | None = None,
+    tier_rates: dict | None = None,
+    tier_weights: list | None = None,
+    gmv_mu: float = 10.0,
+    gmv_sigma: float = 1.2,
+    aov_mu: float = 3.5,
+    aov_sigma: float = 0.8,
+    listings_min: int = 5,
+    listings_max: int = 500,
+    seed: int = SEED,
+) -> pd.DataFrame:
+    """Generate marketplace seller data with GMV, take rates, and commission tiers.
+
+    This function accepts optional parameters to control the distributions and
+    categorical choices used when synthesizing marketplace data. Defaults
+    preserve previous behaviour if parameters are not passed.
+    """
     rng = np.random.default_rng(seed)
 
-    categories = ["Electronics", "Fashion", "Home & Garden", "Beauty", "Sports", "Food & Beverage", "Books", "Toys"]
-    tiers = ["Starter", "Growth", "Pro", "Enterprise"]
-    tier_rates = {"Starter": (0.15, 0.20), "Growth": (0.12, 0.17), "Pro": (0.08, 0.14), "Enterprise": (0.05, 0.10)}
-    tier_weights = [0.40, 0.30, 0.20, 0.10]
+    if categories is None:
+        categories = [
+            "Electronics",
+            "Fashion",
+            "Home & Garden",
+            "Beauty",
+            "Sports",
+            "Food & Beverage",
+            "Books",
+            "Toys",
+        ]
+    if tiers is None:
+        tiers = ["Starter", "Growth", "Pro", "Enterprise"]
+    if tier_rates is None:
+        tier_rates = {
+            "Starter": (0.15, 0.20),
+            "Growth": (0.12, 0.17),
+            "Pro": (0.08, 0.14),
+            "Enterprise": (0.05, 0.10),
+        }
+    if tier_weights is None:
+        tier_weights = [0.40, 0.30, 0.20, 0.10]
 
     rows = []
     for i in range(n_sellers):
         tier = rng.choice(tiers, p=tier_weights)
         cat = rng.choice(categories)
-        gmv = round(float(rng.lognormal(10, 1.2)), 2)  # wide range of seller sizes
-        base_take = round(float(rng.uniform(*tier_rates[tier])), 4)
+        gmv = round(float(rng.lognormal(gmv_mu, gmv_sigma)), 2)  # wide range of seller sizes
+        base_take = round(float(rng.uniform(*tier_rates.get(tier, (0.08, 0.14)))), 4)
         take_rate = min(0.99, base_take * take_rate_multiplier)
         buyer_fee_pct = round(take_rate * buyer_fee_split, 4)
         seller_fee_pct = round(take_rate - buyer_fee_pct, 4)
-        
-        aov = round(float(rng.lognormal(3.5, 0.8)), 2)
+
+        aov = round(float(rng.lognormal(aov_mu, aov_sigma)), 2)
         transactions = int(gmv / max(1.0, aov))
         total_fixed_fees = transactions * fixed_fee
 
-        rows.append({
-            "seller_id": f"SELL-{i:04d}",
-            "category": cat,
-            "commission_tier": tier,
-            "monthly_gmv": gmv,
-            "take_rate": take_rate,
-            "buyer_fee_pct": buyer_fee_pct,
-            "seller_fee_pct": seller_fee_pct,
-            "fixed_fee_revenue": round(total_fixed_fees, 2),
-            "net_revenue": round((gmv * take_rate) + total_fixed_fees, 2),
-            "active_listings": int(rng.integers(5, 500)),
-            "est_transactions": transactions,
-            "avg_order_value": aov,
-        })
+        rows.append(
+            {
+                "seller_id": f"SELL-{i:04d}",
+                "category": cat,
+                "commission_tier": tier,
+                "monthly_gmv": gmv,
+                "take_rate": take_rate,
+                "buyer_fee_pct": buyer_fee_pct,
+                "seller_fee_pct": seller_fee_pct,
+                "fixed_fee_revenue": round(total_fixed_fees, 2),
+                "net_revenue": round((gmv * take_rate) + total_fixed_fees, 2),
+                "active_listings": int(rng.integers(listings_min, listings_max + 1)),
+                "est_transactions": transactions,
+                "avg_order_value": aov,
+            }
+        )
 
     return pd.DataFrame(rows)
 

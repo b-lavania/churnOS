@@ -7,6 +7,22 @@ import pandas as pd
 from datetime import datetime, timedelta
 
 
+# Default configurable constants for marketplace analytics
+DEFAULT_MARKETPLACE_CONFIG = {
+    "high_retention_tiers": ["Pro", "Enterprise"],
+    "retention_1m_high": 0.85,
+    "retention_1m_low": 0.70,
+    "retention_1y_high": 0.55,
+    "retention_1y_low": 0.35,
+    "tier_cac": {"Starter": 25, "Growth": 50, "Pro": 120, "Enterprise": 300},
+    "pct_paid_acquisition": 45.0,
+    "top_percent": 0.2,
+    "new_buyer_rate": 1.0 / 12.0,
+    "buyer_growth_mom": 8.5,
+    "buyer_growth_yoy": 45.2,
+}
+
+
 def calculate_overall_metrics_timebased(
     marketplace: pd.DataFrame, 
     buyers: pd.DataFrame, 
@@ -154,21 +170,28 @@ def calculate_overall_metrics(marketplace: pd.DataFrame, buyers: pd.DataFrame, t
     }
 
 
-def calculate_seller_metrics(marketplace: pd.DataFrame) -> dict:
+def calculate_seller_metrics(marketplace: pd.DataFrame, config: dict | None = None) -> dict:
     """
     Calculate seller/supplier metrics.
     """
+    cfg = dict(DEFAULT_MARKETPLACE_CONFIG)
+    if config:
+        cfg.update(config)
     total_sellers = len(marketplace)
-    
+
     # Retention metrics (simulated based on seller tier and GMV)
-    # Higher GMV and higher tier = better retention
-    retention_1m = marketplace.apply(
-        lambda x: 0.85 if x["commission_tier"] in ["Pro", "Enterprise"] else 0.70, axis=1
-    ).mean() * 100
-    
-    retention_1y = marketplace.apply(
-        lambda x: 0.55 if x["commission_tier"] in ["Pro", "Enterprise"] else 0.35, axis=1
-    ).mean() * 100
+    high_tiers = cfg.get("high_retention_tiers", ["Pro", "Enterprise"])
+    r1m_high = cfg.get("retention_1m_high", 0.85)
+    r1m_low = cfg.get("retention_1m_low", 0.70)
+    retention_1m = (
+        marketplace.apply(lambda x: r1m_high if x["commission_tier"] in high_tiers else r1m_low, axis=1).mean() * 100
+    )
+
+    r1y_high = cfg.get("retention_1y_high", 0.55)
+    r1y_low = cfg.get("retention_1y_low", 0.35)
+    retention_1y = (
+        marketplace.apply(lambda x: r1y_high if x["commission_tier"] in high_tiers else r1y_low, axis=1).mean() * 100
+    )
     
     # Average revenue per seller
     avg_revenue_per_seller = marketplace["net_revenue"].mean()
@@ -180,13 +203,13 @@ def calculate_seller_metrics(marketplace: pd.DataFrame) -> dict:
     top_20_pct_revenue = (top_20_revenue / total_gmv * 100) if total_gmv > 0 else 0
     
     # Seller CAC (estimated based on tier acquisition cost)
-    tier_cac = {"Starter": 25, "Growth": 50, "Pro": 120, "Enterprise": 300}
-    seller_cac_paid = marketplace["commission_tier"].map(tier_cac).fillna(50)
+    tier_cac = cfg.get("tier_cac", {"Starter": 25, "Growth": 50, "Pro": 120, "Enterprise": 300})
+    seller_cac_paid = marketplace["commission_tier"].map(tier_cac).fillna(np.mean(list(tier_cac.values())))
     avg_seller_cac = seller_cac_paid.mean()
     avg_seller_cac_paid = seller_cac_paid.mean()
-    
+
     # % acquired through paid channels (estimate)
-    pct_paid_acquisition = 45.0
+    pct_paid_acquisition = cfg.get("pct_paid_acquisition", 45.0)
     
     # Listing metrics
     total_listings = marketplace["active_listings"].sum()
@@ -212,18 +235,23 @@ def calculate_seller_metrics(marketplace: pd.DataFrame) -> dict:
     }
 
 
-def calculate_buyer_metrics(buyers: pd.DataFrame) -> dict:
+def calculate_buyer_metrics(buyers: pd.DataFrame, config: dict | None = None) -> dict:
     """
     Calculate buyer metrics.
     """
+    cfg = dict(DEFAULT_MARKETPLACE_CONFIG)
+    if config:
+        cfg.update(config)
+
     total_buyers = len(buyers)
-    
-    # New buyers (signed up in last 30 days simulation)
-    new_buyers = total_buyers // 12  # ~8% monthly growth
-    
+
+    # New buyers (as a proportion) - configurable monthly rate
+    new_buyer_rate = cfg.get("new_buyer_rate", 1.0 / 12.0)
+    new_buyers = int(total_buyers * new_buyer_rate)
+
     # Growth rates (simulated)
-    buyer_growth_mom = 8.5
-    buyer_growth_yoy = 45.2
+    buyer_growth_mom = cfg.get("buyer_growth_mom", 8.5)
+    buyer_growth_yoy = cfg.get("buyer_growth_yoy", 45.2)
     
     # Repeat buyer rate
     repeat_buyer_pct = (buyers["repeat_buyer"].sum() / total_buyers * 100) if total_buyers > 0 else 0

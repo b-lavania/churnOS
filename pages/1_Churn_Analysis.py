@@ -40,32 +40,22 @@ data = st.session_state["app_data"]
 customers = data["customers"]
 
 # ── Simulation Controls ──
-col_a, col_b, col_c, col_d, col_e = st.columns(5)
-with col_a:
-    new_n = st.number_input("TOTAL CUSTOMERS", 500, 50000, 5000, step=500)
-with col_b:
-    new_churn_mult = st.slider("BASE CHURN MULTIPLIER", 0.1, 3.0, 1.0, 0.1)
-with col_c:
-    new_prem_mix = st.slider("PREMIUM SEGMENT MIX", -0.5, 0.5, 0.0, 0.05)
-with col_d:
-    new_sub = st.slider("SUBSCRIBE & SAVE %", 0.0, 1.0, 0.0, 0.05)
-with col_e:
-    st.markdown('<div style="margin-top: 1.8rem;"></div>', unsafe_allow_html=True) # visual alignment
-    if st.button("Calculate", type="primary", key="regen_churn"):
-        from data.generator import generate_customers, generate_transactions
-        new_cust = generate_customers(n=new_n, churn_multiplier=new_churn_mult, premium_mix=new_prem_mix, subscribe_ratio=new_sub)
-        st.session_state["app_data"]["customers"] = new_cust
-        st.session_state["app_data"]["transactions"] = generate_transactions(new_cust)
-        st.rerun()
+from ui import inputs as ui_inputs
+controls = ui_inputs.churn_simulation_controls(key_prefix="churn")
+new_n = controls["n"]
+new_churn_mult = controls["churn_mult"]
+new_prem_mix = controls["prem_mix"]
+new_sub = controls["sub_ratio"]
+if controls.get("calculate"):
+    from data.generator import generate_customers, generate_transactions
+    new_cust = generate_customers(n=new_n, churn_multiplier=new_churn_mult, premium_mix=new_prem_mix, subscribe_ratio=new_sub)
+    st.session_state["app_data"]["customers"] = new_cust
+    st.session_state["app_data"]["transactions"] = generate_transactions(new_cust)
+    st.rerun()
 
 # ── Sidebar Filter (Compact Mode) ──
-with st.sidebar:
-    st.markdown('<div class="terminal-header">FILTERS</div>', unsafe_allow_html=True)
-    selected_segments = st.multiselect(
-        "Segment", customers["segment"].unique().tolist(),
-        default=customers["segment"].unique().tolist(),
-        key="churn_seg_2"
-    )
+filters = ui_inputs.global_filters(customers=customers)
+selected_segments = filters.get("segments", customers["segment"].unique().tolist())
 
 filtered = customers[customers["segment"].isin(selected_segments)]
 

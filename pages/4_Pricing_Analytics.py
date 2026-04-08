@@ -54,14 +54,81 @@ with col_d:
 with col_e:
     st.markdown('<div style="margin-top: 1.8rem;"></div>', unsafe_allow_html=True)
     if st.button("Calculate", type="primary", key="regen_price"):
+        # Use optional advanced params (if provided in the expander below)
         from data.generator import generate_marketplace_pricing
+        # Build optional parameters collected in the advanced expander
+        params = {}
+        if "adv_categories" in st.session_state:
+            params["categories"] = st.session_state["adv_categories"]
+        if "adv_tiers" in st.session_state:
+            params["tiers"] = st.session_state["adv_tiers"]
+        if "adv_tier_rates" in st.session_state:
+            params["tier_rates"] = st.session_state["adv_tier_rates"]
+        if "adv_tier_weights" in st.session_state:
+            params["tier_weights"] = st.session_state["adv_tier_weights"]
+        if "adv_gmv_mu" in st.session_state:
+            params["gmv_mu"] = st.session_state["adv_gmv_mu"]
+            params["gmv_sigma"] = st.session_state.get("adv_gmv_sigma", 1.2)
+        if "adv_aov_mu" in st.session_state:
+            params["aov_mu"] = st.session_state["adv_aov_mu"]
+            params["aov_sigma"] = st.session_state.get("adv_aov_sigma", 0.8)
+        if "adv_listings_min" in st.session_state:
+            params["listings_min"] = st.session_state["adv_listings_min"]
+            params["listings_max"] = st.session_state.get("adv_listings_max", 500)
+
         st.session_state["app_data"]["marketplace"] = generate_marketplace_pricing(
-            n_sellers=new_sel, 
-            take_rate_multiplier=new_take, 
+            n_sellers=new_sel,
+            take_rate_multiplier=new_take,
             buyer_fee_split=new_split,
-            fixed_fee=new_fixed
+            fixed_fee=new_fixed,
+            **params,
         )
         st.rerun()
+
+# Advanced parameters for marketplace generation
+with st.expander("Advanced Marketplace Parameters", expanded=False):
+    # Text inputs parsed into lists/dicts and stored in session_state so the Calculate button can consume them
+    cats = st.text_area("Categories (comma-separated)", value=",").strip()
+    if cats:
+        cat_list = [c.strip() for c in cats.split(",") if c.strip()]
+    else:
+        cat_list = None
+    st.session_state["adv_categories"] = cat_list
+
+    tiers = st.text_input("Tiers (comma-separated)", value="Starter,Growth,Pro,Enterprise")
+    tier_list = [t.strip() for t in tiers.split(",") if t.strip()]
+    st.session_state["adv_tiers"] = tier_list
+
+    tier_weights = st.text_input("Tier weights (comma-separated, sum to 1)", value="0.40,0.30,0.20,0.10")
+    try:
+        tw = [float(x.strip()) for x in tier_weights.split(",") if x.strip()]
+    except Exception:
+        tw = None
+    st.session_state["adv_tier_weights"] = tw
+
+    tier_rates_text = st.text_area("Tier rate ranges (JSON)", value='{"Starter": [0.15, 0.20], "Growth": [0.12,0.17], "Pro": [0.08,0.14], "Enterprise": [0.05,0.10]}')
+    try:
+        import json
+
+        tr = json.loads(tier_rates_text)
+    except Exception:
+        tr = None
+    st.session_state["adv_tier_rates"] = tr
+
+    gmv_mu = st.number_input("GMV lognormal mu", value=10.0)
+    gmv_sigma = st.number_input("GMV lognormal sigma", value=1.2)
+    st.session_state["adv_gmv_mu"] = gmv_mu
+    st.session_state["adv_gmv_sigma"] = gmv_sigma
+
+    aov_mu = st.number_input("AOV lognormal mu", value=3.5)
+    aov_sigma = st.number_input("AOV lognormal sigma", value=0.8)
+    st.session_state["adv_aov_mu"] = aov_mu
+    st.session_state["adv_aov_sigma"] = aov_sigma
+
+    listings_min = st.number_input("Listings min", value=5)
+    listings_max = st.number_input("Listings max", value=500)
+    st.session_state["adv_listings_min"] = listings_min
+    st.session_state["adv_listings_max"] = listings_max
 
 # ── KPI Row ──
 c1, c2, c3, c4 = st.columns(4)
