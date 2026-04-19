@@ -4,11 +4,11 @@ I initially made a spreadsheet application for ecommerce and marketplace operato
 
 ## Overview
 
-This has a powerful simulation suite with interactive dashboards. It's built for founders, growth teams, and operators who need to model "what-if" scenarios. The app generates thousands of rows of synthetic customer, transaction, and funnel data on the fly based on the highly granular Simulation Controls provided on every page. Use it to understand how macro changes to your business levers (like CAC, refunds, or commissions) cascade down to your ultimate bottom line.
+This comes out of that spreadsheet app, and has a powerful simulation suite with interactive dashboards. It's built for founders, growth teams, and operators who need to model "what-if" scenarios. The app generates thousands of rows of synthetic customer, transaction, and funnel data on the fly based on the Simulation Controls provided on every page. Use it to understand how macro changes to your business levers (like CAC, refunds, or commissions) cascade down to your ultimate bottom line.
 
 ## Core Features & Simulation Levers
 
-Every page includes a Simulation Controls section right below the header allowing you to instantly regenerate the underlying data based on advanced business parameters:
+Every page includes a Simulation Controls section right below the header allowing you to instantly regenerate the underlying data based on the Simulation Controls provided on every page:
 
 | Page | Description & Simulation Controls |
 |------|-----------------------------------|
@@ -22,7 +22,7 @@ Every page includes a Simulation Controls section right below the header allowin
 ## Architecture
 
 ```
-churn-analysis/
+churnOS/
 |
 |-- app.py                              # Main entry point, page config, landing page
 |-- requirements.txt                    # Python dependencies
@@ -120,7 +120,7 @@ churn-analysis/
 ### Installation
 
 ```bash
-cd churn-analysis
+cd churnOS
 pip install -r requirements.txt
 ```
 

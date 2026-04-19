@@ -1,5 +1,5 @@
 """
-Shared UI input components for the churn-analysis app (prototype).
+Shared UI input components for the churnOS app (prototype).
 
 Functions provided:
 - global_filters(...): renders sidebar filters based on available dataframes

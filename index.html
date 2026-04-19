@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChurnOS - The Ultimate Causal Analytics Platform</title>
+    <meta name="description"
+        content="ChurnOS is a live interactive business calculator covering churn analysis, unit-economics, retention, conversion optimization, and marketplace pricing.">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Outfit:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --primary: #8b5cf6;
+            --secondary: #ec4899;
+            --accent: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        /* Abstract Background Elements */
+        .bg-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(10, 10, 15, 0) 70%);
+            border-radius: 50%;
+            z-index: -1;
+            filter: blur(60px);
+            animation: float 10s infinite ease-in-out alternate;
+        }
+
+        .bg-glow.top-left {
+            top: -200px;
+            left: -200px;
+        }
+
+        .bg-glow.bottom-right {
+            bottom: -200px;
+            right: -200px;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, rgba(10, 10, 15, 0) 70%);
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            100% {
+                transform: translate(50px, 50px);
+            }
+        }
+
+        /* Navbar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 5%;
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            margin-left: 2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 12rem 5% 6rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            max-width: 700px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            box-shadow: 0 10px 20px -10px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -10px rgba(139, 92, 246, 0.7);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            border-color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Dashboard Mockup */
+        .dashboard-preview {
+            max-width: 1200px;
+            margin: 0 auto 8rem;
+            padding: 0 5%;
+            perspective: 1000px;
+        }
+
+        .dashboard-img {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            transform: rotateX(5deg) scale(0.95);
+            transition: transform 0.5s ease;
+        }
+
+        .dashboard-preview:hover .dashboard-img {
+            transform: rotateX(0deg) scale(1);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 5rem 5%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 4rem;
+        }
+
+        .features-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 3rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(139, 92, 246, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #fff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-details {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .detail-group {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .detail-list {
+            list-style: none;
+        }
+
+        .detail-list li {
+            position: relative;
+            padding-left: 1.25rem;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-list li::before {
+            content: '▹';
+            position: absolute;
+            left: 0;
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+
+        .feature-why {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1.5rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            border-left: 4px solid var(--accent);
+            color: #f1f5f9;
+            margin-top: 0.5rem;
+        }
+
+        .feature-why strong {
+            color: white;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Simulation Banner */
+        .simulation-banner {
+            margin: 8rem 5%;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .simulation-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=');
+            z-index: 0;
+        }
+
+        .simulation-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .simulation-content h2 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .simulation-content p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 3rem 5%;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 3rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .simulation-banner {
+                padding: 3rem 2rem;
+            }
+
+            .simulation-content h2 {
+                font-size: 2rem;
+            }
+
+            .feature-card {
+                padding: 2rem;
+            }
+
+            .feature-details {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-glow top-left"></div>
+    <div class="bg-glow bottom-right"></div>
+
+    <nav>
+        <div class="logo">ChurnOS</div>
+        <div class="nav-links">
+            <a href="#features">Features</a>
+            <a href="https://github.com/b-lavania/churnOS" target="_blank">Documentation</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>The Ultimate Causal Analytics Platform</h1>
+        <p>A live, interactive business calculator for founders and operators. Model your unit-economics, forecast
+            retention, and simulate pricing elasticity to see how macro changes impact your bottom line.</p>
+        <div class="cta-buttons">
+            <a href="#start" class="btn btn-primary">Start Modeling Now</a>
+            <a href="#features" class="btn btn-secondary">Explore Features</a>
+        </div>
+    </section>
+
+    <div class="dashboard-preview">
+        <img src="assets/mockup.png" alt="ChurnOS Dashboard Mockup" class="dashboard-img">
+    </div>
+
+    <section id="features" class="features">
+        <h2 class="section-title">Powerful Simulation Modules</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📉</div>
+                <h3>Churn Analysis</h3>
+                <p>A comprehensive diagnostic suite for understanding customer attrition before it impacts your bottom
+                    line.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Simulation Inputs</span>
+                        <ul class="detail-list">
+                            <li>Base churn multiplier & seasonal effects</li>
+                            <li>Premium segment mix (%)</li>
+                            <li>'Subscribe & Save' adoption rates</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>Kaplan-Meier survival curves by cohort</li>
+                            <li>Revenue vs. Logo churn comparison</li>
+                            <li>Random Forest feature importance (Churn Drivers)</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>The Operator's Edge</strong>
+                        Stop guessing why users leave. By simulating the exact impact of retention programs (like
+                        'Subscribe & Save'), you can definitively prove whether sacrificing initial margin is worth the
+                        flattened survival curve.
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔁</div>
+                <h3>Retention & Unit Economics</h3>
+                <p>The ultimate LTV:CAC dashboard linking acquisition costs directly to long-term profitability.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Simulation Inputs</span>
+                        <ul class="detail-list">
+                            <li>Average Order Value (AOV) & Discount Freq</li>
+                            <li>Refund Rates (%) & COGS (%)</li>
+                            <li>Blended Customer Acquisition Cost (CAC)</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>Triangular cohort heatmaps (Day-N Retention)</li>
+                            <li>True Margin Customer Lifetime Value (CLV)</li>
+                            <li>Live, dynamic LTV:CAC Ratio tracking</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>The Operator's Edge</strong>
+                        Revenue isn't margin. This module hard-links your marketing spend (CAC) and fulfillment costs
+                        (COGS/Refunds) to your retention data, revealing your *actual* payback period and preventing
+                        unprofitable scaling.
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Conversion Optimization</h3>
+                <p>Identify and plug the exact leaks in your user journey from first visit to final purchase.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Simulation Inputs</span>
+                        <ul class="detail-list">
+                            <li>Total session volume (N)</li>
+                            <li>Step-by-step dropoff parameters</li>
+                            <li>'Free Shipping' threshold toggle</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>Visit-to-Purchase funnel visualizations</li>
+                            <li>Segmented conversion rates (Mobile vs Desktop)</li>
+                            <li>Statistical significance (A/B Test Z-scores)</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>The Operator's Edge</strong>
+                        Is offering free shipping worth the margin hit? Simulate the exact volume increase needed to
+                        offset the shipping cost, and instantly validate if your new checkout flow is statistically
+                        significantly better.
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <h3>Marketplace Pricing Analytics</h3>
+                <p>Optimize your platform take-rate without destroying seller liquidity or buyer demand.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Simulation Inputs</span>
+                        <ul class="detail-list">
+                            <li>Seller volume & Tier distributions</li>
+                            <li>Take Rate multiplier & Fixed Transaction Fees</li>
+                            <li>Buyer vs. Seller fee splits</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>Price Elasticity of Demand curves</li>
+                            <li>Effective Take Rate & Gross Merchandise Volume</li>
+                            <li>Revenue breakdown by commission tier</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>The Operator's Edge</strong>
+                        Marketplaces are delicate ecosystems. Use this module to safely simulate raising transaction
+                        fees or shifting the burden from seller to buyer, ensuring you maximize revenue capture without
+                        triggering a mass seller exodus.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="simulation-banner" id="start">
+        <div class="simulation-content">
+            <h2>Data on Demand.</h2>
+            <p>Don't have your own data ready? No problem. ChurnOS generates thousands of rows of synthetic customer,
+                transaction, and funnel data on the fly, allowing you to pressure-test scenarios instantly.</p>
+            <div class="code-block"
+                style="background: #111; padding: 1.5rem; border-radius: 15px; display: inline-block; text-align: left; border: 1px solid rgba(255,255,255,0.1); font-family: monospace; color: #a5b4fc; font-size: 0.95rem;">
+                $ git clone https://github.com/bl/churnOS.git<br>
+                $ cd churnOS<br>
+                $ pip install -r requirements.txt<br>
+                $ streamlit run app.py
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 ChurnOS. Built for modern growth operators.</p>
+    </footer>
+
+    <script>
+        // Simple scroll animation for the dashboard mockup
+        window.addEventListener('scroll', () => {
+            const preview = document.querySelector('.dashboard-img');
+            const scrollY = window.scrollY;
+            if (scrollY < 500) {
+                preview.style.transform = `rotateX(${Math.max(0, 5 - scrollY / 100)}deg) scale(${Math.min(1, 0.95 + scrollY / 2000)})`;
+            }
+        });
+    </script>
+</body>
+
+</html>
