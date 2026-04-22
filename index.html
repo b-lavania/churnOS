@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChurnOS - The Ultimate Causal Analytics Platform</title>
     <meta name="description"
-        content="ChurnOS is a live interactive business calculator covering churn analysis, unit-economics, retention, conversion optimization, and marketplace pricing.">
+        content="ChurnOS is a live interactive business calculator covering churn analysis, unit-economics, retention, conversion optimization, e-commerce, and marketplace pricing.">
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Outfit:wght@400;700&display=swap"
         rel="stylesheet">
@@ -124,6 +124,25 @@
             max-width: 1000px;
             margin: 0 auto;
         }
+        
+        .hero-badge {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            color: #d8b4fe;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.5px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+        }
 
         .hero h1 {
             font-size: 4.5rem;
@@ -139,7 +158,7 @@
             font-size: 1.25rem;
             color: var(--text-muted);
             margin-bottom: 2.5rem;
-            max-width: 700px;
+            max-width: 750px;
         }
 
         .cta-buttons {
@@ -203,7 +222,7 @@
         /* Features Section */
         .features {
             padding: 5rem 5%;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -214,25 +233,44 @@
         }
 
         .features-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 3rem;
-            max-width: 900px;
-            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
         }
 
         .feature-card {
             background: var(--bg-card);
             border: 1px solid var(--border-card);
             border-radius: 20px;
-            padding: 3rem;
+            padding: 2.5rem;
             backdrop-filter: blur(10px);
-            transition: transform 0.3s ease, border-color 0.3s ease;
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.5s ease;
         }
 
         .feature-card:hover {
             transform: translateY(-5px);
             border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .feature-card:hover::before {
+            left: 200%;
         }
 
         .feature-icon {
@@ -260,15 +298,16 @@
             color: var(--text-muted);
             font-size: 1rem;
             margin-bottom: 1.5rem;
+            flex-grow: 1;
         }
 
         .feature-details {
-            margin-top: 2rem;
-            padding-top: 2rem;
+            margin-top: auto;
+            padding-top: 1.5rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
         }
 
         .detail-group {
@@ -292,7 +331,7 @@
         .detail-list li {
             position: relative;
             padding-left: 1.25rem;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #cbd5e1;
             margin-bottom: 0.5rem;
         }
@@ -308,9 +347,9 @@
         .feature-why {
             grid-column: 1 / -1;
             background: rgba(255, 255, 255, 0.03);
-            padding: 1.5rem;
+            padding: 1.25rem;
             border-radius: 12px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             border-left: 4px solid var(--accent);
             color: #f1f5f9;
             margin-top: 0.5rem;
@@ -370,6 +409,18 @@
             color: var(--text-muted);
             font-size: 0.9rem;
         }
+        
+        /* Scroll Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
         @media (max-width: 768px) {
             .hero h1 {
@@ -386,10 +437,6 @@
 
             .simulation-content h2 {
                 font-size: 2rem;
-            }
-
-            .feature-card {
-                padding: 2rem;
             }
 
             .feature-details {
@@ -413,55 +460,166 @@
         </div>
     </nav>
 
-    <section class="hero">
+    <section class="hero reveal active">
+        <div class="hero-badge">Now featuring PyMC Bayesian Attribution</div>
         <h1>The Ultimate Causal Analytics Platform</h1>
-        <p>A live, interactive business calculator for founders and operators. Model your unit-economics, forecast
-            retention, and simulate pricing elasticity to see how macro changes impact your bottom line.</p>
+        <p>A live, interactive simulation engine for founders and operators. Model unit-economics, forecast
+            retention, analyze marketplace liquidity, and optimize ad spend with Bayesian inference to see how macro changes impact your bottom line.</p>
         <div class="cta-buttons">
             <a href="#start" class="btn btn-primary">Start Modeling Now</a>
             <a href="#features" class="btn btn-secondary">Explore Features</a>
         </div>
     </section>
 
-    <div class="dashboard-preview">
+    <div class="dashboard-preview reveal">
         <img src="assets/mockup.png" alt="ChurnOS Dashboard Mockup" class="dashboard-img">
     </div>
 
     <section id="features" class="features">
-        <h2 class="section-title">Powerful Simulation Modules</h2>
+        <h2 class="section-title reveal">Powerful Simulation Modules</h2>
         <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">📉</div>
-                <h3>Churn Analysis</h3>
-                <p>A comprehensive diagnostic suite for understanding customer attrition before it impacts your bottom
-                    line.</p>
+        
+            <div class="feature-card reveal">
+                <div class="feature-icon">🧠</div>
+                <h3>Causal Business Modeling</h3>
+                <p>A centralized engine linking CAC, churn, and AOV directly to your lifetime profitability and bottom line.</p>
                 <div class="feature-details">
                     <div class="detail-group">
                         <span class="detail-label">Simulation Inputs</span>
                         <ul class="detail-list">
-                            <li>Base churn multiplier & seasonal effects</li>
-                            <li>Premium segment mix (%)</li>
-                            <li>'Subscribe & Save' adoption rates</li>
+                            <li>Blended CAC & Base Churn</li>
+                            <li>Average Order Value (AOV)</li>
+                            <li>Gross Margin %</li>
                         </ul>
                     </div>
                     <div class="detail-group">
                         <span class="detail-label">Generated Outputs</span>
                         <ul class="detail-list">
-                            <li>Kaplan-Meier survival curves by cohort</li>
-                            <li>Revenue vs. Logo churn comparison</li>
-                            <li>Random Forest feature importance (Churn Drivers)</li>
+                            <li>LTV to CAC Sensitivity Matrix</li>
+                            <li>Executive Summary Dashboard</li>
+                            <li>Global Causal Graph</li>
                         </ul>
                     </div>
                     <div class="feature-why">
                         <strong>The Operator's Edge</strong>
-                        Stop guessing why users leave. By simulating the exact impact of retention programs (like
-                        'Subscribe & Save'), you can definitively prove whether sacrificing initial margin is worth the
-                        flattened survival curve.
+                        Understand exactly how moving one lever (like acquiring cheaper, lower-retaining users) ripples causally through your entire P&L.
                     </div>
                 </div>
             </div>
 
-            <div class="feature-card">
+            <div class="feature-card reveal">
+                <div class="feature-icon">🔮</div>
+                <h3>Bayesian Attribution (MMM)</h3>
+                <p>PyMC-based Marketing Mix Modeling (MMM) for true causal insights into your advertising spend and ROI.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Simulation Inputs</span>
+                        <ul class="detail-list">
+                            <li>Ad Spend per Channel</li>
+                            <li>Adstock Decay Parameters</li>
+                            <li>Saturation Coefficients</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>Diminishing Returns Curves</li>
+                            <li>Causal Spend Effectiveness</li>
+                            <li>Budget Optimization Scenarios</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>The Operator's Edge</strong>
+                        Stop trusting last-click attribution. Uncover the true incremental value of every marketing dollar and optimize budgets using advanced probabilistic modeling.
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-icon">🛒</div>
+                <h3>E-Commerce & RFM Analysis</h3>
+                <p>Advanced segmentation and inventory volatility modeling explicitly designed for modern D2C storefronts.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Simulation Inputs</span>
+                        <ul class="detail-list">
+                            <li>Refund Rate Volatility</li>
+                            <li>Unit COGS & Shipping</li>
+                            <li>Time-since-last-purchase</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>RFM Customer Segments</li>
+                            <li>Inventory Impact on Margin</li>
+                            <li>Repurchase Propensity</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>The Operator's Edge</strong>
+                        Segment users logically by Recency, Frequency, and Monetary value, while simulating how supply chain hiccups directly attack your gross margin.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="feature-card reveal">
+                <div class="feature-icon">🌊</div>
+                <h3>Marketplace Liquidity</h3>
+                <p>Model the delicate balance of supply vs demand health and stimulate network effect flywheels.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Simulation Inputs</span>
+                        <ul class="detail-list">
+                            <li>Buyer-to-Seller Ratios</li>
+                            <li>Cross-Side Network Params</li>
+                            <li>Platform Subsidy %</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>Liquidity Health Metrics</li>
+                            <li>Network Effect Value Growth</li>
+                            <li>Subsidy Burn Rate Impact</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>The Operator's Edge</strong>
+                        Marketplaces fail when liquidity dries up. Simulate the exact subsidy needed to kickstart a cold side, and measure the compounding strength of your network effects.
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-icon">📉</div>
+                <h3>Churn Analysis</h3>
+                <p>A comprehensive diagnostic suite for understanding customer attrition before it impacts your bottom line.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Simulation Inputs</span>
+                        <ul class="detail-list">
+                            <li>Base churn multiplier</li>
+                            <li>Premium segment mix (%)</li>
+                            <li>'Subscribe & Save' adoption</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>Kaplan-Meier survival curves</li>
+                            <li>Revenue vs Logo churn</li>
+                            <li>Random Forest Churn Drivers</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>The Operator's Edge</strong>
+                        Stop guessing why users leave. Simulate the exact impact of retention programs to definitively prove if sacrificing initial margin flattens the survival curve.
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
                 <div class="feature-icon">🔁</div>
                 <h3>Retention & Unit Economics</h3>
                 <p>The ultimate LTV:CAC dashboard linking acquisition costs directly to long-term profitability.</p>
@@ -469,29 +627,27 @@
                     <div class="detail-group">
                         <span class="detail-label">Simulation Inputs</span>
                         <ul class="detail-list">
-                            <li>Average Order Value (AOV) & Discount Freq</li>
-                            <li>Refund Rates (%) & COGS (%)</li>
-                            <li>Blended Customer Acquisition Cost (CAC)</li>
+                            <li>Average Order Value (AOV)</li>
+                            <li>Refund Rates & COGS</li>
+                            <li>Blended CAC</li>
                         </ul>
                     </div>
                     <div class="detail-group">
                         <span class="detail-label">Generated Outputs</span>
                         <ul class="detail-list">
-                            <li>Triangular cohort heatmaps (Day-N Retention)</li>
-                            <li>True Margin Customer Lifetime Value (CLV)</li>
-                            <li>Live, dynamic LTV:CAC Ratio tracking</li>
+                            <li>Cohort heatmaps (Day-N)</li>
+                            <li>True Margin CLV</li>
+                            <li>Live LTV:CAC Ratio tracking</li>
                         </ul>
                     </div>
                     <div class="feature-why">
                         <strong>The Operator's Edge</strong>
-                        Revenue isn't margin. This module hard-links your marketing spend (CAC) and fulfillment costs
-                        (COGS/Refunds) to your retention data, revealing your *actual* payback period and preventing
-                        unprofitable scaling.
+                        Revenue isn't margin. This module hard-links your marketing spend to your retention data, revealing your actual payback period and preventing unprofitable scaling.
                     </div>
                 </div>
             </div>
 
-            <div class="feature-card">
+            <div class="feature-card reveal">
                 <div class="feature-icon">⚡</div>
                 <h3>Conversion Optimization</h3>
                 <p>Identify and plug the exact leaks in your user journey from first visit to final purchase.</p>
@@ -500,60 +656,56 @@
                         <span class="detail-label">Simulation Inputs</span>
                         <ul class="detail-list">
                             <li>Total session volume (N)</li>
-                            <li>Step-by-step dropoff parameters</li>
-                            <li>'Free Shipping' threshold toggle</li>
+                            <li>Step-by-step dropoff</li>
+                            <li>'Free Shipping' threshold</li>
                         </ul>
                     </div>
                     <div class="detail-group">
                         <span class="detail-label">Generated Outputs</span>
                         <ul class="detail-list">
-                            <li>Visit-to-Purchase funnel visualizations</li>
-                            <li>Segmented conversion rates (Mobile vs Desktop)</li>
-                            <li>Statistical significance (A/B Test Z-scores)</li>
+                            <li>Visit-to-Purchase funnels</li>
+                            <li>Segmented conversion rates</li>
+                            <li>A/B Test Z-scores</li>
                         </ul>
                     </div>
                     <div class="feature-why">
                         <strong>The Operator's Edge</strong>
-                        Is offering free shipping worth the margin hit? Simulate the exact volume increase needed to
-                        offset the shipping cost, and instantly validate if your new checkout flow is statistically
-                        significantly better.
+                        Is offering free shipping worth the margin hit? Simulate the volume increase needed to offset shipping costs and instantly validate if your new flow is statistically better.
                     </div>
                 </div>
             </div>
 
-            <div class="feature-card">
+            <div class="feature-card reveal">
                 <div class="feature-icon">💰</div>
-                <h3>Marketplace Pricing Analytics</h3>
+                <h3>Marketplace Pricing</h3>
                 <p>Optimize your platform take-rate without destroying seller liquidity or buyer demand.</p>
                 <div class="feature-details">
                     <div class="detail-group">
                         <span class="detail-label">Simulation Inputs</span>
                         <ul class="detail-list">
-                            <li>Seller volume & Tier distributions</li>
-                            <li>Take Rate multiplier & Fixed Transaction Fees</li>
+                            <li>Seller volume & Tiers</li>
+                            <li>Take Rate multiplier</li>
                             <li>Buyer vs. Seller fee splits</li>
                         </ul>
                     </div>
                     <div class="detail-group">
                         <span class="detail-label">Generated Outputs</span>
                         <ul class="detail-list">
-                            <li>Price Elasticity of Demand curves</li>
-                            <li>Effective Take Rate & Gross Merchandise Volume</li>
-                            <li>Revenue breakdown by commission tier</li>
+                            <li>Price Elasticity of Demand</li>
+                            <li>Effective Take Rate & GMV</li>
+                            <li>Revenue by commission tier</li>
                         </ul>
                     </div>
                     <div class="feature-why">
                         <strong>The Operator's Edge</strong>
-                        Marketplaces are delicate ecosystems. Use this module to safely simulate raising transaction
-                        fees or shifting the burden from seller to buyer, ensuring you maximize revenue capture without
-                        triggering a mass seller exodus.
+                        Safely simulate raising transaction fees or shifting the burden from seller to buyer, ensuring you maximize revenue capture without triggering a mass seller exodus.
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="simulation-banner" id="start">
+    <section class="simulation-banner reveal" id="start">
         <div class="simulation-content">
             <h2>Data on Demand.</h2>
             <p>Don't have your own data ready? No problem. ChurnOS generates thousands of rows of synthetic customer,
@@ -577,9 +729,31 @@
         window.addEventListener('scroll', () => {
             const preview = document.querySelector('.dashboard-img');
             const scrollY = window.scrollY;
-            if (scrollY < 500) {
+            if (scrollY < 500 && preview) {
                 preview.style.transform = `rotateX(${Math.max(0, 5 - scrollY / 100)}deg) scale(${Math.min(1, 0.95 + scrollY / 2000)})`;
             }
+        });
+        
+        // Intersection Observer for scroll animations
+        document.addEventListener("DOMContentLoaded", function() {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        // Optional: stop observing once animated
+                        // observer.unobserve(entry.target); 
+                    }
+                });
+            }, observerOptions);
+
+            const revealElements = document.querySelectorAll('.reveal');
+            revealElements.forEach(el => observer.observe(el));
         });
     </script>
 </body>

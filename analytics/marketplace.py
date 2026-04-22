@@ -330,3 +330,65 @@ def get_category_performance(marketplace: pd.DataFrame) -> pd.DataFrame:
         avg_take_rate=("take_rate", "mean"),
         total_listings=("active_listings", "sum"),
     ).reset_index().sort_values("total_gmv", ascending=False)
+
+def calculate_liquidity_metrics(buyers: pd.DataFrame, sellers: pd.DataFrame, transactions: pd.DataFrame) -> dict:
+    """Calculates Search-to-Fill Rate and Time-to-First-Sale."""
+    # Search-to-fill estimated from conversion rates (proxy for liquidity)
+    search_to_fill_rate = min(95.0, (len(transactions) / (len(buyers) * 2)) * 100) if not buyers.empty else 0
+    
+    # Time to first sale
+    avg_time_to_first_sale = sellers["time_to_first_sale_days"].mean() if "time_to_first_sale_days" in sellers.columns else 0
+    
+    # Buyer-to-seller ratio
+    buyer_to_seller_ratio = len(buyers) / len(sellers) if len(sellers) > 0 else 0
+    
+    return {
+        "search_to_fill_rate": search_to_fill_rate,
+        "avg_time_to_first_sale_days": avg_time_to_first_sale,
+        "buyer_to_seller_ratio": buyer_to_seller_ratio
+    }
+
+def supply_side_cohorts(sellers: pd.DataFrame) -> pd.DataFrame:
+    """Generates survival curve data for seller retention."""
+    if "signup_date" not in sellers.columns:
+        return pd.DataFrame()
+        
+    sellers['signup_month'] = sellers['signup_date'].dt.to_period('M')
+    
+    # Calculate months active
+    end_date = sellers['churn_date'].fillna(pd.Timestamp('2025-12-31'))
+    sellers['months_active'] = ((end_date - sellers['signup_date']).dt.days / 30).astype(int)
+    
+    # Create cohort retention matrix
+    max_months = 24
+    retention_data = []
+    
+    for m in range(max_months + 1):
+        active_count = len(sellers[sellers['months_active'] >= m])
+        retention_pct = (active_count / len(sellers)) * 100 if len(sellers) > 0 else 0
+        retention_data.append({"month": m, "active_pct": retention_pct})
+        
+    return pd.DataFrame(retention_data)
+
+def cross_side_network_effects(buyers: pd.DataFrame, sellers: pd.DataFrame, simulated_seller_growth: float = 0.0) -> dict:
+    """Models the causal link between supply density and buyer conversion."""
+    base_sellers = len(sellers)
+    new_sellers = int(base_sellers * (1 + simulated_seller_growth))
+    
+    # Assume 10% increase in sellers leads to 2% increase in buyer conversion
+    conversion_boost = (simulated_seller_growth * 100) * 0.2
+    
+    base_conversion = 3.5 # Example base conversion
+    new_conversion = base_conversion * (1 + (conversion_boost / 100))
+    
+    # Projected GMV impact
+    total_gmv = sellers["monthly_gmv"].sum()
+    new_gmv = total_gmv * (1 + (conversion_boost / 100))
+    
+    return {
+        "projected_sellers": new_sellers,
+        "base_conversion_pct": base_conversion,
+        "projected_conversion_pct": new_conversion,
+        "gmv_lift_pct": conversion_boost,
+        "projected_gmv": new_gmv
+    }

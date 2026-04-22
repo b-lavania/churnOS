@@ -113,10 +113,31 @@ def generate_transactions(
             discount = bool(rng.random() < discount_freq)
             is_refunded = bool(rng.random() < refund_rate)
             
-            cogs = round(revenue * cogs_pct, 2)
+            # E-commerce extensions
+            inventory_level = int(rng.poisson(20))
+            is_stockout = inventory_level == 0
+            
+            if is_stockout:
+                revenue = 0.0
+                items = 0
+                discount = False
+                is_refunded = False
+                
+            dynamic_cogs_pct = cogs_pct
+            if inventory_level < 5 and not is_stockout:
+                dynamic_cogs_pct = min(0.9, cogs_pct * 1.3)
+                
+            cogs = round(revenue * dynamic_cogs_pct, 2)
+            
+            is_incremental = False
+            is_cannibalized = False
+            if discount and not is_stockout:
+                is_cannibalized = bool(rng.random() < (0.6 if discount_freq > 0.3 else 0.3))
+                is_incremental = not is_cannibalized
+
             # Subscribers get free shipping, or randomly applied
             ship = 0.0 if cust.get("is_subscriber", False) else shipping_cost
-            net_revenue = 0.0 if is_refunded else revenue
+            net_revenue = 0.0 if is_refunded or is_stockout else revenue
             gross_margin = net_revenue - cogs - ship
 
             rows.append({
@@ -131,6 +152,10 @@ def generate_transactions(
                 "items": items,
                 "discount_applied": discount,
                 "is_refunded": is_refunded,
+                "inventory_level": inventory_level,
+                "is_stockout": is_stockout,
+                "is_incremental": is_incremental,
+                "is_cannibalized": is_cannibalized,
             })
             tid += 1
 
@@ -237,6 +262,10 @@ def generate_marketplace_pricing(
     if tier_weights is None:
         tier_weights = [0.40, 0.30, 0.20, 0.10]
 
+    start_date = pd.Timestamp("2023-01-01")
+    end_date = pd.Timestamp("2025-12-31")
+    date_range_days = (end_date - start_date).days
+
     rows = []
     for i in range(n_sellers):
         tier = rng.choice(tiers, p=tier_weights)
@@ -250,12 +279,27 @@ def generate_marketplace_pricing(
         aov = round(float(rng.lognormal(aov_mu, aov_sigma)), 2)
         transactions = int(gmv / max(1.0, aov))
         total_fixed_fees = transactions * fixed_fee
+        
+        # Marketplace Seller Cohorts
+        signup_offset = rng.integers(0, date_range_days)
+        signup_date = start_date + timedelta(days=int(signup_offset))
+        
+        tier_churn_prob = {"Starter": 0.5, "Growth": 0.3, "Pro": 0.15, "Enterprise": 0.05}
+        is_churned = rng.random() < tier_churn_prob.get(tier, 0.2)
+        days_to_churn = int(rng.integers(30, 365 * 2))
+        churn_date = signup_date + timedelta(days=days_to_churn) if is_churned else pd.NaT
+        
+        time_to_first_sale_days = int(rng.integers(1, 45)) if rng.random() < 0.8 else int(rng.integers(46, 120))
 
         rows.append(
             {
                 "seller_id": f"SELL-{i:04d}",
                 "category": cat,
                 "commission_tier": tier,
+                "signup_date": signup_date,
+                "churn_date": churn_date,
+                "is_churned": is_churned,
+                "time_to_first_sale_days": time_to_first_sale_days,
                 "monthly_gmv": gmv,
                 "take_rate": take_rate,
                 "buyer_fee_pct": buyer_fee_pct,
@@ -332,6 +376,61 @@ def generate_buyers(n_buyers: int = 10000, seed: int = SEED) -> pd.DataFrame:
     return df
 
 
+def generate_marketing_spend(days: int = 365, seed: int = SEED) -> pd.DataFrame:
+    """Generate daily marketing spend and ground-truth sales for Bayesian MMM."""
+    rng = np.random.default_rng(seed)
+    
+    start_date = pd.Timestamp("2024-01-01")
+    dates = [start_date + timedelta(days=i) for i in range(days)]
+    
+    spend_meta = np.abs(1000 + 300 * np.sin(np.linspace(0, 10, days)) + rng.normal(0, 150, days))
+    spend_google = np.abs(800 + 100 * np.sin(np.linspace(0, 10, days) + 2) + rng.normal(0, 100, days))
+    spend_tiktok = np.abs(500 + 400 * np.sin(np.linspace(0, 15, days) + 1) + rng.normal(0, 200, days))
+    spend_email = np.abs(100 + 20 * np.sin(np.linspace(0, 20, days)) + rng.normal(0, 10, days))
+    
+    def apply_adstock(spend, retain_rate):
+        adstocked = np.zeros_like(spend)
+        adstocked[0] = spend[0]
+        for t in range(1, len(spend)):
+            adstocked[t] = spend[t] + retain_rate * adstocked[t-1]
+        return adstocked
+
+    def apply_saturation(spend, alpha, lam):
+        return alpha * spend / (lam + spend)
+
+    params = {
+        "Meta": {"adstock": 0.3, "alpha": 3000, "lam": 1000},
+        "Google": {"adstock": 0.1, "alpha": 2500, "lam": 800},
+        "TikTok": {"adstock": 0.6, "alpha": 4000, "lam": 2000},
+        "Email": {"adstock": 0.05, "alpha": 800, "lam": 100}
+    }
+    
+    adstocked_meta = apply_adstock(spend_meta, params["Meta"]["adstock"])
+    adstocked_google = apply_adstock(spend_google, params["Google"]["adstock"])
+    adstocked_tiktok = apply_adstock(spend_tiktok, params["TikTok"]["adstock"])
+    adstocked_email = apply_adstock(spend_email, params["Email"]["adstock"])
+    
+    sales_meta = apply_saturation(adstocked_meta, params["Meta"]["alpha"], params["Meta"]["lam"])
+    sales_google = apply_saturation(adstocked_google, params["Google"]["alpha"], params["Google"]["lam"])
+    sales_tiktok = apply_saturation(adstocked_tiktok, params["TikTok"]["alpha"], params["TikTok"]["lam"])
+    sales_email = apply_saturation(adstocked_email, params["Email"]["alpha"], params["Email"]["lam"])
+    
+    baseline_sales = 2000 + 500 * np.sin(np.linspace(0, 6.28, days)) # seasonality
+    noise = rng.normal(0, 300, days)
+    
+    total_sales = baseline_sales + sales_meta + sales_google + sales_tiktok + sales_email + noise
+    
+    df = pd.DataFrame({
+        "Date": dates,
+        "Spend_Meta": spend_meta,
+        "Spend_Google": spend_google,
+        "Spend_TikTok": spend_tiktok,
+        "Spend_Email": spend_email,
+        "Sales": np.maximum(0, total_sales)
+    })
+    
+    return df
+
 # Convenience function to generate all datasets
 def generate_all_data(seed: int = SEED):
     """Return all datasets as a dict."""
@@ -340,10 +439,12 @@ def generate_all_data(seed: int = SEED):
     funnel = generate_funnel_events(seed=seed)
     marketplace = generate_marketplace_pricing(seed=seed)
     buyers = generate_buyers(seed=seed)
+    marketing = generate_marketing_spend(seed=seed)
     return {
         "customers": customers,
         "transactions": transactions,
         "funnel": funnel,
         "marketplace": marketplace,
         "buyers": buyers,
+        "marketing": marketing,
     }

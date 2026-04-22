@@ -1,0 +1,103 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+from pathlib import Path
+
+from data.generator import generate_all_data
+from analytics.attribution import build_and_sample_mmm, extract_roas_posteriors
+
+st.set_page_config(page_title="Attribution MMM", layout="wide")
+
+# Load CSS
+css_path = Path(__file__).parent.parent / "assets" / "style.css"
+if css_path.exists():
+    st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
+
+st.markdown('<div class="terminal-header">MARKETING // BAYESIAN MMM</div>', unsafe_allow_html=True)
+st.markdown('<h1 class="gradient-text">Marketing Mix Modeling</h1>', unsafe_allow_html=True)
+
+@st.cache_data
+def load_data():
+    return generate_all_data()
+
+data = load_data()
+df = data['marketing']
+
+st.markdown("---")
+
+col1, col2 = st.columns([1, 2])
+
+with col1:
+    st.subheader("Model Configuration")
+    st.write("Run the PyMC NUTS sampler to estimate causal ROAS.")
+    run_model = st.button("Run Bayesian Sampler", type="primary")
+    
+    st.markdown("""
+    > [!TIP]
+    > **Why Bayesian?** Traditional last-click attribution under-reports top-of-funnel channels and over-reports bottom-of-funnel channels. A Bayesian MMM looks at aggregate spend vs sales to infer true causality and gives you a probability distribution, not just a single guess.
+    """)
+
+# Cache the heavy PyMC execution
+@st.cache_data(show_spinner=False)
+def get_model_trace(_df):
+    trace, model = build_and_sample_mmm(_df)
+    roas_posteriors = extract_roas_posteriors(trace, _df)
+    return roas_posteriors
+
+if run_model or "roas_posteriors" in st.session_state:
+    with st.spinner("Sampling from posterior... (This may take a minute)"):
+        roas_posteriors = get_model_trace(df)
+        st.session_state["roas_posteriors"] = roas_posteriors
+        
+    with col2:
+        st.subheader("Posterior ROAS Distributions (95% HDI)")
+        
+        fig = go.Figure()
+        channels = ["Meta", "Google", "TikTok", "Email"]
+        colors = ["#1877F2", "#EA4335", "#00f2ff", "#14b8a6"]
+        
+        for i, c in enumerate(channels):
+            fig.add_trace(go.Violin(
+                x=roas_posteriors[c],
+                name=c,
+                line_color=colors[i],
+                fillcolor=colors[i],
+                opacity=0.6,
+                meanline_visible=True
+            ))
+            
+        fig.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)", 
+            paper_bgcolor="rgba(0,0,0,0)", 
+            font=dict(color="#94a3b8"),
+            xaxis_title="Estimated True ROAS (x)",
+            yaxis_title="Channel",
+            showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        
+    st.markdown("---")
+    st.subheader("Budget Optimization Simulator")
+    
+    st.write("Adjust weekly budget below to see how diminishing returns impact expected revenue.")
+    
+    means = {c: np.mean(roas_posteriors[c]) for c in channels}
+    
+    opt_cols = st.columns(4)
+    budget_allocs = {}
+    for i, c in enumerate(channels):
+        current_weekly = df[f"Spend_{c}"].sum() / 52
+        budget_allocs[c] = opt_cols[i].slider(f"{c} Weekly ($)", 0, int(current_weekly*3), int(current_weekly), step=500)
+        
+    projected_rev = sum(budget_allocs[c] * means[c] for c in channels)
+    st.metric("Expected Weekly Revenue from Ads", f"${projected_rev:,.2f}")
+else:
+    with col2:
+        st.info("Click 'Run Bayesian Sampler' to initialize the PyMC engine.")
+        
+        st.subheader("Historical Daily Spend")
+        fig = px.line(df, x="Date", y=["Spend_Meta", "Spend_Google", "Spend_TikTok", "Spend_Email"])
+        fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#94a3b8"))
+        st.plotly_chart(fig, use_container_width=True)

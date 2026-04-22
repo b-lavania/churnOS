@@ -12,10 +12,13 @@ Every page includes a Simulation Controls section right below the header allowin
 
 | Page | Description & Simulation Controls |
 |------|-----------------------------------|
+| **Causal Business Model** | Unified engine linking core levers (CAC, Churn, AOV) to customer lifecycle. **Controls:** Base inputs impacting all downstream modules. |
 | **Churn Analysis** | Cohort survival, driver ID, revenue churn vs logo churn. **Controls:** Base Churn Multiplier, Premium Mix, Subscribe & Save % (flattens survival curves by dropping base churn). |
 | **Retention** | Cohort heatmaps, Day-N retention, and True Margin CLV. **Controls:** AOV, Discount Freq, Refund Rate %, COGS %, Blended CAC. Includes a live *LTV:CAC Ratio* tracking profitability! |
 | **Conversion Optimization** | Funnel visualization from Visit to Purchase, drop-off analysis. **Controls:** N Sessions, Checkout Dropoff, Mobile Share, and a Free Shipping toggle to model volume vs. margin tradeoffs. |
-| **Pricing Analytics** | Take-rate analysis, elasticity simulation, buyer vs seller split. **Controls:** Seller Volume, Take Rate Multiplier, Fee Splits, and a Fixed Per-Transaction Fee ($) to model margin expansion. |
+| **E-Commerce Analytics** | Deep dive for storefronts: RFM segmentation and Inventory/COGS volatility modeling. **Controls:** Refund Rate Volatility, Unit COGS. |
+| **Marketplace Pricing & Liquidity** | Take-rate analysis, elasticity simulation, network effect modeling. **Controls:** Seller Volume, Take Rate Multiplier, Fee Splits, Platform Subsidy %. |
+| **Bayesian Attribution (MMM)** | Marketing Mix Modeling using PyMC to provide causal insights into spend. **Controls:** Ad Spend per Channel, Diminishing Returns coefficients. |
 | **Knowledge Base** | Metric definitions, formulas, industry benchmarks, and actionable playbooks. |
 | **README** | This documentation rendered within the app. |
 
@@ -40,17 +43,26 @@ churnOS/
 |
 |-- analytics/
 |   |-- __init__.py
+|   |-- causal_model.py                 # Centralized causal model linking levers to LTV/CAC
 |   |-- churn.py                        # Churn rate, cohort churn, survival analysis, RF drivers
 |   |-- retention.py                    # Cohort retention matrix, CLV, Day-N retention, curves
 |   |-- conversion.py                   # Funnel summary, drop-off, segment conversion, A/B test
 |   |-- pricing.py                      # Take-rate, price elasticity, commission tiers, fee split
+|   |-- ecommerce.py                    # RFM segmentation, inventory/COGS volatility modeling
+|   |-- marketplace.py                  # Marketplace liquidity metrics, network effects
+|   |-- attribution.py                  # Bayesian Marketing Mix Modeling (MMM) via PyMC
 |
 |-- pages/
+    |-- 0_Business_Model.py             # Causal model input and executive summary
     |-- 1_Churn_Analysis.py             # Churn dashboards with data input
     |-- 2_Retention.py                  # Retention dashboards with data input
     |-- 3_Conversion_Optimization.py    # Conversion dashboards with data input
     |-- 4_Pricing_Analytics.py          # Pricing dashboards with data input
-    |-- 5_Knowledge_Base.py             # Metric definitions and playbooks
+    |-- 5_Marketplace_Analytics.py      # Marketplace seller performance tracking
+    |-- 7_Concepts.py                   # Knowledge base, metric definitions, playbooks
+    |-- 8_ECommerce_Analytics.py        # Storefront-specific insights
+    |-- 9_Marketplace_Liquidity.py      # Supply/demand liquidity modeling
+    |-- 10_Attribution_MMM.py           # Bayesian attribution analysis
     |-- 6_README.py                     # This README rendered in the app
 ```
 
@@ -109,6 +121,21 @@ churnOS/
 - `price_elasticity_sim()` — Demand and revenue curves given price elasticity
 - `commission_tier_model()` — Revenue breakdown by commission tier
 - `fee_split_scenario()` — Model buyer vs seller fee allocation impact
+
+**causal_model.py**
+- Core engine linking CAC, churn, and AOV to lifetime profitability and tracking sensitivity.
+
+**ecommerce.py**
+- `rfm_segmentation()` — Recency, Frequency, Monetary modeling.
+- `inventory_volatility()` — Simulates COGS volatility impacts on margin.
+
+**marketplace.py**
+- `liquidity_ratio()` — Models supply vs demand health.
+- `network_effect_sim()` — Simulates platform value growth organically.
+
+**attribution.py**
+- PyMC-based Bayesian Marketing Mix Modeling (MMM).
+- Causal insights into advertising spend and diminishing returns.
 
 ## Getting Started
 

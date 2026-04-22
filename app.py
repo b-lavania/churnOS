@@ -275,6 +275,9 @@ pages = [
     st.Page("pages/3_Conversion.py", title="Conversion & Funnel"),
     st.Page("pages/4_Marketplace.py", title="Marketplace"),
     st.Page("pages/5_Marketplace_Analytics.py", title="Marketplace Analytics"),
+    st.Page("pages/8_ECommerce_Analytics.py", title="E-Commerce Deep Dive"),
+    st.Page("pages/9_Marketplace_Liquidity.py", title="Marketplace Liquidity"),
+    st.Page("pages/10_Attribution_MMM.py", title="Attribution & MMM"),
 ]
 
 pg = st.navigation(pages)
