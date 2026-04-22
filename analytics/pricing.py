@@ -1,5 +1,5 @@
 """
-Pricing analytics for marketplaces — take-rate analysis, price elasticity,
+Pricing analytics for marketplaces : take-rate analysis, price elasticity,
 commission tiers, and buyer/seller fee split modeling.
 """
 

@@ -29,6 +29,14 @@ PLOTLY_THEME = {
 st.markdown('<div class="terminal-header">DEEP DIVE // CONVERSION & FUNNEL</div>', unsafe_allow_html=True)
 st.markdown('<h1 class="gradient-text">Conversion & Funnel</h1>', unsafe_allow_html=True)
 
+with st.expander("Concept Playbook: How to use this page"):
+    st.markdown('''
+    **Overview:** This page provides causal insights into your metrics.
+    **How to use:** Adjust the inputs in the sidebar or main area to simulate different business scenarios. 
+    Pay attention to the outputs with tooltips for detailed definitions. All metrics are connected to the central causal model.
+    ''')
+
+
 if "model" not in st.session_state:
     st.warning("No model defined. Go to **Business Model** to configure your business first.")
     st.stop()
@@ -37,7 +45,7 @@ model = st.session_state["model"]
 s = st.session_state["model_summary"]
 config = st.session_state["model_config"]
 
-# ── Generate funnel data (using existing generator — kept for conversion analysis) ──
+# ── Generate funnel data (using existing generator : kept for conversion analysis) ──
 from data.generator import generate_funnel_events
 from analytics.conversion import funnel_summary, segment_conversion, ab_test_significance
 
@@ -45,11 +53,11 @@ from analytics.conversion import funnel_summary, segment_conversion, ab_test_sig
 st.markdown('<div class="terminal-header">FUNNEL SIMULATION</div>', unsafe_allow_html=True)
 col_a, col_b, col_c, col_d, col_e = st.columns(5)
 with col_a:
-    new_sess = st.number_input("SESSIONS", 5000, 100000, 30000, step=5000, key="conv_sess")
+    new_sess = st.number_input("SESSIONS", 5000, 100000, 30000, step=5000, key="conv_sess", help="A group of user interactions with your website that take place within a given time frame.")
 with col_b:
-    new_dropoff = st.slider("CHECKOUT DROPOFF", 0.5, 2.0, 1.0, 0.1, key="conv_dropoff")
+    new_dropoff = st.slider("CHECKOUT DROPOFF", 0.5, 2.0, 1.0, 0.1, key="conv_dropoff", help="The rate at which users leave the funnel at a specific step.")
 with col_c:
-    new_mobile = st.slider("MOBILE SHARE", 0.1, 0.9, 0.48, 0.05, key="conv_mobile")
+    new_mobile = st.slider("MOBILE SHARE", 0.1, 0.9, 0.48, 0.05, key="conv_mobile", help="Interactions occurring on mobile devices.")
 with col_d:
     st.markdown('<div style="margin-top: 1.8rem;"></div>', unsafe_allow_html=True)
     new_fs = st.toggle("FREE SHIPPING", value=False, key="conv_fs")
@@ -138,8 +146,8 @@ with tab3:
         unsafe_allow_html=True,
     )
 
-    step_to_improve = st.selectbox("Funnel Step to Improve", ["Product View", "Add to Cart", "Checkout", "Purchase"], key="conv_step")
-    improvement_pct = st.slider("Improvement (%)", 1, 50, 10, step=1, key="conv_improve")
+    step_to_improve = st.selectbox("Funnel Step to Improve", ["Product View", "Add to Cart", "Checkout", "Purchase"], key="conv_step", help="Adjust this parameter to see its impact on the model.")
+    improvement_pct = st.slider("Improvement (%)", 1, 50, 10, step=1, key="conv_improve", help="Adjust this parameter to see its impact on the model.")
 
     # Calculate impact: improvement in this step means more purchases
     # which means more customers acquired from the same traffic
@@ -169,11 +177,11 @@ with tab3:
     st.markdown('<div class="terminal-header" style="margin-top: 2rem;">A/B TEST SIGNIFICANCE CALCULATOR</div>', unsafe_allow_html=True)
     col_a, col_b = st.columns(2)
     with col_a:
-        cv = st.number_input("CONTROL VISITORS", 1000, 100000, 10000, key="ab_cv")
-        cc = st.number_input("CONTROL CONVERSIONS", 10, 10000, 350, key="ab_cc")
+        cv = st.number_input("CONTROL VISITORS", 1000, 100000, 10000, key="ab_cv", help="Adjust this parameter to see its impact on the model.")
+        cc = st.number_input("CONTROL CONVERSIONS", 10, 10000, 350, key="ab_cc", help="Adjust this parameter to see its impact on the model.")
     with col_b:
-        vv = st.number_input("VARIANT VISITORS", 1000, 100000, 10000, key="ab_vv")
-        vc = st.number_input("VARIANT CONVERSIONS", 10, 10000, 420, key="ab_vc")
+        vv = st.number_input("VARIANT VISITORS", 1000, 100000, 10000, key="ab_vv", help="Adjust this parameter to see its impact on the model.")
+        vc = st.number_input("VARIANT CONVERSIONS", 10, 10000, 420, key="ab_vc", help="Adjust this parameter to see its impact on the model.")
     if st.button("RUN SIGNIFICANCE TEST", type="primary", key="ab_run"):
         res = ab_test_significance(cv, cc, vv, vc)
         res_cols = st.columns(3)

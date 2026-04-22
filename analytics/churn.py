@@ -1,5 +1,5 @@
 """
-Churn analysis module — churn rates, survival analysis, and churn driver identification.
+Churn analysis module : churn rates, survival analysis, and churn driver identification.
 """
 
 import numpy as np

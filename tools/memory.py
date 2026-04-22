@@ -26,7 +26,7 @@ def read_memory(path: Path = FILE) -> str:
 def append_entry(mistake: str, pattern: str = "", better: str = "", path: Path = FILE) -> None:
     ts = datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
     entry_lines = [
-        "\n### Entry — " + ts,
+        "\n### Entry : " + ts,
         "",
         "**Mistake:** " + mistake,
         "",

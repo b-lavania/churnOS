@@ -1,5 +1,5 @@
 """
-Marketplace analytics — Overall, Seller, and Buyer metrics.
+Marketplace analytics : Overall, Seller, and Buyer metrics.
 """
 
 import numpy as np

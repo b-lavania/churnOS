@@ -98,40 +98,40 @@ churnOS/
 ### Analytics Module Details
 
 **churn.py**
-- `compute_churn_rate()` — Overall and grouped churn rates
-- `compute_cohort_churn()` — Churn rate by signup month cohort
-- `revenue_vs_logo_churn()` — Compare customer count churn vs revenue churn
-- `churn_drivers()` — Random Forest feature importance for churn prediction
-- `survival_analysis()` — Kaplan-Meier survival curves by segment
+- `compute_churn_rate()` : Overall and grouped churn rates
+- `compute_cohort_churn()` : Churn rate by signup month cohort
+- `revenue_vs_logo_churn()` : Compare customer count churn vs revenue churn
+- `churn_drivers()` : Random Forest feature importance for churn prediction
+- `survival_analysis()` : Kaplan-Meier survival curves by segment
 
 **retention.py**
-- `cohort_retention_matrix()` — Triangular retention heatmap data
-- `clv_estimate()` — CLV = AOV x Frequency x Lifespan
-- `retention_curve()` — Retention percentage by month, grouped by channel or segment
-- `day_n_retention()` — D1, D7, D14, D30, D60, D90 retention metrics
+- `cohort_retention_matrix()` : Triangular retention heatmap data
+- `clv_estimate()` : CLV = AOV x Frequency x Lifespan
+- `retention_curve()` : Retention percentage by month, grouped by channel or segment
+- `day_n_retention()` : D1, D7, D14, D30, D60, D90 retention metrics
 
 **conversion.py**
-- `funnel_summary()` — Session counts and conversion rates at each funnel step
-- `drop_off_analysis()` — Identify biggest funnel drop-off points
-- `segment_conversion()` — Conversion rate by device or traffic source
-- `ab_test_significance()` — Two-proportion Z-test with confidence intervals
+- `funnel_summary()` : Session counts and conversion rates at each funnel step
+- `drop_off_analysis()` : Identify biggest funnel drop-off points
+- `segment_conversion()` : Conversion rate by device or traffic source
+- `ab_test_significance()` : Two-proportion Z-test with confidence intervals
 
 **pricing.py**
-- `take_rate_analysis()` — GMV, net revenue, effective take rate by category
-- `price_elasticity_sim()` — Demand and revenue curves given price elasticity
-- `commission_tier_model()` — Revenue breakdown by commission tier
-- `fee_split_scenario()` — Model buyer vs seller fee allocation impact
+- `take_rate_analysis()` : GMV, net revenue, effective take rate by category
+- `price_elasticity_sim()` : Demand and revenue curves given price elasticity
+- `commission_tier_model()` : Revenue breakdown by commission tier
+- `fee_split_scenario()` : Model buyer vs seller fee allocation impact
 
 **causal_model.py**
 - Core engine linking CAC, churn, and AOV to lifetime profitability and tracking sensitivity.
 
 **ecommerce.py**
-- `rfm_segmentation()` — Recency, Frequency, Monetary modeling.
-- `inventory_volatility()` — Simulates COGS volatility impacts on margin.
+- `rfm_segmentation()` : Recency, Frequency, Monetary modeling.
+- `inventory_volatility()` : Simulates COGS volatility impacts on margin.
 
 **marketplace.py**
-- `liquidity_ratio()` — Models supply vs demand health.
-- `network_effect_sim()` — Simulates platform value growth organically.
+- `liquidity_ratio()` : Models supply vs demand health.
+- `network_effect_sim()` : Simulates platform value growth organically.
 
 **attribution.py**
 - PyMC-based Bayesian Marketing Mix Modeling (MMM).

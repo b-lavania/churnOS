@@ -1,5 +1,5 @@
 """
-Conversion funnel analytics — funnel summary, drop-off analysis, segment breakdowns, A/B testing.
+Conversion funnel analytics : funnel summary, drop-off analysis, segment breakdowns, A/B testing.
 """
 
 import numpy as np

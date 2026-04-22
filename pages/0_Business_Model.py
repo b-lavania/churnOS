@@ -1,7 +1,7 @@
 """
 Page 0: Business Model Configuration
 ======================================
-The unified input screen — define your business so churnOS can reason about it.
+The unified input screen : define your business so churnOS can reason about it.
 """
 
 import streamlit as st
@@ -17,10 +17,18 @@ from analytics.causal_model import BusinessModel, TEMPLATES
 # ── Header ──
 st.markdown('<div class="terminal-header">SYSTEM CONFIG // BUSINESS MODEL DEFINITION</div>', unsafe_allow_html=True)
 st.markdown('<h1 class="gradient-text">Business Model</h1>', unsafe_allow_html=True)
+
+with st.expander("Concept Playbook: How to use this page"):
+    st.markdown('''
+    **Overview:** This page provides causal insights into your metrics.
+    **How to use:** Adjust the inputs in the sidebar or main area to simulate different business scenarios. 
+    Pay attention to the outputs with tooltips for detailed definitions. All metrics are connected to the central causal model.
+    ''')
+
 st.markdown(
     '<p style="max-width: 700px; margin-bottom: 2rem;">'
     'Define your business archetype. churnOS will propagate these inputs through the '
-    'full causal chain — from acquisition cost to lifetime value — so every dashboard '
+    'full causal chain : from acquisition cost to lifetime value : so every dashboard '
     'reflects <em>your</em> economics.'
     '</p>',
     unsafe_allow_html=True,
@@ -31,8 +39,7 @@ st.markdown('<div class="terminal-header">STEP 1 // BUSINESS TYPE</div>', unsafe
 
 btype_col, template_col = st.columns([2, 3])
 with btype_col:
-    business_type = st.selectbox(
-        "Business Type",
+    business_type = st.selectbox("Business Type",
         list(TEMPLATES.keys()),
         index=0,
         key="bm_business_type",
@@ -67,8 +74,7 @@ st.markdown('<div class="terminal-header" style="margin-top: 2rem;">STEP 2 // AC
 
 acq1, acq2, acq3, acq4 = st.columns(4)
 with acq1:
-    cohort_size = st.number_input(
-        "Cohort Size",
+    cohort_size = st.number_input("Cohort Size",
         100, 500000,
         int(template.get("cohort_size", 5000)),
         step=500,
@@ -76,8 +82,7 @@ with acq1:
         help="Number of new customers in a cohort period (monthly).",
     )
 with acq2:
-    cac_paid = st.number_input(
-        "CAC — Paid ($)",
+    cac_paid = st.number_input("CAC : Paid ($)",
         0.0, 1000.0,
         float(template.get("cac_paid", 35.0)),
         step=1.0,
@@ -85,8 +90,7 @@ with acq2:
         help="Average cost to acquire a customer through paid channels.",
     )
 with acq3:
-    cac_organic = st.number_input(
-        "CAC — Organic ($)",
+    cac_organic = st.number_input("CAC : Organic ($)",
         0.0, 500.0,
         float(template.get("cac_organic", 8.0)),
         step=1.0,
@@ -94,8 +98,7 @@ with acq3:
         help="Average cost to acquire a customer through organic channels (content, SEO, etc.).",
     )
 with acq4:
-    paid_mix = st.slider(
-        "Paid Channel Mix (%)",
+    paid_mix = st.slider("Paid Channel Mix (%)",
         0, 100,
         int(template.get("paid_mix", 0.45) * 100),
         step=5,
@@ -108,8 +111,7 @@ st.markdown('<div class="terminal-header" style="margin-top: 2rem;">STEP 3 // RE
 
 ret1, ret2, ret3, ret4 = st.columns(4)
 with ret1:
-    monthly_churn = st.slider(
-        "Monthly Churn Rate (%)",
+    monthly_churn = st.slider("Monthly Churn Rate (%)",
         0.5, 40.0,
         float(template.get("monthly_churn_rate", 0.08) * 100),
         step=0.5,
@@ -117,8 +119,7 @@ with ret1:
         help="Average percentage of active customers lost each month.",
     )
 with ret2:
-    subscribe_pct = st.slider(
-        "Subscribe & Save (%)",
+    subscribe_pct = st.slider("Subscribe & Save (%)",
         0, 100,
         int(template.get("subscribe_save_pct", 0.0) * 100),
         step=5,
@@ -126,8 +127,7 @@ with ret2:
         help="Fraction of customers enrolled in a subscription program (reduces churn).",
     )
 with ret3:
-    sub_churn_reduction = st.slider(
-        "Subscriber Churn Reduction (%)",
+    sub_churn_reduction = st.slider("Subscriber Churn Reduction (%)",
         0, 100,
         int(template.get("subscriber_churn_reduction", 0.80) * 100),
         step=5,
@@ -135,8 +135,7 @@ with ret3:
         help="How much less subscribers churn vs non-subscribers.",
     )
 with ret4:
-    reactivation = st.slider(
-        "Reactivation Rate (%)",
+    reactivation = st.slider("Reactivation Rate (%)",
         0.0, 20.0,
         float(template.get("reactivation_rate", 0.02) * 100),
         step=0.5,
@@ -185,8 +184,7 @@ st.markdown('<div class="terminal-header" style="margin-top: 2rem;">STEP 4 // MO
 
 mon1, mon2, mon3 = st.columns(3)
 with mon1:
-    aov = st.number_input(
-        "Avg Order Value ($)",
+    aov = st.number_input("Avg Order Value ($)",
         1.0, 10000.0,
         float(template.get("aov", 65.0)),
         step=5.0,
@@ -194,8 +192,7 @@ with mon1:
         help="Average revenue per transaction.",
     )
 with mon2:
-    frequency = st.number_input(
-        "Purchase Freq (orders/mo)",
+    frequency = st.number_input("Purchase Freq (orders/mo)",
         0.1, 30.0,
         float(template.get("purchase_frequency", 1.8)),
         step=0.1,
@@ -203,8 +200,7 @@ with mon2:
         help="Average number of orders per active customer per month.",
     )
 with mon3:
-    cogs_pct = st.slider(
-        "COGS (%)",
+    cogs_pct = st.slider("COGS (%)",
         0, 90,
         int(template.get("cogs_pct", 0.40) * 100),
         step=5,
@@ -214,8 +210,7 @@ with mon3:
 
 mon4, mon5, mon6, mon7 = st.columns(4)
 with mon4:
-    shipping = st.number_input(
-        "Shipping Cost ($)",
+    shipping = st.number_input("Shipping Cost ($)",
         0.0, 50.0,
         float(template.get("shipping_cost", 5.0)),
         step=0.5,
@@ -223,8 +218,7 @@ with mon4:
         help="Average shipping cost per order.",
     )
 with mon5:
-    refund_rate = st.slider(
-        "Refund Rate (%)",
+    refund_rate = st.slider("Refund Rate (%)",
         0, 50,
         int(template.get("refund_rate", 0.05) * 100),
         step=1,
@@ -232,8 +226,7 @@ with mon5:
         help="Percentage of orders that get refunded.",
     )
 with mon6:
-    disc_freq = st.slider(
-        "Discount Frequency (%)",
+    disc_freq = st.slider("Discount Frequency (%)",
         0, 100,
         int(template.get("discount_frequency", 0.25) * 100),
         step=5,
@@ -241,8 +234,7 @@ with mon6:
         help="Percentage of orders where a discount is applied.",
     )
 with mon7:
-    disc_depth = st.slider(
-        "Discount Depth (%)",
+    disc_depth = st.slider("Discount Depth (%)",
         0, 80,
         int(template.get("discount_depth", 0.15) * 100),
         step=5,
@@ -256,32 +248,28 @@ if is_marketplace:
     st.markdown('<div class="terminal-header" style="margin-top: 2rem;">STEP 5 // MARKETPLACE ECONOMICS</div>', unsafe_allow_html=True)
     mp1, mp2, mp3, mp4 = st.columns(4)
     with mp1:
-        take_rate = st.slider(
-            "Take Rate (%)",
+        take_rate = st.slider("Take Rate (%)",
             1, 50,
             int(template.get("take_rate", 0.15) * 100),
             step=1,
             key="bm_take_rate",
         )
     with mp2:
-        buyer_fee = st.slider(
-            "Buyer Fee Split (%)",
+        buyer_fee = st.slider("Buyer Fee Split (%)",
             0, 100,
             int(template.get("buyer_fee_split", 0.40) * 100),
             step=5,
             key="bm_buyer_fee",
         )
     with mp3:
-        fixed_fee = st.number_input(
-            "Fixed Fee / Txn ($)",
+        fixed_fee = st.number_input("Fixed Fee / Txn ($)",
             0.0, 10.0,
             float(template.get("fixed_fee_per_txn", 0.0)),
             step=0.05,
             key="bm_fixed_fee",
         )
     with mp4:
-        n_sellers = st.number_input(
-            "Seller Count",
+        n_sellers = st.number_input("Seller Count",
             10, 100000,
             int(template.get("n_sellers", 500)),
             step=50,
@@ -296,7 +284,7 @@ st.markdown("---")
 
 run_col, status_col = st.columns([1, 3])
 with run_col:
-    run_model = st.button("⚡ Run Model", type="primary", key="bm_run")
+    run_model = st.button(" Run Model", type="primary", key="bm_run")
 
 # Assemble config dict from all widget values
 def _assemble_config() -> dict:

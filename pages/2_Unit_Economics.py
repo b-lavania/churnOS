@@ -31,6 +31,14 @@ PLOTLY_THEME = {
 st.markdown('<div class="terminal-header">DEEP DIVE // UNIT ECONOMICS</div>', unsafe_allow_html=True)
 st.markdown('<h1 class="gradient-text">Unit Economics</h1>', unsafe_allow_html=True)
 
+with st.expander("Concept Playbook: How to use this page"):
+    st.markdown('''
+    **Overview:** This page provides causal insights into your metrics.
+    **How to use:** Adjust the inputs in the sidebar or main area to simulate different business scenarios. 
+    Pay attention to the outputs with tooltips for detailed definitions. All metrics are connected to the central causal model.
+    ''')
+
+
 if "model" not in st.session_state:
     st.warning("No model defined. Go to **Business Model** to configure your business first.")
     st.stop()
@@ -175,8 +183,8 @@ with tab2:
             f"{config['refund_rate'] * 100:.0f}%",
             f"{config['discount_frequency'] * config['discount_depth'] * 100:.1f}%",
             f"{s['gross_margin_pct']:.1f}%",
-            "—",
-            "—",
+            ":",
+            ":",
         ],
     }
     st.dataframe(pd.DataFrame(pnl_data), use_container_width=True, hide_index=True)
@@ -222,9 +230,9 @@ with tab4:
 
     target_col, horizon_col, _ = st.columns([1, 1, 2])
     with target_col:
-        target_ratio = st.number_input("Target LTV:CAC Ratio", 1.0, 10.0, 3.0, step=0.5, key="cac_target")
+        target_ratio = st.number_input("Target LTV:CAC Ratio", 1.0, 10.0, 3.0, step=0.5, key="cac_target", help="Customer Acquisition Cost: The total cost to acquire a new customer.")
     with horizon_col:
-        horizon = st.number_input("Horizon (months)", 6, 60, 24, step=6, key="cac_horizon")
+        horizon = st.number_input("Horizon (months)", 6, 60, 24, step=6, key="cac_horizon", help="Adjust this parameter to see its impact on the model.")
 
     # Compute ceiling across different ratios
     ratios = [1.5, 2.0, 2.5, 3.0, 4.0, 5.0]

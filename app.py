@@ -1,5 +1,5 @@
 """
-churnOS — Causal Business Intelligence for Retention & Growth
+churnOS: Causal Business Intelligence for Retention & Growth
 ==============================================================
 Main entry point. Defines the navigation and the Executive Summary (home page).
 """
@@ -37,7 +37,7 @@ with st.sidebar:
 
 
 # ──────────────────────────────────────────────
-#  Executive Summary — the Home Page
+#  Executive Summary: the Home Page
 # ──────────────────────────────────────────────
 
 def executive_summary():
@@ -93,7 +93,7 @@ def executive_summary():
                 {health}
             </div>
             <div style="font-family: 'JetBrains Mono'; font-size: 0.8rem; color: #94a3b8; margin-top: 0.3rem;">
-                / 100 — {config['business_type'].upper()}
+                / 100: {config['business_type'].upper()}
             </div>
         </div>
         """,
@@ -266,19 +266,31 @@ def executive_summary():
 #  Navigation
 # ──────────────────────────────────────────────
 
-# Build page list — conditionally include marketplace/conversion
-pages = [
-    st.Page("pages/0_Business_Model.py", title="Business Model"),
-    st.Page(executive_summary, title="Executive Summary"),
-    st.Page("pages/1_Retention_Churn.py", title="Retention & Churn"),
-    st.Page("pages/2_Unit_Economics.py", title="Unit Economics"),
-    st.Page("pages/3_Conversion.py", title="Conversion & Funnel"),
-    st.Page("pages/4_Marketplace.py", title="Marketplace"),
-    st.Page("pages/5_Marketplace_Analytics.py", title="Marketplace Analytics"),
-    st.Page("pages/8_ECommerce_Analytics.py", title="E-Commerce Deep Dive"),
-    st.Page("pages/9_Marketplace_Liquidity.py", title="Marketplace Liquidity"),
-    st.Page("pages/10_Attribution_MMM.py", title="Attribution & MMM"),
-]
+pages = {
+    "Core": [
+        st.Page("pages/0_Business_Model.py", title="Business Model"),
+        st.Page(executive_summary, title="Executive Summary"),
+        st.Page("pages/7_Concepts.py", title="Concepts & Playbook"),
+        st.Page("pages/6_README.py", title="System Architecture"),
+    ],
+    "B2C Products": [
+        st.Page("pages/1_Retention_Churn.py", title="Retention & Churn"),
+        st.Page("pages/2_Unit_Economics.py", title="Unit Economics"),
+        st.Page("pages/3_Conversion.py", title="Conversion & Funnel"),
+    ],
+    "eCommerce": [
+        st.Page("pages/8_ECommerce_Analytics.py", title="RFM & Inventory"),
+    ],
+    "Marketplaces": [
+        st.Page("pages/4_Marketplace.py", title="Pricing Analytics"),
+        st.Page("pages/5_Marketplace_Analytics.py", title="Seller Analytics"),
+        st.Page("pages/9_Marketplace_Liquidity.py", title="Marketplace Liquidity"),
+    ],
+    "Attribution": [
+        st.Page("pages/10_Attribution_MMM.py", title="Attribution & MMM"),
+    ]
+}
 
 pg = st.navigation(pages)
 pg.run()
+

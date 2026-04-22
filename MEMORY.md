@@ -16,9 +16,9 @@ Template for new entries
 
 ## Mistakes
 
-_(most recent first — add new entries at the top or use the helper script)_
+_(most recent first : add new entries at the top or use the helper script)_
 
-### Example entry — 2026-03-28T00:00:00Z
+### Example entry : 2026-03-28T00:00:00Z
 **Mistake:** Assumed default cohort alignment was "signup_date" without checking data.
 
 **Patterns to avoid:**
@@ -60,9 +60,9 @@ Template for new entries
 
 ## Mistakes
 
-_(most recent first — add new entries at the top or use the helper script)_
+_(most recent first : add new entries at the top or use the helper script)_
 
-### Example entry — 2026-03-28T00:00:00Z
+### Example entry : 2026-03-28T00:00:00Z
 **Mistake:** Assumed default cohort alignment was "signup_date" without checking data.
 
 **Patterns to avoid:**

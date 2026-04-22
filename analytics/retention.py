@@ -1,5 +1,5 @@
 """
-Retention analytics — cohort retention matrix, CLV, and retention curves.
+Retention analytics : cohort retention matrix, CLV, and retention curves.
 """
 
 import numpy as np

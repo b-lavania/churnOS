@@ -1,7 +1,7 @@
 """
 Page 4: Marketplace
 =====================
-Marketplace-specific deep dive — seller/buyer economics, take rate analysis,
+Marketplace-specific deep dive : seller/buyer economics, take rate analysis,
 and liquidity metrics. Connected to the causal model.
 """
 
@@ -31,6 +31,14 @@ PLOTLY_THEME = {
 st.markdown('<div class="terminal-header">DEEP DIVE // MARKETPLACE ECONOMICS</div>', unsafe_allow_html=True)
 st.markdown('<h1 class="gradient-text">Marketplace</h1>', unsafe_allow_html=True)
 
+with st.expander("Concept Playbook: How to use this page"):
+    st.markdown('''
+    **Overview:** This page provides causal insights into your metrics.
+    **How to use:** Adjust the inputs in the sidebar or main area to simulate different business scenarios. 
+    Pay attention to the outputs with tooltips for detailed definitions. All metrics are connected to the central causal model.
+    ''')
+
+
 if "model" not in st.session_state:
     st.warning("No model defined. Go to **Business Model** to configure your business first.")
     st.stop()
@@ -56,6 +64,7 @@ if "mp_data" not in st.session_state:
         buyer_fee_split=buyer_fee_val,
         fixed_fee=fixed_fee_val,
     )
+if "buyer_data" not in st.session_state:
     st.session_state["buyer_data"] = generate_buyers()
 
 marketplace = st.session_state["mp_data"]
@@ -113,9 +122,9 @@ with tab2:
 
     el_col1, el_col2 = st.columns(2)
     with el_col1:
-        base_price = st.number_input("BASE PRICE ($)", 5.0, 500.0, 50.0, step=5.0, key="mp_base_price")
+        base_price = st.number_input("BASE PRICE ($)", 5.0, 500.0, 50.0, step=5.0, key="mp_base_price", help="Adjust this parameter to see its impact on the model.")
     with el_col2:
-        elasticity = st.slider("ELASTICITY COEFFICIENT", -3.0, -0.1, -1.5, step=0.1, key="mp_elasticity")
+        elasticity = st.slider("ELASTICITY COEFFICIENT", -3.0, -0.1, -1.5, step=0.1, key="mp_elasticity", help="A measure of a variable's sensitivity to a change in another variable, usually price.")
 
     sim = price_elasticity_sim(base_price, elasticity)
     optimal_idx = sim["revenue"].idxmax()
@@ -227,4 +236,4 @@ with tab4:
     # Top 20% stat
     top_20_gmv = sorted_sellers.head(int(len(sorted_sellers) * 0.2))["monthly_gmv"].sum()
     top_20_pct = top_20_gmv / gmv * 100
-    st.info(f"Top 20% of sellers generate **{top_20_pct:.1f}%** of GMV — {'high' if top_20_pct > 80 else 'moderate'} concentration.")
+    st.info(f"Top 20% of sellers generate **{top_20_pct:.1f}%** of GMV : {'high' if top_20_pct > 80 else 'moderate'} concentration.")

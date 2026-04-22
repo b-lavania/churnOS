@@ -17,6 +17,14 @@ if css_path.exists():
 st.markdown('<div class="terminal-header">MARKETPLACE // LIQUIDITY</div>', unsafe_allow_html=True)
 st.markdown('<h1 class="gradient-text">Liquidity & Network Effects</h1>', unsafe_allow_html=True)
 
+with st.expander("Concept Playbook: How to use this page"):
+    st.markdown('''
+    **Overview:** This page provides causal insights into your metrics.
+    **How to use:** Adjust the inputs in the sidebar or main area to simulate different business scenarios. 
+    Pay attention to the outputs with tooltips for detailed definitions. All metrics are connected to the central causal model.
+    ''')
+
+
 # Generate Data
 @st.cache_data
 def load_data():
@@ -64,7 +72,7 @@ with tab3:
     st.subheader("Cross-Side Network Effects")
     st.write("Simulate how acquiring new sellers impacts buyer conversion.")
     
-    growth_slider = st.slider("Simulated Seller Growth", min_value=0.0, max_value=2.0, value=0.5, step=0.1)
+    growth_slider = st.slider("Simulated Seller Growth", min_value=0.0, max_value=2.0, value=0.5, step=0.1, help="Adjust this parameter to see its impact on the model.")
     
     nw = cross_side_network_effects(buyers, sellers, simulated_seller_growth=growth_slider)
     

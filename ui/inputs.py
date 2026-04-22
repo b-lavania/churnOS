@@ -6,7 +6,7 @@ Functions provided:
 - churn_simulation_controls(...): renders the churn page top-row controls
 - preset_manager(...): minimal preset save/load UI (file-backed)
 
-This is intentionally lightweight — intended as a single place to centralize
+This is intentionally lightweight : intended as a single place to centralize
 common inputs and keys for the app.
 """
 from __future__ import annotations
@@ -79,13 +79,13 @@ def churn_simulation_controls(defaults: Optional[Dict[str, Any]] = None, key_pre
     defaults = defaults or {}
     col_a, col_b, col_c, col_d, col_e = st.columns(5)
     with col_a:
-        n = st.number_input("TOTAL CUSTOMERS", 500, 50000, int(defaults.get("n", 5000)), step=500, key=f"{key_prefix}_n")
+        n = st.number_input("TOTAL CUSTOMERS", 500, 50000, int(defaults.get("n", 5000, help="Adjust this parameter to see its impact on the model.")), step=500, key=f"{key_prefix}_n")
     with col_b:
-        churn_mult = st.slider("BASE CHURN MULTIPLIER", 0.1, 3.0, float(defaults.get("churn_mult", 1.0)), 0.1, key=f"{key_prefix}_churn_mult")
+        churn_mult = st.slider("BASE CHURN MULTIPLIER", 0.1, 3.0, float(defaults.get("churn_mult", 1.0, help="The percentage of customers or revenue lost during a given period.")), 0.1, key=f"{key_prefix}_churn_mult")
     with col_c:
-        prem_mix = st.slider("PREMIUM SEGMENT MIX", -0.5, 0.5, float(defaults.get("prem_mix", 0.0)), 0.05, key=f"{key_prefix}_prem_mix")
+        prem_mix = st.slider("PREMIUM SEGMENT MIX", -0.5, 0.5, float(defaults.get("prem_mix", 0.0, help="Adjust this parameter to see its impact on the model.")), 0.05, key=f"{key_prefix}_prem_mix")
     with col_d:
-        sub_ratio = st.slider("SUBSCRIBE & SAVE %", 0.0, 1.0, float(defaults.get("sub_ratio", 0.0)), 0.05, key=f"{key_prefix}_sub_ratio")
+        sub_ratio = st.slider("SUBSCRIBE & SAVE %", 0.0, 1.0, float(defaults.get("sub_ratio", 0.0, help="Adjust this parameter to see its impact on the model.")), 0.05, key=f"{key_prefix}_sub_ratio")
     with col_e:
         st.markdown('<div style="margin-top: 1.8rem;"></div>', unsafe_allow_html=True)
         calculate = st.button("Calculate", type="primary", key=f"{key_prefix}_calculate")
@@ -120,7 +120,7 @@ def preset_manager(key_prefix: str = "presets") -> None:
                 PRESET_FILE.write_text(json.dumps(presets, indent=2), encoding="utf-8")
                 st.success("Preset saved")
     with cols[2]:
-        choice = st.selectbox("Load", options=[""] + list(presets.keys()), key=f"{key_prefix}_load")
+        choice = st.selectbox("Load", options=[""] + list(presets.keys(, help="Adjust this parameter to see its impact on the model.")), key=f"{key_prefix}_load")
         if choice:
             st.session_state[f"{key_prefix}_loaded"] = presets.get(choice)
             st.experimental_rerun()

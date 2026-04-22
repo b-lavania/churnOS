@@ -31,6 +31,14 @@ PLOTLY_THEME = {
 st.markdown('<div class="terminal-header">DEEP DIVE // RETENTION & CHURN</div>', unsafe_allow_html=True)
 st.markdown('<h1 class="gradient-text">Retention & Churn</h1>', unsafe_allow_html=True)
 
+with st.expander("Concept Playbook: How to use this page"):
+    st.markdown('''
+    **Overview:** This page provides causal insights into your metrics.
+    **How to use:** Adjust the inputs in the sidebar or main area to simulate different business scenarios. 
+    Pay attention to the outputs with tooltips for detailed definitions. All metrics are connected to the central causal model.
+    ''')
+
+
 # ── Check for model ──
 if "model" not in st.session_state:
     st.warning("No model defined. Go to **Business Model** to configure your business first.")
@@ -60,24 +68,21 @@ st.markdown(
 
 wi_col1, wi_col2, wi_col3 = st.columns(3)
 with wi_col1:
-    wi_churn = st.slider(
-        "Monthly Churn Rate (%)",
+    wi_churn = st.slider("Monthly Churn Rate (%)",
         0.5, 40.0,
         float(config["monthly_churn_rate"] * 100),
         step=0.5,
         key="wi_churn",
     )
 with wi_col2:
-    wi_sub = st.slider(
-        "Subscribe & Save (%)",
+    wi_sub = st.slider("Subscribe & Save (%)",
         0, 100,
         int(config["subscribe_save_pct"] * 100),
         step=5,
         key="wi_sub",
     )
 with wi_col3:
-    wi_reactivation = st.slider(
-        "Reactivation Rate (%)",
+    wi_reactivation = st.slider("Reactivation Rate (%)",
         0.0, 20.0,
         float(config["reactivation_rate"] * 100),
         step=0.5,
@@ -96,13 +101,13 @@ wi_summary = wi_model.compute_summary()
 # Show deltas
 d1, d2, d3, d4 = st.columns(4)
 clv_delta = wi_summary["clv_24"] - s["clv_24"]
-d1.metric("CLV (24mo) — Scenario", f"${wi_summary['clv_24']:,.2f}", f"${clv_delta:+,.2f}")
+d1.metric("CLV (24mo) : Scenario", f"${wi_summary['clv_24']:,.2f}", f"${clv_delta:+,.2f}")
 ltv_cac_delta = wi_summary["ltv_cac"] - s["ltv_cac"]
-d2.metric("LTV:CAC — Scenario", f"{wi_summary['ltv_cac']}x", f"{ltv_cac_delta:+.2f}x")
+d2.metric("LTV:CAC : Scenario", f"{wi_summary['ltv_cac']}x", f"{ltv_cac_delta:+.2f}x")
 payback_label = f"M{wi_summary['payback_month']}" if wi_summary['payback_month'] else "Never"
-d3.metric("Payback — Scenario", payback_label)
+d3.metric("Payback : Scenario", payback_label)
 health_delta = wi_summary["health_score"] - s["health_score"]
-d4.metric("Health — Scenario", f"{wi_summary['health_score']}/100", f"{health_delta:+d}")
+d4.metric("Health : Scenario", f"{wi_summary['health_score']}/100", f"{health_delta:+d}")
 
 # ── Tabs ──
 tab1, tab2, tab3 = st.tabs(["[ 01 ] SURVIVAL CURVES", "[ 02 ] SEGMENT COMPARISON", "[ 03 ] CHURN SENSITIVITY"])
@@ -182,7 +187,7 @@ with tab2:
     st.markdown(
         '<p style="font-size: 0.82rem; color: #94a3b8;">'
         '"Logo churn" counts customers lost. "Revenue churn" weights by spend. '
-        'When high-value segments churn less, revenue churn < logo churn — a good sign.'
+        'When high-value segments churn less, revenue churn < logo churn : a good sign.'
         '</p>',
         unsafe_allow_html=True,
     )
