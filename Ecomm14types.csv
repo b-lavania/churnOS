@@ -1,0 +1,77 @@
+Product Archetype,Defining Characteristic,Detailed Diagnosis,Key Metrics to Monitor,Potential Actionable Solutions
+1. Hidden Gems,"High Conversion Rate (CR), low page views.","Customers who find this product love it and buy it instantly. The product itself is a winner, but it's failing due to a lack of exposure. This is a pure marketing and discovery problem.","• Page Views / Impressions
+• Conversion Rate
+• Internal Click-Through Rate (CTR)","• Feature on the homepage.• Include in email newsletters & campaigns.
+• Boost with targeted social media ads.
+• Improve internal linking from popular pages."
+2. Search Sleepers,"Strong product-query fit, low organic traffic.","The product is a perfect solution for specific search terms (often long-tail), but it's not optimized for search engines. Customers are looking for it, but they can't find your page.","• Organic Search Sessions
+• Keyword Rankings
+• Impressions vs. Clicks (Google Search Console)","• Optimize product title, description, and alt-text with target keywords.
+• Build high-quality backlinks.
+• Run targeted Google Shopping Ads.
+• Encourage reviews that naturally use keywords."
+3. Loyalist Favorites,"Loved by repeat buyers, but ignored by new customers.",This product has a cult following among your existing customer base but fails to attract or convert new visitors. It may be an acquired taste or require prior brand trust.,"• Repeat Customer Rate vs. New Customer Rate (for this product)
+• Sessions by User Type","• Create ""customer favorite"" badges/sections.
+• Use testimonials from loyal customers on the product page.
+• Bundle it with a bestseller to encourage trial by new customers."
+"4. Well-Rated, Well-Hidden","Great reviews and ratings, barely seen.","Similar to a Hidden Gem, but its strength is validated social proof that is going to waste. The trust-building power of its reviews is not being leveraged to attract traffic.","• Number of Reviews & Average Rating
+• Page Views
+• On-site search volume for the product","• Showcase reviews in ads and social media posts.
+• Feature it in ""Top Rated"" collections.
+• Use review snippets on category pages or the homepage."
+5. First-Touch Fumbles,"Seen early in the journey, but fails to get a click-through.","The product is visible on high-traffic pages (like the homepage or main category pages) but its thumbnail, name, or price fails to entice users to click for more details. The first impression is weak.","• CTR from Category/Homepage
+• Bounce Rate (if they do click)","• A/B test product thumbnails and images.
+• Refine the product name to be more descriptive or intriguing.
+• Test promotional callouts like ""New!"" or ""Bestseller""."
+6. Click Tease,"High page views, low Add-to-Cart rate.","The product's title or thumbnail is compelling, drawing lots of clicks. However, the product detail page (PDP) fails to convince the user. The promise doesn't match the reality of the PDP.","• Add-to-Cart Rate
+• Bounce Rate on PDP
+• Average Time on Page","• Improve product photography and add video.
+• Rewrite the description to be clearer and more benefit-oriented.
+• Ensure price and shipping costs are transparent.
+• Add trust badges and guarantees."
+7. Wishlist Darlings,"Often added to wishlists, but rarely purchased.","The product is desirable but lacks the urgency to trigger an immediate purchase. It's a ""nice-to-have"" that customers are waiting on, often due to price or lack of a compelling event.","• Add-to-Wishlist Rate
+• Wishlist-to-Cart Conversion
+• Sales Velocity","• Create urgency with limited-time offers.
+• Send ""Price Drop"" or ""Back in Stock"" email alerts to wishlisters.
+• Bundle with essential items to increase perceived value."
+8. Hard to Love,"Great long-term value, but poor first-time Conversion Rate.","This product requires education. Its benefits aren't obvious at first glance (e.g., technical gear, complex skincare). Customers don't understand its value proposition and drop off.","• New Visitor CR
+• Average Time on Page
+• Customer Support Inquiries","• Create detailed how-to guides, videos, or blog posts.
+• Use infographics and detailed spec sheets on the PDP.
+• Highlight glowing testimonials that explain the ""aha!"" moment."
+9. Discount Addicts,Only sells in significant volume during promotions.,"This product's perceived value is tied directly to its sale price. Customers have been trained to wait for a discount, eroding its margin and brand equity.","• Sales Volume (On vs. Off Promotion)
+• Average Selling Price (ASP)
+• Profit Margin","• Gradually reduce discount frequency/depth.
+• Exclude from site-wide sales.
+• Bundle with full-price bestsellers instead of discounting it directly."
+10. Overhyped,"Strong initial reviews and sales, but a high return rate.",Marketing and social proof create high expectations that the product itself fails to meet. This leads to customer disappointment and costly returns.,"• Return Rate / Refund Rate
+• Customer Feedback on Returns
+• Review Sentiment Analysis","• Revise product descriptions and photos to be more accurate.
+• Use customer feedback from returns to improve the product.
+• Add a sizing guide or comparison tool if fit is the issue."
+11. One and Done,Customers buy it once but never purchase from the category again.,"The product satisfies an immediate need but fails to create brand loyalty or encourage further exploration. It's a transactional, not a relational, purchase.","• Repeat Purchase Rate (for the customer)
+• Customer Lifetime Value (CLV)
+• Time Between Purchases","• Implement a post-purchase email sequence to educate and cross-sell.
+• Offer a small ""next purchase"" discount.
+• Solicit feedback to understand why they don't return."
+12. Once Hot,"Previously sold well, but sales have sharply declined.","This product was once a star but has fallen off due to changing trends, new competition, or market saturation. It's no longer relevant to your audience.","• Sales Velocity (Month-over-Month)
+• Category Page Rank / Position
+• Market Trend Data","• Evaluate if a product refresh (new color, feature) is possible.
+• Use it in a clearance sale to liquidate stock.
+• Bundle it with a new, popular product to move inventory."
+13. Revenue Killers,Generates significant revenue but has a razor-thin or negative profit margin.,"This product is expensive to source, ship, or market, or has a high return rate. While it boosts top-line revenue, it actually hurts your overall profitability.","• Gross Margin / Contribution Margin
+• Cost of Goods Sold (COGS)
+• Cost of Acquisition / Shipping Costs","• Renegotiate costs with suppliers.
+• Increase the price, even if it slightly lowers volume.
+• Sell only as part of a high-margin bundle.
+• Discontinue if profitability cannot be fixed."
+14. Out-of-Stock Stars,"Sells out instantly when available, but is frequently unavailable.",This is a high-demand product plagued by supply chain or inventory management issues. You're losing significant potential revenue and disappointing customers.,"• Stockout Rate / Days Out of Stock
+• Pre-order Volume
+• Lost Revenue (Est.)","• Improve demand forecasting and inventory planning.
+• Diversify suppliers or find alternatives.
+• Implement a ""notify me when available"" feature to capture demand and manage expectations."
+,,,,
+,,,,
+,,,,
+,,,,
+,,,.,
