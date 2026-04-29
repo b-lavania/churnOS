@@ -443,6 +443,159 @@
                 grid-template-columns: 1fr;
                 gap: 1.5rem;
             }
+            .stats-bar { gap: 1rem; }
+            .stat-pill { min-width: 130px; padding: 1rem 1.25rem; }
+            .about-builder { padding: 3rem 2rem; }
+            .about-builder h2 { font-size: 2rem; }
+        }
+
+        /* Nav GitHub Button */
+        .btn-nav-github {
+            padding: 0.45rem 1.1rem;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 50px;
+            color: #d8b4fe !important;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-nav-github:hover {
+            background: rgba(139, 92, 246, 0.22);
+            border-color: rgba(139, 92, 246, 0.6);
+            color: white !important;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            padding: 0 5%;
+            max-width: 900px;
+            margin: -1rem auto 5rem;
+        }
+        .stat-pill {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(139, 92, 246, 0.07);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 16px;
+            padding: 1.25rem 2rem;
+            min-width: 160px;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.07);
+        }
+        .stat-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        /* Tech Strip */
+        .tech-strip {
+            text-align: center;
+            padding: 3rem 5% 1rem;
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .tech-strip-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            margin-bottom: 1.25rem;
+            font-weight: 600;
+        }
+        .tech-pills {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.65rem;
+        }
+        .tech-pill {
+            padding: 0.45rem 1.1rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            font-size: 0.88rem;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .tech-pill:hover {
+            border-color: var(--primary);
+            color: #d8b4fe;
+            background: rgba(139, 92, 246, 0.08);
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.15);
+        }
+
+        /* About Builder */
+        .about-builder {
+            margin: 3rem 5% 6rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.07), rgba(236, 72, 153, 0.07));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 30px;
+            padding: 5rem;
+            text-align: center;
+        }
+        .about-eyebrow {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .about-builder h2 {
+            font-size: 3rem;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1.25rem;
+        }
+        .about-bio {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            max-width: 620px;
+            margin: 0 auto 1.75rem;
+            line-height: 1.75;
+        }
+        .about-tags {
+            display: flex;
+            justify-content: center;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+            margin-bottom: 2.25rem;
+        }
+        .about-tag {
+            padding: 0.38rem 1rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            font-size: 0.82rem;
+            color: #a5b4fc;
+            font-weight: 600;
+        }
+        .about-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
         }
     </style>
 </head>
@@ -456,20 +609,26 @@
         <div class="logo">ChurnOS</div>
         <div class="nav-links">
             <a href="#features">Features</a>
-            <a href="https://github.com/b-lavania/churnOS" target="_blank">Documentation</a>
+            <a href="https://github.com/b-lavania/churnOS" target="_blank" class="btn-nav-github">GitHub ↗</a>
         </div>
     </nav>
 
     <section class="hero reveal active">
-        <div class="hero-badge">Now featuring PyMC Bayesian Attribution</div>
+        <div class="hero-badge">Conversion, Churn &amp; Retention Modeling Platform</div>
         <h1>The Ultimate Causal Analytics Platform</h1>
-        <p>A live, interactive simulation engine for founders and operators. Model unit-economics, forecast
-            retention, analyze marketplace liquidity, and optimize ad spend with Bayesian inference to see how macro changes impact your bottom line.</p>
+        <p>A specialized analytics platform for growth-focused operators. Model unit-economics, forecast cohort retention, analyze marketplace liquidity, and run Bayesian attribution: every variable is causally connected to your P&L.</p>
         <div class="cta-buttons">
-            <a href="#start" class="btn btn-primary">Start Modeling Now</a>
+            <a href="https://github.com/b-lavania/churnOS" target="_blank" class="btn btn-primary">View on GitHub ↗</a>
             <a href="#features" class="btn btn-secondary">Explore Features</a>
         </div>
     </section>
+
+    <div class="stats-bar reveal">
+        <div class="stat-pill"><span class="stat-num">8</span><span class="stat-label">Analytics Modules</span></div>
+        <div class="stat-pill"><span class="stat-num">5</span><span class="stat-label">Statistical Methods</span></div>
+        <div class="stat-pill"><span class="stat-num">1,700+</span><span class="stat-label">Lines of Analytics Logic</span></div>
+        <div class="stat-pill"><span class="stat-num">100%</span><span class="stat-label">Python</span></div>
+    </div>
 
     <div class="dashboard-preview reveal">
         <img src="assets/mockup.png" alt="ChurnOS Dashboard Mockup" class="dashboard-img">
@@ -501,8 +660,7 @@
                         </ul>
                     </div>
                     <div class="feature-why">
-                        <strong>The Operator's Edge</strong>
-                        Understand exactly how moving one lever (like acquiring cheaper, lower-retaining users) ripples causally through your entire P&L.
+                        Directed acyclic graph (DAG) architecture links every input to outputs via deterministic causal chains, not correlations. Changing one parameter propagates through the entire model in real time.
                     </div>
                 </div>
             </div>
@@ -529,8 +687,7 @@
                         </ul>
                     </div>
                     <div class="feature-why">
-                        <strong>The Operator's Edge</strong>
-                        Stop trusting last-click attribution. Uncover the true incremental value of every marketing dollar and optimize budgets using advanced probabilistic modeling.
+                        PyMC probabilistic model with adstock decay (geometric/Weibull) and Hill saturation curves. Posterior sampling via MCMC quantifies budget uncertainty, far beyond deterministic attribution.
                     </div>
                 </div>
             </div>
@@ -557,8 +714,7 @@
                         </ul>
                     </div>
                     <div class="feature-why">
-                        <strong>The Operator's Edge</strong>
-                        Segment users logically by Recency, Frequency, and Monetary value, while simulating how supply chain hiccups directly attack your gross margin.
+                        RFM scoring with recency-weighted segmentation. Inventory volatility is modeled as a margin shock propagated causally through the DAG: directly surfacing the P&L impact of supply disruptions.
                     </div>
                 </div>
             </div>
@@ -585,8 +741,7 @@
                         </ul>
                     </div>
                     <div class="feature-why">
-                        <strong>The Operator's Edge</strong>
-                        Marketplaces fail when liquidity dries up. Simulate the exact subsidy needed to kickstart a cold side, and measure the compounding strength of your network effects.
+                        Cross-side network effects modeled with Metcalfe's Law variants. Liquidity score derived from buyer-to-seller ratio dynamics, with cold-start subsidy optimization surfaced in real time.
                     </div>
                 </div>
             </div>
@@ -613,8 +768,7 @@
                         </ul>
                     </div>
                     <div class="feature-why">
-                        <strong>The Operator's Edge</strong>
-                        Stop guessing why users leave. Simulate the exact impact of retention programs to definitively prove if sacrificing initial margin flattens the survival curve.
+                        Kaplan-Meier non-parametric survival estimator with log-rank hypothesis tests. Random Forest feature importances identify top churn drivers, without assuming proportional hazards.
                     </div>
                 </div>
             </div>
@@ -641,8 +795,7 @@
                         </ul>
                     </div>
                     <div class="feature-why">
-                        <strong>The Operator's Edge</strong>
-                        Revenue isn't margin. This module hard-links your marketing spend to your retention data, revealing your actual payback period and preventing unprofitable scaling.
+                        Cohort heatmaps built from first-purchase date bucketing. CLV uses margin-adjusted discounted cash flow across the simulated survival curve, not naive revenue multiples.
                     </div>
                 </div>
             </div>
@@ -669,8 +822,7 @@
                         </ul>
                     </div>
                     <div class="feature-why">
-                        <strong>The Operator's Edge</strong>
-                        Is offering free shipping worth the margin hit? Simulate the volume increase needed to offset shipping costs and instantly validate if your new flow is statistically better.
+                        Two-proportion z-test for A/B significance with Bonferroni correction for MVT. Sample size calculator uses full power analysis: explicitly surfacing Type I / Type II error tradeoffs.
                     </div>
                 </div>
             </div>
@@ -697,31 +849,30 @@
                         </ul>
                     </div>
                     <div class="feature-why">
-                        <strong>The Operator's Edge</strong>
-                        Safely simulate raising transaction fees or shifting the burden from seller to buyer, ensuring you maximize revenue capture without triggering a mass seller exodus.
+                        Price elasticity modeled via log-linear demand curves. Commission tier optimization uses constrained revenue maximization to find the take-rate ceiling, without triggering seller-exit risk.
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="simulation-banner reveal" id="start">
-        <div class="simulation-content">
-            <h2>Data on Demand.</h2>
-            <p>Don't have your own data ready? No problem. ChurnOS generates thousands of rows of synthetic customer,
-                transaction, and funnel data on the fly, allowing you to pressure-test scenarios instantly.</p>
-            <div class="code-block"
-                style="background: #111; padding: 1.5rem; border-radius: 15px; display: inline-block; text-align: left; border: 1px solid rgba(255,255,255,0.1); font-family: monospace; color: #a5b4fc; font-size: 0.95rem;">
-                $ git clone https://github.com/bl/churnOS.git<br>
-                $ cd churnOS<br>
-                $ pip install -r requirements.txt<br>
-                $ streamlit run app.py
-            </div>
+
+    <section class="about-builder reveal" id="start">
+        <p class="about-eyebrow">About</p>
+        <p class="about-bio">For product leaders and Conversion, Retention, and Churn Specialists: ChurnOS was built to demonstrate specialized analytics for product growth and customer lifecycle optimization, providing the causal insights needed to drive sustainable revenue.</p>
+        <div class="about-tags">
+            <span class="about-tag">Product Strategy</span>
+            <span class="about-tag">Conversion Optimization</span>
+            <span class="about-tag">Retention Analysis</span>
+        </div>
+        <div class="about-links">
+            <a href="https://github.com/b-lavania" target="_blank" class="btn btn-primary">GitHub Profile ↗</a>
+            <a href="https://linkedin.com/in/blavania" target="_blank" class="btn btn-secondary">LinkedIn ↗</a>
         </div>
     </section>
 
     <footer>
-        <p>&copy; 2026 ChurnOS. Built for modern growth operators.</p>
+        <p>ChurnOS &middot; Conversion, Retention &amp; Churn Analytics &middot; <a href="https://linkedin.com/in/blavania" target="_blank" style="color:var(--text-muted);text-decoration:none;">LinkedIn</a> &middot; <a href="https://github.com/b-lavania" target="_blank" style="color:var(--text-muted);text-decoration:none;">github.com/b-lavania</a></p>
     </footer>
 
     <script>
