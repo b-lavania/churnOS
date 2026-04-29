@@ -47,7 +47,11 @@ config = st.session_state["model_config"]
 
 # ── Generate funnel data (using existing generator : kept for conversion analysis) ──
 from data.generator import generate_funnel_events
-from analytics.conversion import funnel_summary, segment_conversion, ab_test_significance
+from analytics.conversion import (
+    funnel_summary, segment_conversion, ab_test_significance,
+    calculate_sample_size, estimate_test_duration, calculate_mde, calculate_power,
+    validate_test_reliability, plan_multivariate_test, calculate_cro_metrics
+)
 
 # Funnel simulation controls
 st.markdown('<div class="terminal-header">FUNNEL SIMULATION</div>', unsafe_allow_html=True)
@@ -89,7 +93,13 @@ c3.metric("OVERALL CVR", f"{cvr:.2f}%")
 c4.metric("CART ADD RATE", f"{summary.loc[summary['step'] == 'Add to Cart', 'conversion_rate'].iloc[0]}%")
 
 # ── Tabs ──
-tab1, tab2, tab3 = st.tabs(["[ 01 ] FUNNEL", "[ 02 ] SEGMENT MAP", "[ 03 ] CVR → CLV IMPACT"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "[ 01 ] FUNNEL", 
+    "[ 02 ] SEGMENT MAP", 
+    "[ 03 ] CVR → CLV IMPACT",
+    "[ 04 ] A/B TEST PLANNING",
+    "[ 05 ] A/B TEST ANALYSIS & MVT"
+])
 
 with tab1:
     st.markdown('<div class="terminal-header">VISUAL FUNNEL BREAKDOWN</div>', unsafe_allow_html=True)
@@ -173,21 +183,114 @@ with tab3:
         imp_cols[2].metric("MONTHLY MARGIN GAIN", f"${additional_monthly_rev:,.2f}")
         imp_cols[3].metric("24mo VALUE", f"${additional_24mo_value:,.2f}")
 
-    # A/B test engine
-    st.markdown('<div class="terminal-header" style="margin-top: 2rem;">A/B TEST SIGNIFICANCE CALCULATOR</div>', unsafe_allow_html=True)
-    col_a, col_b = st.columns(2)
-    with col_a:
-        cv = st.number_input("CONTROL VISITORS", 1000, 100000, 10000, key="ab_cv", help="Adjust this parameter to see its impact on the model.")
-        cc = st.number_input("CONTROL CONVERSIONS", 10, 10000, 350, key="ab_cc", help="Adjust this parameter to see its impact on the model.")
-    with col_b:
-        vv = st.number_input("VARIANT VISITORS", 1000, 100000, 10000, key="ab_vv", help="Adjust this parameter to see its impact on the model.")
-        vc = st.number_input("VARIANT CONVERSIONS", 10, 10000, 420, key="ab_vc", help="Adjust this parameter to see its impact on the model.")
-    if st.button("RUN SIGNIFICANCE TEST", type="primary", key="ab_run"):
-        res = ab_test_significance(cv, cc, vv, vc)
-        res_cols = st.columns(3)
-        res_cols[0].metric("LIFT", f"{res['lift_pct']:+.2f}%")
-        res_cols[1].metric("P-VALUE", f"{res['p_value']:.4f}")
-        if res["is_significant"]:
-            res_cols[2].success("✓ STATISTICALLY SIGNIFICANT")
+with tab4:
+    st.markdown('<div class="terminal-header">SAMPLE SIZE & DURATION ESTIMATOR</div>', unsafe_allow_html=True)
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        base_cvr = st.number_input("BASELINE CVR (%)", 0.1, 100.0, 3.0, step=0.1, key="plan_base_cvr") / 100.0
+    with c2:
+        mde = st.number_input("MDE (RELATIVE %)", 1.0, 100.0, 10.0, step=1.0, key="plan_mde") / 100.0
+    with c3:
+        power = st.selectbox("POWER", [0.80, 0.90, 0.95], index=0, key="plan_power")
+    with c4:
+        daily_traffic = st.number_input("DAILY TRAFFIC", 100, 1000000, 1000, step=100, key="plan_traffic")
+
+    try:
+        ss_res = calculate_sample_size(base_cvr, mde, power=power)
+        dur_res = estimate_test_duration(ss_res['total_sample_size'], daily_traffic, base_cvr)
+        
+        st.markdown(f"**Required Sample Size (per variant):** {ss_res['sample_size_per_variant']:,}")
+        st.markdown(f"**Total Sample Size:** {ss_res['total_sample_size']:,}")
+        st.markdown(f"**Estimated Duration:** {dur_res['days_to_completion']} days ({dur_res['weeks_to_completion']} weeks)")
+        
+        for w in ss_res.get('warnings', []) + dur_res.get('warnings', []):
+            st.warning(w)
+    except Exception as e:
+        st.error(f"Calculation error: {e}")
+        
+    st.markdown('<div class="terminal-header" style="margin-top: 2rem;">STATISTICAL POWER & MDE ANALYZER</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**MDE Analyzer** (Given fixed sample size)")
+        fixed_ss = st.number_input("SAMPLE SIZE PER VARIANT", 1000, 1000000, 5000, step=1000, key="mde_ss")
+        try:
+            mde_res = calculate_mde(base_cvr, fixed_ss, power=power)
+            st.info(f"With {fixed_ss:,} users/variant, you can reliably detect a relative change of **{mde_res['mde_relative']*100:.2f}%**.")
+            if mde_res.get('ecommerce_note'):
+                st.caption(mde_res['ecommerce_note'])
+        except Exception as e:
+            st.error(f"Error: {e}")
+            
+    with c2:
+        st.markdown("**Statistical Power Calculator**")
+        effect_size = st.number_input("EXPECTED EFFECT SIZE (%)", 1.0, 100.0, 5.0, step=1.0, key="pow_effect") / 100.0
+        try:
+            pow_res = calculate_power(base_cvr, effect_size, fixed_ss)
+            st.info(f"Statistical Power: **{pow_res['power_pct']:.1f}%** (Probability of detecting this effect)")
+            for w in pow_res.get('warnings', []):
+                st.warning(w)
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+with tab5:
+    st.markdown('<div class="terminal-header">A/B TEST RELIABILITY VALIDATOR</div>', unsafe_allow_html=True)
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        cv = st.number_input("CONTROL VISITORS", 1000, 100000, 10000, key="val_cv")
+    with c2:
+        cc = st.number_input("CONTROL CONV.", 10, 10000, 350, key="val_cc")
+    with c3:
+        vv = st.number_input("VARIANT VISITORS", 1000, 100000, 10000, key="val_vv")
+    with c4:
+        vc = st.number_input("VARIANT CONV.", 10, 10000, 420, key="val_vc")
+    with c5:
+        duration = st.number_input("DURATION (DAYS)", 1, 365, 14, key="val_dur")
+        
+    if st.button("VALIDATE TEST", type="primary", key="val_run"):
+        sig_res = ab_test_significance(cv, cc, vv, vc)
+        val_res = validate_test_reliability(cv, cc, vv, vc, duration, sig_res['lift_pct'])
+        
+        m1, m2, m3 = st.columns(3)
+        m1.metric("LIFT", f"{sig_res['lift_pct']:+.2f}%")
+        m2.metric("P-VALUE", f"{sig_res['p_value']:.4f}")
+        
+        score_color = "#14b8a6" if val_res['reliability_score'] >= 80 else "#ff9d00" if val_res['reliability_score'] >= 60 else "#f43f5e"
+        m3.markdown(f"<h3 style='color: {score_color}; margin: 0;'>RELIABILITY: {val_res['reliability_score']}/100</h3>", unsafe_allow_html=True)
+        
+        if val_res['is_reliable']:
+            st.success("✓ TEST IS RELIABLE AND SIGNIFICANT")
         else:
-            res_cols[2].warning("✗ NOT SIGNIFICANT")
+            st.warning("⚠️ TEST HAS RELIABILITY CONCERNS")
+            for w in val_res['warnings']:
+                st.markdown(f"- {w}")
+            for r in val_res['recommendations']:
+                st.markdown(f"💡 {r}")
+                
+    st.markdown('<div class="terminal-header" style="margin-top: 2rem;">MULTIVARIATE TEST (MVT) PLANNER</div>', unsafe_allow_html=True)
+    mvt_base_cvr = st.number_input("BASELINE CVR (%)", 0.1, 100.0, 3.0, step=0.1, key="mvt_base") / 100.0
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Element 1: Headline**")
+        n_head = st.number_input("Number of variations (incl. Control)", 1, 10, 3, key="mvt_h")
+    with c2:
+        st.markdown("**Element 2: Button Color**")
+        n_btn = st.number_input("Number of variations (incl. Control)", 1, 10, 2, key="mvt_b")
+        
+    try:
+        elements = [{'name': 'headline', 'n_variations': n_head}, {'name': 'button_color', 'n_variations': n_btn}]
+        mvt_res = plan_multivariate_test(mvt_base_cvr, elements)
+        st.info(f"Total Combinations: **{mvt_res['total_combinations']}** | Sample Size per combination: **{mvt_res['sample_size_per_combination']:,}** | Total Sample Size: **{mvt_res['total_sample_size']:,}**")
+        for w in mvt_res.get('warnings', []):
+            st.warning(w)
+    except Exception as e:
+        st.error(f"Error planning MVT: {e}")
+
+    st.markdown('<div class="terminal-header" style="margin-top: 2rem;">CRO METRICS DASHBOARD</div>', unsafe_allow_html=True)
+    try:
+        cro_metrics = calculate_cro_metrics(funnel_df)
+        cm1, cm2, cm3 = st.columns(3)
+        cm1.metric("BOUNCE RATE", f"{cro_metrics['bounce_rate']:.1f}%")
+        cm2.metric("ABOVE-FOLD ENGAGEMENT", f"{cro_metrics['above_fold_engagement']:.1f}%")
+        cm3.metric("AVG TIME ON PAGE", f"{cro_metrics['avg_time_on_page']:.1f}s")
+    except Exception as e:
+        st.info("💡 Additional CRO metrics (bounce rate, time on page) require extended event tracking data. Current tracking only records funnel progression.")

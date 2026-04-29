@@ -31,6 +31,9 @@ with st.sidebar:
             </p>
         </div>
         <hr style="border-color: rgba(255,255,255,0.08); margin: 0.5rem 0 1.5rem;">
+        <div class="terminal-header" style="margin-bottom: 1rem;">NAVIGATION</div>
+        
+        <!-- Navigation Group Labels removed since native st.navigation handles them -->
         """,
         unsafe_allow_html=True,
     )
@@ -266,31 +269,32 @@ def executive_summary():
 #  Navigation
 # ──────────────────────────────────────────────
 
-pages = {
-    "Core": [
+# ── Define Navigation Structure with Group Metadata ──
+nav_structure = {
+    "⚙️  CORE": [
         st.Page("pages/0_Business_Model.py", title="Business Model"),
         st.Page(executive_summary, title="Executive Summary"),
         st.Page("pages/7_Concepts.py", title="Concepts & Playbook"),
         st.Page("pages/6_README.py", title="System Architecture"),
     ],
-    "B2C Products": [
+    "📦  B2C / SAAS": [
         st.Page("pages/1_Retention_Churn.py", title="Retention & Churn"),
         st.Page("pages/2_Unit_Economics.py", title="Unit Economics"),
         st.Page("pages/3_Conversion.py", title="Conversion & Funnel"),
     ],
-    "eCommerce": [
+    "🛒  ECOMMERCE": [
         st.Page("pages/8_ECommerce_Analytics.py", title="RFM & Inventory"),
     ],
-    "Marketplaces": [
+    "🏪  MARKETPLACES": [
         st.Page("pages/4_Marketplace.py", title="Pricing Analytics"),
         st.Page("pages/5_Marketplace_Analytics.py", title="Seller Analytics"),
         st.Page("pages/9_Marketplace_Liquidity.py", title="Marketplace Liquidity"),
     ],
-    "Attribution": [
+    "📡  ATTRIBUTION": [
         st.Page("pages/10_Attribution_MMM.py", title="Attribution & MMM"),
     ]
 }
 
-pg = st.navigation(pages)
+pg = st.navigation(nav_structure)
 pg.run()
 

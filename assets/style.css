@@ -81,6 +81,33 @@ p, span, div, li {
     gap: 0.5rem !important;
 }
 
+/* ── Sidebar Section Headers ── */
+[data-testid="stNavSectionHeader"] {
+    visibility: visible !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.65rem !important;
+    font-weight: 800 !important;
+    color: var(--accent-primary) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    padding: 0.5rem 0.75rem !important;
+    border-left: 3px solid var(--accent-primary) !important;
+    background: rgba(0, 242, 255, 0.05) !important;
+    border-radius: 0 4px 4px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    margin-top: 1.2rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Ensure child text styling matches */
+[data-testid="stNavSectionHeader"] span {
+    color: var(--accent-primary) !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.65rem !important;
+    font-weight: 800 !important;
+}
+
 /* Base link style */
 [data-testid="stSidebarNav"] a {
     color: #ffffff !important; /* White on Black as requested */
@@ -256,4 +283,4 @@ p, span, div, li {
 /* ── Hide Streamlit branding ── */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-header {visibility: hidden;}
+[data-testid="stHeader"] {visibility: hidden;}
