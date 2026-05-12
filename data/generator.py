@@ -162,6 +162,98 @@ def generate_transactions(
     return pd.DataFrame(rows)
 
 
+def generate_product_events(
+    customers: pd.DataFrame,
+    transactions: pd.DataFrame,
+    *,
+    seed: int = SEED,
+) -> pd.DataFrame:
+    """Synthetic behavioural events aligned to purchasers (instrumentation-lite).
+
+    Emits verbs such as ``view_item`` / ``add_to_cart`` preceding orders so sessionization /
+    cohort adoption calculators have realistic timelines.
+    """
+    rng = np.random.default_rng(seed)
+    rows = []
+    txn_with_cust = transactions.merge(customers[["customer_id", "is_subscriber"]], on="customer_id", how="left")
+
+    for _, row in txn_with_cust.iterrows():
+        if row.get("is_stockout"):
+            continue
+        if row.get("net_revenue") is not None and float(row.get("net_revenue") or 0) <= 0:
+            continue
+
+        day = pd.Timestamp(row["date"]).normalize()
+        purchase_ts = day + timedelta(
+            hours=int(rng.integers(14, 22)),
+            minutes=int(rng.integers(0, 59)),
+        )
+
+        view_ts = purchase_ts - timedelta(hours=int(rng.integers(12, 73)))
+        cart_ts = purchase_ts - timedelta(hours=int(rng.integers(1, 36)))
+
+        cid = row["customer_id"]
+        props = "{}"
+
+        rows.append({"customer_id": cid, "event_ts": view_ts, "event_name": "view_item", "props_json": props})
+
+        rows.append({"customer_id": cid, "event_ts": cart_ts, "event_name": "add_to_cart", "props_json": props})
+
+        if bool(row.get("discount_applied")):
+            promo_ts = cart_ts + timedelta(seconds=int(rng.integers(60, 600)))
+            rows.append(
+                {"customer_id": cid, "event_ts": promo_ts, "event_name": "apply_promo", "props_json": props}
+            )
+
+        rows.append(
+            {"customer_id": cid, "event_ts": purchase_ts, "event_name": "purchase_complete", "props_json": props}
+        )
+
+    # Browse-only jitter for subset of subscribers (stickiness storyline)
+    sub_ids = customers.loc[customers["is_subscriber"].fillna(False), "customer_id"].tolist()
+
+    if sub_ids:
+
+        max_pick = max(75, len(sub_ids) // 8)
+
+        pick_count = min(max_pick, len(sub_ids))
+
+        jitter_ids = rng.choice(np.array(sub_ids, dtype=object), size=pick_count, replace=False)
+
+        for cid in jitter_ids:
+
+            sub_df = customers.loc[customers["customer_id"] == cid]
+
+            if sub_df.empty:
+
+                continue
+
+            cust_row = sub_df.iloc[0]
+
+            base = pd.Timestamp(cust_row["signup_date"]).normalize()
+
+            browse_ts = base + timedelta(days=int(rng.integers(1, 30)), hours=int(rng.integers(8, 23)))
+
+            rows.append(
+
+                {"customer_id": cid, "event_ts": browse_ts, "event_name": "browse_for_you_scroll", "props_json": "{}"}
+
+            )
+
+            toggle_ts = browse_ts + timedelta(minutes=int(rng.integers(5, 90)))
+
+            rows.append({"customer_id": cid, "event_ts": toggle_ts, "event_name": "subscribe_toggle", "props_json": "{}"})
+
+    if not rows:
+        return pd.DataFrame(columns=["customer_id", "event_ts", "event_name", "props_json"])
+
+    df = pd.DataFrame(rows)
+
+    df.sort_values(["customer_id", "event_ts"], kind="mergesort", inplace=True)
+
+    return df.reset_index(drop=True)
+
+
 def generate_funnel_events(n_sessions: int = 30000, checkout_dropoff_modifier: float = 1.0, mobile_share: float = 0.48, free_shipping: bool = False, seed: int = SEED) -> pd.DataFrame:
     """Generate conversion funnel events: Visit → Product View → Add to Cart → Checkout → Purchase."""
     rng = np.random.default_rng(seed)
@@ -437,6 +529,7 @@ def generate_all_data(seed: int = SEED):
     customers = generate_customers(seed=seed)
     transactions = generate_transactions(customers, seed=seed)
     funnel = generate_funnel_events(seed=seed)
+    product_events = generate_product_events(customers, transactions, seed=seed)
     marketplace = generate_marketplace_pricing(seed=seed)
     buyers = generate_buyers(seed=seed)
     marketing = generate_marketing_spend(seed=seed)
@@ -444,6 +537,7 @@ def generate_all_data(seed: int = SEED):
         "customers": customers,
         "transactions": transactions,
         "funnel": funnel,
+        "product_events": product_events,
         "marketplace": marketplace,
         "buyers": buyers,
         "marketing": marketing,

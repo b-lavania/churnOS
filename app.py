@@ -277,6 +277,9 @@ nav_structure = {
         st.Page("pages/7_Concepts.py", title="Concepts & Playbook"),
         st.Page("pages/6_README.py", title="System Architecture"),
     ],
+    "📈  PRODUCT": [
+        st.Page("pages/11_Product_Lifecycle.py", title="Lifecycle & NSM Proxies"),
+    ],
     "📦  B2C / SAAS": [
         st.Page("pages/1_Retention_Churn.py", title="Retention & Churn"),
         st.Page("pages/2_Unit_Economics.py", title="Unit Economics"),

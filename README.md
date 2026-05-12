@@ -1,182 +1,159 @@
-# Churn OS: Churn and Marketplace Analytics
+# churnOS · Causal growth & operations intelligence
 
-I initially made a spreadsheet application for ecommerce and marketplace operators, acting as a live interactive business calculator covering churn analysis, unit-economics retention, conversion optimization, and marketplace pricing.
+_Portfolio-ready Streamlit toolkit for experimentation-minded analytics leaders._
+It stitches together causal unit economics, retention science, ecommerce depth, marketplace dynamics,
+marketing mix modelling, and a **deliberately honest product analytics overlay** sourced from transactional + synthetic behavioural events.
 
-## Overview
+---
 
-This comes out of that spreadsheet app, and has a powerful simulation suite with interactive dashboards. It's built for founders, growth teams, and operators who need to model "what-if" scenarios. The app generates thousands of rows of synthetic customer, transaction, and funnel data on the fly based on the Simulation Controls provided on every page. Use it to understand how macro changes to your business levers (like CAC, refunds, or commissions) cascade down to your ultimate bottom line.
+## Portfolio story & intent
 
-## Core Features & Simulation Levers
+Growth leaders face the same fracture: spreadsheets hold partial truths—CAC in one workbook, churn in another,
+experiment readouts stranded across tooling, while churnOS folds those narratives into **one calibrated simulator**
+so you can reason about trade-offs coherently. Synthetic generators keep every screen reproducible offline,
+Hypothesis-backed tests safeguard core numerical contracts, while methodology notes call out causal limits.
 
-Every page includes a Simulation Controls section right below the header allowing you to instantly regenerate the underlying data based on the Simulation Controls provided on every page:
+Perfect for recruiters evaluating **analytics + product sense + engineering hygiene**—not just chart polish.
 
-| Page | Description & Simulation Controls |
-|------|-----------------------------------|
-| **Causal Business Model** | Unified engine linking core levers (CAC, Churn, AOV) to customer lifecycle. **Controls:** Base inputs impacting all downstream modules. |
-| **Churn Analysis** | Cohort survival, driver ID, revenue churn vs logo churn. **Controls:** Base Churn Multiplier, Premium Mix, Subscribe & Save % (flattens survival curves by dropping base churn). |
-| **Retention** | Cohort heatmaps, Day-N retention, and True Margin CLV. **Controls:** AOV, Discount Freq, Refund Rate %, COGS %, Blended CAC. Includes a live *LTV:CAC Ratio* tracking profitability! |
-| **Conversion Optimization** | Funnel visualization from Visit to Purchase, drop-off analysis. **Controls:** N Sessions, Checkout Dropoff, Mobile Share, and a Free Shipping toggle to model volume vs. margin tradeoffs. |
-| **E-Commerce Analytics** | Deep dive for storefronts: RFM segmentation and Inventory/COGS volatility modeling. **Controls:** Refund Rate Volatility, Unit COGS. |
-| **Marketplace Pricing & Liquidity** | Take-rate analysis, elasticity simulation, network effect modeling. **Controls:** Seller Volume, Take Rate Multiplier, Fee Splits, Platform Subsidy %. |
-| **Bayesian Attribution (MMM)** | Marketing Mix Modeling using PyMC to provide causal insights into spend. **Controls:** Ad Spend per Channel, Diminishing Returns coefficients. |
-| **Knowledge Base** | Metric definitions, formulas, industry benchmarks, and actionable playbooks. |
-| **README** | This documentation rendered within the app. |
+Suggested capture set for README viewers (swap in files under `assets/` as you capture them):
 
-## Architecture
+- [`assets/mockup.png`](assets/mockup.png)
+- Planned: Executive Summary KPI stack
+- Planned: Lifecycle & NSM Proxies heatmap ribbon
+- Planned: Bayesian MMM posterior snapshot
+- Screen recording suggestion: `<2‑minute Loom showcasing Business Model → Executive Summary → Product Lifecycle>`
+  (swap in URL when published)
+
+Canonical documentation lives **here**. [`pages/6_README.py`](pages/6_README.py) simply renders this file verbatim—edit `README.md` only.
+
+Further reading: **[Methodology appendix](docs/methodology.md)** (assumptions, associational pitfalls, experimentation guardrails).
+
+---
+
+## Highlights
+
+| Area | What churnOS showcases |
+| --- | --- |
+| **Executive calibration** | Causal waterfall, sensitivity grid, simulated cohort segmentation |
+| **Retention & churn** | Survival modelling, churn drivers with interpretability caveat, triangles |
+| **Product analytics** | Activation windows, behavioural stickiness analogue, instrumentation sandbox |
+| **Experimentation Ops** | CRO math, MVT planning, uplift → monetisation bridging + refunds guardrails |
+| **Market intelligence** | Take-rate gymnastics, liquidity, seller cohort behaviour |
+| **Attribution rigour** | PyMC Bayesian MMM with diminishing returns scaffolding |
+
+Simulation controls regenerate synthetic facts per surface; alternatively upload schemas noted in-context.
+
+---
+
+## Navigation map (aligned with sidebar)
+
+| Sidebar group | Modules |
+| --- | --- |
+| **CORE** | Business Model • Executive Summary • Concepts & Playbook • System Architecture (this README rendered in-app) |
+| **PRODUCT** | Lifecycle & NSM Proxies (`pages/11_Product_Lifecycle.py`) |
+| **B2C / SaaS** | Retention & Churn • Unit Economics • Conversion & Funnel |
+| **ECOMMERCE** | RFM & Inventory |
+| **MARKETPLACES** | Pricing Analytics • Seller Analytics • Marketplace Liquidity |
+| **ATTRIBUTION** | Attribution & MMM |
+
+[`app.py`](app.py) configures this layout via grouped `streamlit.navigation`.
+
+---
+
+## Repository anatomy
 
 ```
 churnOS/
-|
-|-- app.py                              # Main entry point, page config, landing page
-|-- requirements.txt                    # Python dependencies
-|
-|-- assets/
-|   |-- style.css                       # Premium dark theme (glassmorphism, Inter font)
-|
-|-- data/
-|   |-- __init__.py
-|   |-- generator.py                    # Synthetic dataset generation
-|       |-- generate_customers()        #   5,000 customers with segment-dependent churn
-|       |-- generate_transactions()     #   ~50,000 transaction records
-|       |-- generate_funnel_events()    #   30,000 funnel sessions with device/source
-|       |-- generate_marketplace_pricing()  # 500 sellers with tiers and fee structures
-|
-|-- analytics/
-|   |-- __init__.py
-|   |-- causal_model.py                 # Centralized causal model linking levers to LTV/CAC
-|   |-- churn.py                        # Churn rate, cohort churn, survival analysis, RF drivers
-|   |-- retention.py                    # Cohort retention matrix, CLV, Day-N retention, curves
-|   |-- conversion.py                   # Funnel summary, drop-off, segment conversion, A/B test
-|   |-- pricing.py                      # Take-rate, price elasticity, commission tiers, fee split
-|   |-- ecommerce.py                    # RFM segmentation, inventory/COGS volatility modeling
-|   |-- marketplace.py                  # Marketplace liquidity metrics, network effects
-|   |-- attribution.py                  # Bayesian Marketing Mix Modeling (MMM) via PyMC
-|
-|-- pages/
-    |-- 0_Business_Model.py             # Causal model input and executive summary
-    |-- 1_Churn_Analysis.py             # Churn dashboards with data input
-    |-- 2_Retention.py                  # Retention dashboards with data input
-    |-- 3_Conversion_Optimization.py    # Conversion dashboards with data input
-    |-- 4_Pricing_Analytics.py          # Pricing dashboards with data input
-    |-- 5_Marketplace_Analytics.py      # Marketplace seller performance tracking
-    |-- 7_Concepts.py                   # Knowledge base, metric definitions, playbooks
-    |-- 8_ECommerce_Analytics.py        # Storefront-specific insights
-    |-- 9_Marketplace_Liquidity.py      # Supply/demand liquidity modeling
-    |-- 10_Attribution_MMM.py           # Bayesian attribution analysis
-    |-- 6_README.py                     # This README rendered in the app
+├── app.py                               # Landing + grouped navigation bootstrap
+├── requirements.txt                     # Pip dependencies (+ testing stack)
+├── .python-version                      # Target interpreter (validated locally on 3.12.x)
+├── LICENSE                              # MIT
+├── docs/
+│   └── methodology.md                   # Inference guardrails / synthetic caveats
+├── assets/
+│   └── style.css                        # Neon glass theme + typography
+├── data/
+│   └── generator.py                     # Synthetic customers, funnel, behavioural events…
+├── analytics/
+│   ├── causal_model.py
+│   ├── churn.py · retention.py
+│   ├── conversion.py
+│   ├── ecommerce.py · marketplace.py · pricing.py
+│   ├── attribution.py                  # Bayesian MMM (PyMC)
+│   └── product_metrics.py               # Lifecycle, stickiness analogue, experimentation helpers
+└── pages/
+    ├── 0_Business_Model.py
+    ├── 1_Retention_Churn.py
+    ├── 2_Unit_Economics.py
+    ├── 3_Conversion.py
+    ├── 4_Marketplace.py
+    ├── 5_Marketplace_Analytics.py
+    ├── 6_README.py
+    ├── 7_Concepts.py
+    ├── 8_ECommerce_Analytics.py
+    ├── 9_Marketplace_Liquidity.py
+    ├── 10_Attribution_MMM.py
+    └── 11_Product_Lifecycle.py       # Acquisition / Activation / Monetisation scoreboard
 ```
 
-### Data Flow
+### Data flow cheat sheet
 
-```
-                    +------------------+
-                    |   Data Input     |
-                    | (CSV Upload or   |
-                    |  Synthetic Data) |
-                    +--------+---------+
-                             |
-                    +--------v---------+
-                    |  data/generator   |
-                    |  (Synthetic Data) |
-                    +--------+---------+
-                             |
-              +--------------+--------------+
-              |              |              |
-     +--------v---+  +------v-----+  +-----v------+
-     | analytics/ |  | analytics/ |  | analytics/ |
-     | churn.py   |  | retention  |  | conversion |
-     +--------+---+  +------+-----+  +-----+------+
-              |              |              |
-              +--------------+--------------+
-                             |
-                    +--------v---------+
-                    |   Streamlit UI   |
-                    |  (pages/*.py)    |
-                    +------------------+
+```text
+customers + downstream generators
+        │
+ ┌──────┴───────────┬──────────────────┐
+ funnel events      transactional rows   marketing panel
+ └──────▲───────────▴──────────────────┘
+        │
+ behavioural `product_events` (Instrumentation sandbox)
+        │
+ analytics stack (pandas / sklearn / scipy / pymc pathways)
+        │
+ Streamlit canvases (+ Plotly overlays)
 ```
 
-### Analytics Module Details
+`generate_all_data()` now returns **`product_events`** alongside customers, funnel, marketplace, buyers, marketing.
 
-**churn.py**
-- `compute_churn_rate()` : Overall and grouped churn rates
-- `compute_cohort_churn()` : Churn rate by signup month cohort
-- `revenue_vs_logo_churn()` : Compare customer count churn vs revenue churn
-- `churn_drivers()` : Random Forest feature importance for churn prediction
-- `survival_analysis()` : Kaplan-Meier survival curves by segment
+Suggested CSV schema additions for imports:
 
-**retention.py**
-- `cohort_retention_matrix()` : Triangular retention heatmap data
-- `clv_estimate()` : CLV = AOV x Frequency x Lifespan
-- `retention_curve()` : Retention percentage by month, grouped by channel or segment
-- `day_n_retention()` : D1, D7, D14, D30, D60, D90 retention metrics
+```text
+product_events.csv
+- customer_id (string)
+- event_ts (ISO-8601 timestamp)
+- event_name (enumerated strings: view_item, add_to_cart, …)
+- props_json (optional JSON blob)
+```
 
-**conversion.py**
-- `funnel_summary()` : Session counts and conversion rates at each funnel step
-- `drop_off_analysis()` : Identify biggest funnel drop-off points
-- `segment_conversion()` : Conversion rate by device or traffic source
-- `ab_test_significance()` : Two-proportion Z-test with confidence intervals
+---
 
-**pricing.py**
-- `take_rate_analysis()` : GMV, net revenue, effective take rate by category
-- `price_elasticity_sim()` : Demand and revenue curves given price elasticity
-- `commission_tier_model()` : Revenue breakdown by commission tier
-- `fee_split_scenario()` : Model buyer vs seller fee allocation impact
-
-**causal_model.py**
-- Core engine linking CAC, churn, and AOV to lifetime profitability and tracking sensitivity.
-
-**ecommerce.py**
-- `rfm_segmentation()` : Recency, Frequency, Monetary modeling.
-- `inventory_volatility()` : Simulates COGS volatility impacts on margin.
-
-**marketplace.py**
-- `liquidity_ratio()` : Models supply vs demand health.
-- `network_effect_sim()` : Simulates platform value growth organically.
-
-**attribution.py**
-- PyMC-based Bayesian Marketing Mix Modeling (MMM).
-- Causal insights into advertising spend and diminishing returns.
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.10+
-- pip
-
-### Installation
+## Getting started / reproducibility
 
 ```bash
 cd churnOS
-pip install -r requirements.txt
+python3 -m venv .venv && source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt          # aligns with [.python-version](.python-version)
+streamlit run app.py                     # browse http://localhost:8501
+pytest tests/ --hypothesis-profile=dev    # mirrors CI pacing
 ```
 
-### Running the App
+> PyMC-heavy attribution stays interactive via explicit **Run Bayesian Sampler**—keep local seeds stable when recording demos.
 
-```bash
-streamlit run app.py
-```
+Continuous integration blueprint: [.github/workflows/ci.yml](.github/workflows/ci.yml)
 
-The app will open at `http://localhost:8501`.
+---
 
-### Using Your Own Data
+## Tooling highlights
 
-Each analytics page has a **Data Input** expander at the top where you can:
-1. **Upload a CSV** matching the expected schema (column names shown in the UI)
-2. **Adjust parameters** to regenerate synthetic data with different settings
+| Tag | Packages |
+| --- | --- |
+| App shell | Streamlit · Plotly |
+| Core analytics | pandas · NumPy · SciPy · scikit-learn · lifelines |
+| Attribution lane | pymc · arviz |
+| Quality | pytest · Hypothesis |
 
-## Dependencies
-
-| Package | Purpose |
-|---------|---------|
-| streamlit | Web application framework |
-| pandas | Data manipulation |
-| numpy | Numerical computation |
-| plotly | Interactive charts |
-| scipy | Statistical tests (A/B testing) |
-| scikit-learn | Random Forest for churn drivers |
-| lifelines | Kaplan-Meier survival analysis |
+---
 
 ## License
 
-MIT
+Distributed under **MIT**—see [`LICENSE`](LICENSE).

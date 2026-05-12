@@ -46,7 +46,8 @@ s = st.session_state["model_summary"]
 config = st.session_state["model_config"]
 
 # ── Generate funnel data (using existing generator : kept for conversion analysis) ──
-from data.generator import generate_funnel_events
+from data.generator import generate_customers, generate_funnel_events, generate_transactions
+from analytics.product_metrics import conversion_lift_orders_margin, refund_exposure_rates
 from analytics.conversion import (
     funnel_summary, segment_conversion, ab_test_significance,
     calculate_sample_size, estimate_test_duration, calculate_mde, calculate_power,
@@ -80,6 +81,12 @@ if regen or "funnel_data" not in st.session_state:
 
 funnel_df = st.session_state["funnel_data"]
 summary = funnel_summary(funnel_df)
+
+if "conversion_guard_transactions" not in st.session_state:
+    _ck = generate_customers(seed=202)
+    st.session_state["conversion_guard_transactions"] = generate_transactions(_ck, seed=202)
+
+_guard_tx = st.session_state["conversion_guard_transactions"]
 
 # ── KPIs ──
 total_s = summary.loc[summary["step"] == "Visit", "sessions"].iloc[0]
@@ -265,6 +272,62 @@ with tab5:
                 st.markdown(f"- {w}")
             for r in val_res['recommendations']:
                 st.markdown(f"💡 {r}")
+                
+    st.markdown('<div class="terminal-header" style="margin-top: 2rem;">EXPERIMENT → BUSINESS READ-THROUGH</div>', unsafe_allow_html=True)
+
+    rtl = st.slider(
+        "Hypothetical lift on funnel CVR (relative %)",
+        min_value=-15,
+        max_value=40,
+        value=10,
+        step=1,
+        key="exp_read_rel_lift",
+    )
+
+    read = conversion_lift_orders_margin(
+        baseline_cvr_pct=float(cvr),
+        relative_lift_pct=float(rtl),
+        baseline_sessions=int(new_sess),
+        margin_per_incremental_buyer_monthly=float(s["margin_per_active_monthly"]),
+        buyer_clv_24=float(s["clv_24"]),
+    )
+
+    rg1, rg2, rg3 = st.columns(3)
+
+    rg1.metric("Δ session buyers approx", f"{read['delta_additional_session_buyers_approx']:,.4f}")
+
+    rg2.metric("Δ monthly margin (model)", f"${read['estimated_monthly_margin_gain_usd']:,.2f}")
+
+    rg3.metric("Δ 24mo modeled value", f"${read['estimated_total_clv_gain_24m_usd']:,.2f}")
+
+    st.warning(read["ratio_metric_notes"])
+
+    st.caption(
+        "**Ratio metrics:** if your test changes bounce / sessions-per-users, quoting only session conversion mis-states incremental buyers."
+    )
+
+    ref = refund_exposure_rates(_guard_tx)
+
+    g1, g2 = st.columns(2)
+
+    rr_main = ref.get("refund_rate_all_orders_pct")
+
+    g1.metric(
+        "Guardrail │ refund mix (txn table)",
+        "—" if rr_main is None or (isinstance(rr_main, float) and pd.isna(rr_main)) else f"{rr_main:.2f}%",
+    )
+
+    gd = ref.get("refund_rate_discounted_orders_pct")
+
+    g2.metric(
+        "Guardrail │ refunds on discounted orders",
+        "—" if gd is None or (isinstance(gd, float) and pd.isna(gd)) else f"{gd:.2f}%",
+    )
+
+    st.caption(
+        "Guardrail mix uses a seeded synthetic transactional slice—in production, reconcile with refunds and promotions fact tables."
+    )
+
                 
     st.markdown('<div class="terminal-header" style="margin-top: 2rem;">MULTIVARIATE TEST (MVT) PLANNER</div>', unsafe_allow_html=True)
     mvt_base_cvr = st.number_input("BASELINE CVR (%)", 0.1, 100.0, 3.0, step=0.1, key="mvt_base") / 100.0

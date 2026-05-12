@@ -6,16 +6,12 @@ This directory contains the test suite for the CRO Analytics Enhancement feature
 
 ```
 tests/
-├── __init__.py              # Test package initialization
-├── conftest.py              # Pytest configuration and hypothesis settings
+├── __init__.py
+├── conftest.py              # Pytest configuration and hypothesis profiles
 ├── README.md                # This file
-├── unit/                    # Unit tests for specific examples and edge cases
-│   ├── __init__.py
-│   └── test_data_models.py  # Tests for data models
-├── property/                # Property-based tests for universal correctness
-│   └── __init__.py
-└── integration/             # Integration tests for end-to-end workflows
-    └── __init__.py
+├── unit/                    # Unit tests / narrow behaviour checks
+├── property/               # Hypothesis property-based correctness tests
+└── integration/             # Lightweight smoke drills across generator ↔ analytics stacks
 ```
 
 ## Test Types
@@ -38,12 +34,10 @@ Property-based tests verify universal properties across all inputs using Hypothe
 **Configuration**: Minimum 100 iterations per property test (configured in `conftest.py`)
 
 ### Integration Tests (`tests/integration/`)
-Integration tests verify end-to-end workflows:
-- Complete A/B test planning workflow
-- Complete MVT planning workflow
-- Complete segment analysis workflow
-- CVR improvement → CLV impact workflow
-- Regression tests for existing functionality
+Targeted drills that hydrate `generate_all_data()` and traverse a handful of analytics modules (`churn`,
+`conversion`, `product_metrics`, etc.).
+They are intentionally **narrow** smoke checks rather than full UI regressions—the Streamlit surfaces still
+demand exploratory QA locally.
 
 ## Running Tests
 

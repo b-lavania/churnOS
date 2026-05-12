@@ -696,11 +696,68 @@ concept_card(
 
 
 # ══════════════════════════════════════════════════════════════
-#  SECTION 6: PUTTING IT ALL TOGETHER
+#  SECTION 06: PRODUCT ANALYTICS LEXICON
 # ══════════════════════════════════════════════════════════════
 
 concept_section(
-    "SECTION 06 // THE CAUSAL CHAIN : HOW EVERYTHING CONNECTS",
+    "SECTION 06 // PRODUCT ANALYTICS LEXICON",
+    "How North Stars, experimentation guardrails, and incrementality coexist with marketplace + retention math.",
+    "#00f2ff",
+)
+
+concept_card(
+    "North Star vs Overall Evaluation Criterion (OEC)",
+    "Ambition headline vs disciplined suite of KPIs judged during experiments.",
+    "",
+    "**North Star** : long-term aspiration (repeat revenue, habitual usage, liquidity quality).\n"
+    "**OEC** : statistically powered bundle you compare during A/B launches (conversion, attach rate).\n\n"
+    "Example: raising session CVR is an OEC win, but refunds + refunds on discounted cohorts bleed margin : "
+    "guardrails veto the rollout.\n\n"
+    "Lifecycle & NSM Proxies page layers acquisition/activation/monetary density so PMs practise that dual lens.",
+    "Keep your North Star on one slide; enumerate OEC + guardrails on the launch doc.",
+    "Without guardrails you'll ship clever experiments that degrade trust, SKU mix, or margin structure.",
+    "• Treat North Star deltas as directional until powered by calibrated incrementality stacks.\n"
+    "• If OEC proxies session conversion, annotate whether visits-per-buyer drifted.",
+    color="#14b8a6",
+)
+
+concept_card(
+    "Experiment guardrails beyond p-values",
+    "Secondary metrics veto bad wins : refunds, subsidy leakage, SLA breaches, novelty collapse.",
+    "Guardrail checklist:\n• Refunds / chargebacks spike?\n• Discount cannibalisation up?\n"
+    "• Latency regressions harming repeat intent?\n• Liquidity imbalances on marketplaces?",
+    "Session CVR jumps +35% yet discounted orders refunds climb +110bp versus control : gross margin uplift never shows up downstream.",
+    "Series B SaaS pilots often tolerate +30–50bp refund noise if net expansion holds; ecommerce promos seldom tolerate sustained refund drift.",
+    "Guardrail tiles protect Finance + Customer Trust teams from flashy local optima.",
+    common_mistakes=(
+        "• Reading weekly lift while ignoring median inter‑purchase maturity.\n"
+        "• Anchoring purely on additive metrics instead of ratios when traffic mix swings."
+    ),
+    color="#ff9d00",
+)
+
+concept_card(
+    "MMM coexists with experimentation",
+    "Macro channel attribution versus micro product tests answer different causal questions.",
+    "MMM ≈ smoothed saturation curves on aggregated spend,\nExperimentation ≈ treatment effects on narrowly scoped hypotheses.",
+    "Allocate media budget when MMM posteriors widen confidence on diminishing returns;"
+    " deploy PDP tests when product squads disagree on behavioural economics.",
+    "Fortune‑500 teams pair always‑on dashboards with disciplined experiment registries.",
+    "Prevents double counting : only one analytic layer claims credit for incremental revenue on a roadmap slide.",
+    common_mistakes=(
+        "• Mistaking smoothed posterior ROAS for SKU‑level causal truth.\n"
+        "• Extrapolating a one‑week uplift into FY guidance without translating through survival curves."
+    ),
+    color="#8a2be2",
+)
+
+
+# ══════════════════════════════════════════════════════════════
+#  SECTION 7: PUTTING IT ALL TOGETHER
+# ══════════════════════════════════════════════════════════════
+
+concept_section(
+    "SECTION 07 // THE CAUSAL CHAIN : HOW EVERYTHING CONNECTS",
     "churnOS isn't a collection of dashboards : it's a single causal model where every input propagates to every output.",
     "#14b8a6",
 )
@@ -794,6 +851,15 @@ st.markdown(
                     Watch your <strong>Buyer:Seller ratio</strong> : it's your liquidity pulse.
                 </td>
             </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <td style="padding: 12px 8px; color: #1877FF; font-family: 'JetBrains Mono';">
+                    PRODUCT & GROWTH ANALYTICS
+                </td>
+                <td style="padding: 12px 8px;">
+                    Start at <strong>Lifecycle & NSM Proxies</strong> to rehearse Acquisition → Activation narratives on synthetic cohorts,
+                    then cross-check hypotheses on <strong>Conversion &amp; Funnel</strong> (experiment read‑through tiles) plus <strong>Retention &amp; Churn</strong>.
+                </td>
+            </tr>
             <tr>
                 <td style="padding: 12px 8px; color: #8a2be2; font-family: 'JetBrains Mono';">
                     MY FUNNEL LEAKS
@@ -816,7 +882,7 @@ st.markdown("---")
 st.markdown(
     """
     <div style="text-align:center; padding: 1rem; font-family: 'JetBrains Mono'; font-size: 0.7rem; color: #475569;">
-        // CONCEPTS v2.0 // LAST UPDATED: APRIL 2026 // churnOS KNOWLEDGE ENGINE
+        // CONCEPTS v2.0 // LAST UPDATED: MAY 2026 // churnOS KNOWLEDGE ENGINE
     </div>
     """,
     unsafe_allow_html=True,
