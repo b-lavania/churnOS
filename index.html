@@ -614,9 +614,9 @@
     </nav>
 
     <section class="hero reveal active">
-        <div class="hero-badge">Conversion, Churn &amp; Retention Modeling Platform</div>
+        <div class="hero-badge">Product Analytics &amp; Conversion Revenue Optimization Platform</div>
         <h1>The Ultimate Causal Analytics Platform</h1>
-        <p>A specialized analytics platform for growth-focused operators. Model unit-economics, forecast cohort retention, analyze marketplace liquidity, and run Bayesian attribution: every variable is causally connected to your P&L.</p>
+        <p>A full-stack product analytics and CRO platform built with Streamlit, PyMC, SciPy, and Plotly. Quantify revenue leakage, run Bayesian A/B tests, forecast conversion impact, and manage your entire experimentation program — with every variable causally connected to your P&amp;L.</p>
         <div class="cta-buttons">
             <a href="https://github.com/b-lavania/churnOS" target="_blank" class="btn btn-primary">View on GitHub ↗</a>
             <a href="#features" class="btn btn-secondary">Explore Features</a>
@@ -624,10 +624,10 @@
     </section>
 
     <div class="stats-bar reveal">
-        <div class="stat-pill"><span class="stat-num">8</span><span class="stat-label">Analytics Modules</span></div>
-        <div class="stat-pill"><span class="stat-num">5</span><span class="stat-label">Statistical Methods</span></div>
-        <div class="stat-pill"><span class="stat-num">1,700+</span><span class="stat-label">Lines of Analytics Logic</span></div>
-        <div class="stat-pill"><span class="stat-num">100%</span><span class="stat-label">Python</span></div>
+        <div class="stat-pill"><span class="stat-num">11</span><span class="stat-label">Analytics Modules</span></div>
+        <div class="stat-pill"><span class="stat-num">7</span><span class="stat-label">Statistical Methods</span></div>
+        <div class="stat-pill"><span class="stat-num">2,100+</span><span class="stat-label">Lines of Analytics Logic</span></div>
+        <div class="stat-pill"><span class="stat-num">Bayesian</span><span class="stat-label">A/B Testing</span></div>
     </div>
 
     <div class="dashboard-preview reveal">
@@ -833,29 +833,113 @@
                 <p>Optimize your platform take-rate without destroying seller liquidity or buyer demand.</p>
                 <div class="feature-details">
                     <div class="detail-group">
-                        <span class="detail-label">Simulation Inputs</span>
+                        <span class="detail-label">Key Inputs</span>
                         <ul class="detail-list">
-                            <li>Seller volume & Tiers</li>
-                            <li>Take Rate multiplier</li>
-                            <li>Buyer vs. Seller fee splits</li>
+                            <li>Take Rate &amp; Fee Split</li>
+                            <li>Seller Tier Distribution</li>
+                            <li>Buyer Price Sensitivity</li>
                         </ul>
                     </div>
                     <div class="detail-group">
                         <span class="detail-label">Generated Outputs</span>
                         <ul class="detail-list">
                             <li>Price Elasticity of Demand</li>
-                            <li>Effective Take Rate & GMV</li>
+                            <li>Effective Take Rate &amp; GMV</li>
                             <li>Revenue by commission tier</li>
                         </ul>
                     </div>
                     <div class="feature-why">
-                        Price elasticity modeled via log-linear demand curves. Commission tier optimization uses constrained revenue maximization to find the take-rate ceiling, without triggering seller-exit risk.
+                        <strong>Engineering Highlight</strong>
+                        Price elasticity modeled via log-linear demand curves. Commission tier optimization uses constrained revenue maximization to find the take-rate ceiling without triggering seller-exit risk.
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-icon">🧪</div>
+                <h3>CRO Program Dashboard</h3>
+                <p>Command center for your entire experimentation program — track active tests, cumulative revenue impact, and program velocity.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Key Inputs</span>
+                        <ul class="detail-list">
+                            <li>Experiment Registry</li>
+                            <li>Win/Loss Outcomes</li>
+                            <li>Revenue Impact per Test</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>Cumulative Revenue Impact</li>
+                            <li>Win Rate &amp; Avg Lift</li>
+                            <li>Program Velocity KPIs</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>Engineering Highlight</strong>
+                        Full experiment lifecycle management with auto-computed program KPIs. Cumulative revenue waterfall shows the compounding effect of shipped winning tests over time.
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-icon">🔍</div>
+                <h3>Revenue Leakage Analysis</h3>
+                <p>Quantify exactly how much revenue each segment leaves on the table vs your best performer.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Key Inputs</span>
+                        <ul class="detail-list">
+                            <li>Funnel Event Data</li>
+                            <li>Segment Dimensions</li>
+                            <li>AOV &amp; Margin %</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>Revenue Gap per Segment</li>
+                            <li>Best-in-Class CVR Benchmark</li>
+                            <li>Prioritized Fix Recommendations</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>Engineering Highlight</strong>
+                        Segment-level revenue gap computed as (best_cvr − segment_cvr) × sessions × margin. Ranks opportunities by dollar impact, not just conversion rate deltas.
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card reveal">
+                <div class="feature-icon">📊</div>
+                <h3>Conversion Revenue Forecast</h3>
+                <p>Monte Carlo simulation of your CRO roadmap — project 12-month revenue impact with confidence bands.</p>
+                <div class="feature-details">
+                    <div class="detail-group">
+                        <span class="detail-label">Key Inputs</span>
+                        <ul class="detail-list">
+                            <li>Planned Improvements</li>
+                            <li>Expected Lift &amp; Uncertainty</li>
+                            <li>Deployment Timeline</li>
+                        </ul>
+                    </div>
+                    <div class="detail-group">
+                        <span class="detail-label">Generated Outputs</span>
+                        <ul class="detail-list">
+                            <li>12-Month Revenue Projection</li>
+                            <li>80% Confidence Bands</li>
+                            <li>Per-Improvement Contribution</li>
+                        </ul>
+                    </div>
+                    <div class="feature-why">
+                        <strong>Engineering Highlight</strong>
+                        1,000 Monte Carlo simulations with Gaussian uncertainty on each improvement's lift. Outputs median revenue path with 10th/90th percentile confidence bands.
                     </div>
                 </div>
             </div>
         </div>
     </section>
-
 
     <section class="about-builder reveal" id="start">
         <p class="about-eyebrow">About</p>

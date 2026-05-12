@@ -51,7 +51,8 @@ from analytics.product_metrics import conversion_lift_orders_margin, refund_expo
 from analytics.conversion import (
     funnel_summary, segment_conversion, ab_test_significance,
     calculate_sample_size, estimate_test_duration, calculate_mde, calculate_power,
-    validate_test_reliability, plan_multivariate_test, calculate_cro_metrics
+    validate_test_reliability, plan_multivariate_test, calculate_cro_metrics,
+    bayesian_ab_test, revenue_at_stake, experiment_roi, conversion_to_ltv_impact
 )
 
 # Funnel simulation controls
@@ -130,6 +131,20 @@ with tab1:
     fig_drop.update_layout(**PLOTLY_THEME["layout"], coloraxis_showscale=False)
     st.plotly_chart(fig_drop, use_container_width=True)
 
+    st.markdown('<div class="terminal-header">REVENUE AT STAKE // WHAT EACH LEAK COSTS</div>', unsafe_allow_html=True)
+    rev_stake = revenue_at_stake(funnel_df, aov=s["aov"], gross_margin_pct=s["gross_margin_pct"])
+    fig_rev = px.bar(
+        rev_stake, x="step", y="revenue_at_stake",
+        color="revenue_at_stake",
+        color_continuous_scale=["#14b8a6", "#ff9d00", "#f43f5e"],
+        labels={"step": "FUNNEL STEP", "revenue_at_stake": "REVENUE LOST ($)"},
+        text_auto=".0f",
+    )
+    fig_rev.update_layout(**PLOTLY_THEME["layout"], coloraxis_showscale=False)
+    fig_rev.update_traces(textposition="outside", textfont_size=11)
+    st.plotly_chart(fig_rev, use_container_width=True)
+    st.caption("Revenue at stake = sessions lost × AOV × gross margin %. Fix the biggest bar first.")
+
 with tab2:
     st.markdown('<div class="terminal-header">CVR BY DEVICE CLASS</div>', unsafe_allow_html=True)
     dev_conv = segment_conversion(funnel_df, by="device")
@@ -166,29 +181,36 @@ with tab3:
     step_to_improve = st.selectbox("Funnel Step to Improve", ["Product View", "Add to Cart", "Checkout", "Purchase"], key="conv_step", help="Adjust this parameter to see its impact on the model.")
     improvement_pct = st.slider("Improvement (%)", 1, 50, 10, step=1, key="conv_improve", help="Adjust this parameter to see its impact on the model.")
 
-    # Calculate impact: improvement in this step means more purchases
-    # which means more customers acquired from the same traffic
     baseline_cvr = cvr / 100.0
     step_data = summary[summary["step"] == step_to_improve]
     if len(step_data) > 0:
         step_rate = step_data["conversion_rate"].iloc[0] / 100.0
         improved_rate = step_rate * (1 + improvement_pct / 100.0)
-        # Proportional impact on final CVR
         if step_rate > 0:
             cvr_ratio = improved_rate / step_rate
             new_cvr = baseline_cvr * cvr_ratio
         else:
             new_cvr = baseline_cvr
 
+        ltv_impact = conversion_to_ltv_impact(
+            baseline_cvr=baseline_cvr * 100,
+            improved_cvr=new_cvr * 100,
+            monthly_sessions=new_sess,
+            aov=s["aov"],
+            gross_margin_pct=s["gross_margin_pct"],
+            monthly_churn_rate=config.get("monthly_churn_rate", 0.08),
+        )
+
         additional_customers = int(new_sess * (new_cvr - baseline_cvr))
         additional_monthly_rev = additional_customers * s["margin_per_active_monthly"]
-        additional_24mo_value = additional_customers * s["clv_24"]
 
         imp_cols = st.columns(4)
         imp_cols[0].metric("NEW CVR", f"{new_cvr * 100:.2f}%", f"+{(new_cvr - baseline_cvr) * 100:.2f}%")
         imp_cols[1].metric("ADDITIONAL CUSTOMERS", f"{additional_customers:,}")
         imp_cols[2].metric("MONTHLY MARGIN GAIN", f"${additional_monthly_rev:,.2f}")
-        imp_cols[3].metric("24mo VALUE", f"${additional_24mo_value:,.2f}")
+        imp_cols[3].metric("24mo INCREMENTAL CLV", f"${ltv_impact['incremental_ltv_24mo']:,.2f}")
+
+        st.caption(f"Each month, {ltv_impact['additional_customers_per_month']:.1f} additional customers enter the retention curve, generating ${ltv_impact['incremental_monthly_revenue']:,.2f}/mo in incremental margin.")
 
 with tab4:
     st.markdown('<div class="terminal-header">SAMPLE SIZE & DURATION ESTIMATOR</div>', unsafe_allow_html=True)
@@ -214,6 +236,33 @@ with tab4:
             st.warning(w)
     except Exception as e:
         st.error(f"Calculation error: {e}")
+
+    st.markdown('<div class="terminal-header" style="margin-top: 2rem;">EXPERIMENT ROI CALCULATOR</div>', unsafe_allow_html=True)
+    st.caption("Is this test worth the opportunity cost of not deploying immediately?")
+    roi_col1, roi_col2 = st.columns(2)
+    with roi_col1:
+        exp_lift = st.number_input("EXPECTED LIFT (%)", 1.0, 100.0, 10.0, step=1.0, key="roi_lift")
+    with roi_col2:
+        exp_ss = st.number_input("SAMPLE SIZE PER VARIANT", 1000, 1000000, 5000, step=1000, key="roi_ss")
+    try:
+        roi_res = experiment_roi(
+            baseline_cvr=base_cvr,
+            expected_lift_pct=exp_lift,
+            sample_size_per_variant=exp_ss,
+            daily_traffic=daily_traffic,
+            aov=s["aov"],
+            gross_margin_pct=s["gross_margin_pct"],
+        )
+        roi_m1, roi_m2, roi_m3 = st.columns(3)
+        roi_m1.metric("MONTHLY REVENUE GAIN", f"${roi_res['expected_monthly_revenue_gain']:,.2f}")
+        roi_m2.metric("OPPORTUNITY COST", f"${roi_res['test_opportunity_cost']:,.2f}")
+        roi_m3.metric("NET ROI (12mo)", f"${roi_res['net_roi_12mo']:,.2f}")
+        if roi_res['net_roi_3mo'] > 0:
+            st.success(roi_res['recommendation'])
+        else:
+            st.warning(roi_res['recommendation'])
+    except Exception as e:
+        st.error(f"ROI calculation error: {e}")
         
     st.markdown('<div class="terminal-header" style="margin-top: 2rem;">STATISTICAL POWER & MDE ANALYZER</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
@@ -272,6 +321,16 @@ with tab5:
                 st.markdown(f"- {w}")
             for r in val_res['recommendations']:
                 st.markdown(f"💡 {r}")
+
+        st.markdown('<div class="terminal-header" style="margin-top: 1.5rem;">BAYESIAN A/B TEST</div>', unsafe_allow_html=True)
+        bayes_res = bayesian_ab_test(cv, cc, vv, vc)
+        b1, b2, b3, b4 = st.columns(4)
+        prob_color = "#14b8a6" if bayes_res['prob_b_better'] >= 0.95 else "#ff9d00" if bayes_res['prob_b_better'] >= 0.80 else "#94a3b8"
+        b1.markdown(f"<h3 style='color: {prob_color}; margin: 0;'>P(Variant > Control): {bayes_res['prob_b_better']:.1%}</h3>", unsafe_allow_html=True)
+        b2.metric("EXPECTED LIFT", f"{bayes_res['expected_lift_pct']:+.2f}%")
+        b3.metric("95% CREDIBLE INT.", f"[{bayes_res['credible_interval'][0]:+.2f}%, {bayes_res['credible_interval'][1]:+.2f}%]")
+        b4.metric("EXPECTED LOSS", f"{bayes_res['expected_loss_pct']:.3f}%")
+        st.info(bayes_res['interpretation'])
                 
     st.markdown('<div class="terminal-header" style="margin-top: 2rem;">EXPERIMENT → BUSINESS READ-THROUGH</div>', unsafe_allow_html=True)
 

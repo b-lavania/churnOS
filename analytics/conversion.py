@@ -1714,3 +1714,358 @@ def _generate_visitor_type_recommendations(segments: pd.DataFrame, overall_cvr: 
         )
     
     return recommendations
+
+
+# ──────────────────────────────────────────────────────────
+#  Bayesian A/B Test Engine
+# ──────────────────────────────────────────────────────────
+
+def bayesian_ab_test(
+    control_visitors: int,
+    control_conversions: int,
+    variant_visitors: int,
+    variant_conversions: int,
+    n_samples: int = 100_000,
+    seed: int = 42,
+) -> dict:
+    """
+    Bayesian A/B test using Beta-Binomial conjugate model.
+
+    Returns:
+        prob_b_better: P(variant > control)
+        expected_lift_pct: expected relative lift (%)
+        credible_interval: (lower, upper) 95% HDI for lift
+        expected_loss_pct: expected % loss if wrong variant chosen
+        control_posterior_mean, variant_posterior_mean
+        interpretation: human-readable verdict
+    """
+    rng = np.random.default_rng(seed)
+
+    a_c, b_c = 1 + control_conversions, 1 + control_visitors - control_conversions
+    a_v, b_v = 1 + variant_conversions, 1 + variant_visitors - variant_conversions
+
+    samples_c = rng.beta(a_c, b_c, n_samples)
+    samples_v = rng.beta(a_v, b_v, n_samples)
+
+    prob_b_better = float(np.mean(samples_v > samples_c))
+
+    lift_samples = np.where(samples_c > 0, (samples_v - samples_c) / samples_c * 100, 0)
+    expected_lift_pct = round(float(np.mean(lift_samples)), 2)
+
+    ci_lower = round(float(np.percentile(lift_samples, 2.5)), 2)
+    ci_upper = round(float(np.percentile(lift_samples, 97.5)), 2)
+
+    loss_if_pick_variant = np.maximum(samples_c - samples_v, 0)
+    loss_if_pick_control = np.maximum(samples_v - samples_c, 0)
+    expected_loss_pct = round(float(np.minimum(
+        np.mean(loss_if_pick_variant), np.mean(loss_if_pick_control)
+    )) * 100, 3)
+
+    if prob_b_better >= 0.95:
+        interpretation = "Strong evidence: variant is likely better."
+    elif prob_b_better >= 0.80:
+        interpretation = "Moderate evidence: variant shows promise but more data recommended."
+    elif prob_b_better <= 0.05:
+        interpretation = "Strong evidence: control is likely better."
+    elif prob_b_better <= 0.20:
+        interpretation = "Weak evidence favoring control. Variant may be worse."
+    else:
+        interpretation = "Inconclusive: insufficient data to determine a winner."
+
+    return {
+        "prob_b_better": round(prob_b_better, 4),
+        "expected_lift_pct": expected_lift_pct,
+        "credible_interval": (ci_lower, ci_upper),
+        "expected_loss_pct": expected_loss_pct,
+        "control_posterior_mean": round(a_c / (a_c + b_c) * 100, 3),
+        "variant_posterior_mean": round(a_v / (a_v + b_v) * 100, 3),
+        "interpretation": interpretation,
+    }
+
+
+# ──────────────────────────────────────────────────────────
+#  Revenue Impact Engine
+# ──────────────────────────────────────────────────────────
+
+def revenue_at_stake(
+    funnel_df: pd.DataFrame,
+    aov: float,
+    gross_margin_pct: float,
+) -> pd.DataFrame:
+    """
+    Compute dollar value of dropoff at each funnel step.
+
+    Returns DataFrame with: step, sessions, sessions_lost, revenue_at_stake,
+    cumulative_revenue_lost, pct_of_total_loss.
+    """
+    summary = funnel_summary(funnel_df)
+    top = summary["sessions"].iloc[0]
+
+    rows = []
+    for i in range(len(summary)):
+        step = summary["step"].iloc[i]
+        sessions = summary["sessions"].iloc[i]
+        sessions_lost = top - sessions
+        rev = sessions_lost * aov * (gross_margin_pct / 100)
+        rows.append({
+            "step": step,
+            "sessions": int(sessions),
+            "sessions_lost": int(sessions_lost),
+            "revenue_at_stake": round(rev, 2),
+        })
+
+    result = pd.DataFrame(rows)
+    total_loss = result["revenue_at_stake"].max()
+    result["cumulative_revenue_lost"] = result["revenue_at_stake"]
+    result["pct_of_total_loss"] = (
+        (result["revenue_at_stake"] / total_loss * 100).round(1) if total_loss > 0 else 0
+    )
+    return result.sort_values("revenue_at_stake", ascending=False).reset_index(drop=True)
+
+
+def experiment_roi(
+    baseline_cvr: float,
+    expected_lift_pct: float,
+    sample_size_per_variant: int,
+    daily_traffic: int,
+    aov: float,
+    gross_margin_pct: float,
+    test_duration_days: int | None = None,
+) -> dict:
+    """
+    Calculate expected ROI of running an A/B test.
+
+    Returns:
+        expected_monthly_revenue_gain: if winner deployed
+        test_opportunity_cost: revenue lost by not deploying immediately
+        net_roi_3mo, net_roi_6mo, net_roi_12mo: cumulative net gain
+        recommendation: whether test is worth running
+    """
+    if test_duration_days is None:
+        test_duration_days = int(np.ceil(sample_size_per_variant * 2 / daily_traffic))
+
+    improved_cvr = baseline_cvr * (1 + expected_lift_pct / 100)
+    daily_revenue_gain = daily_traffic * (improved_cvr - baseline_cvr) / 100 * aov * (gross_margin_pct / 100)
+    monthly_revenue_gain = daily_revenue_gain * 30
+
+    test_opportunity_cost = daily_revenue_gain * test_duration_days
+
+    net_3mo = monthly_revenue_gain * 3 - test_opportunity_cost
+    net_6mo = monthly_revenue_gain * 6 - test_opportunity_cost
+    net_12mo = monthly_revenue_gain * 12 - test_opportunity_cost
+
+    if net_3mo > 0:
+        recommendation = "Test is worth running: positive ROI within 3 months."
+    elif net_6mo > 0:
+        recommendation = "Test is worth running: positive ROI within 6 months."
+    elif net_12mo > 0:
+        recommendation = "Marginal: positive ROI within 12 months. Consider if strategic."
+    else:
+        recommendation = "Test may not be worth the opportunity cost. Consider a larger expected lift or shorter duration."
+
+    return {
+        "expected_monthly_revenue_gain": round(monthly_revenue_gain, 2),
+        "test_duration_days": test_duration_days,
+        "test_opportunity_cost": round(test_opportunity_cost, 2),
+        "net_roi_3mo": round(net_3mo, 2),
+        "net_roi_6mo": round(net_6mo, 2),
+        "net_roi_12mo": round(net_12mo, 2),
+        "recommendation": recommendation,
+    }
+
+
+def conversion_to_ltv_impact(
+    baseline_cvr: float,
+    improved_cvr: float,
+    monthly_sessions: int,
+    aov: float,
+    gross_margin_pct: float,
+    monthly_churn_rate: float,
+    n_months: int = 24,
+) -> dict:
+    """
+    Project LTV impact of a conversion rate improvement.
+
+    Simulates how many additional customers enter the retention curve
+    and computes their 24-month discounted CLV contribution.
+    """
+    additional_customers = monthly_sessions * (improved_cvr - baseline_cvr) / 100
+    monthly_rev_per_customer = aov * (gross_margin_pct / 100)
+
+    months = np.arange(1, n_months + 1)
+    retention = (1 - monthly_churn_rate) ** months
+    monthly_contribution = additional_customers * monthly_rev_per_customer * retention
+
+    incremental_ltv = float(np.sum(monthly_contribution))
+
+    return {
+        "additional_customers_per_month": round(additional_customers, 1),
+        "incremental_monthly_revenue": round(additional_customers * monthly_rev_per_customer, 2),
+        "incremental_ltv_24mo": round(incremental_ltv, 2),
+        "monthly_retention_curve": [round(r * 100, 1) for r in retention[:12]],
+        "monthly_contribution_curve": [round(c, 2) for c in monthly_contribution[:12]],
+    }
+
+
+# ──────────────────────────────────────────────────────────
+#  Segment Revenue Gap Analysis
+# ──────────────────────────────────────────────────────────
+
+def segment_revenue_gap(
+    funnel_df: pd.DataFrame,
+    segment_by: str,
+    aov: float,
+    gross_margin_pct: float,
+) -> pd.DataFrame:
+    """
+    Quantify revenue gap per segment vs the best-performing segment.
+
+    Returns DataFrame with: segment, cvr, sessions, revenue, best_cvr,
+    revenue_gap (how much more revenue if this segment matched best).
+    """
+    seg = segment_conversion(funnel_df, by=segment_by)
+    best_cvr = seg["conversion_rate"].max()
+
+    rows = []
+    for _, row in seg.iterrows():
+        seg_name = row[segment_by]
+        cvr = row["conversion_rate"]
+        sessions = int(row["total_sessions"])
+        current_revenue = sessions * (cvr / 100) * aov * (gross_margin_pct / 100)
+        potential_revenue = sessions * (best_cvr / 100) * aov * (gross_margin_pct / 100)
+        gap = potential_revenue - current_revenue
+
+        rows.append({
+            "segment": str(seg_name),
+            "cvr_pct": round(cvr, 2),
+            "sessions": sessions,
+            "current_revenue": round(current_revenue, 2),
+            "best_cvr_pct": round(best_cvr, 2),
+            "revenue_gap": round(gap, 2),
+            "gap_pct_of_current": round((gap / current_revenue * 100), 1) if current_revenue > 0 else 0,
+        })
+
+    result = pd.DataFrame(rows)
+    return result.sort_values("revenue_gap", ascending=False).reset_index(drop=True)
+
+
+def forecast_cro_revenue(
+    baseline_cvr: float,
+    planned_improvements: list[dict],
+    monthly_sessions: int,
+    aov: float,
+    gross_margin_pct: float,
+    monthly_churn_rate: float,
+    n_months: int = 12,
+    n_simulations: int = 1000,
+    seed: int = 42,
+) -> dict:
+    """
+    Monte Carlo revenue forecast from a CRO improvement roadmap.
+
+    Args:
+        planned_improvements: list of dicts with:
+            - name: str
+            - cvr_lift_pct: float (expected relative lift)
+            - cvr_lift_std: float (uncertainty in lift)
+            - deploy_month: int (when improvement ships, 1-indexed)
+
+    Returns:
+        monthly_forecast: list of dicts with month, median_revenue, ci_lower, ci_upper
+        total_incremental_revenue: median total over forecast period
+        improvement_contributions: per-improvement expected contribution
+    """
+    rng = np.random.default_rng(seed)
+    months = np.arange(1, n_months + 1)
+
+    # Simulate
+    all_monthly = np.zeros((n_simulations, n_months))
+    contributions = {imp["name"]: 0.0 for imp in planned_improvements}
+
+    for sim in range(n_simulations):
+        effective_cvr = baseline_cvr
+        for imp in planned_improvements:
+            lift = rng.normal(imp["cvr_lift_pct"], imp["cvr_lift_std"])
+            deploy = imp["deploy_month"]
+            if deploy <= n_months:
+                months_active = n_months - deploy + 1
+                effective_cvr_after = baseline_cvr * (1 + lift / 100)
+                additional = monthly_sessions * (effective_cvr_after - effective_cvr) / 100
+                monthly_rev = additional * aov * (gross_margin_pct / 100)
+                retention = (1 - monthly_churn_rate) ** np.arange(1, months_active + 1)
+                contrib = float(np.sum(monthly_rev * retention))
+                contributions[imp["name"]] += contrib / n_simulations
+                effective_cvr = effective_cvr_after
+
+        additional_customers = monthly_sessions * (effective_cvr - baseline_cvr) / 100
+        monthly_rev_per = additional_customers * aov * (gross_margin_pct / 100)
+        for m in range(n_months):
+            retention_factor = (1 - monthly_churn_rate) ** (m + 1)
+            all_monthly[sim, m] = monthly_rev_per * retention_factor
+
+    monthly_forecast = []
+    total_median = 0.0
+    for m in range(n_months):
+        vals = all_monthly[:, m]
+        med = round(float(np.median(vals)), 2)
+        lo = round(float(np.percentile(vals, 10)), 2)
+        hi = round(float(np.percentile(vals, 90)), 2)
+        total_median += med
+        monthly_forecast.append({
+            "month": int(months[m]),
+            "median_revenue": med,
+            "ci_lower": lo,
+            "ci_upper": hi,
+        })
+
+    return {
+        "monthly_forecast": monthly_forecast,
+        "total_incremental_revenue": round(total_median, 2),
+        "improvement_contributions": {k: round(v, 2) for k, v in contributions.items()},
+    }
+
+
+def program_metrics(
+    experiments: list[dict],
+) -> dict:
+    """
+    Compute aggregate CRO program KPIs from a list of experiments.
+
+    Args:
+        experiments: list of dicts with:
+            - status: 'completed', 'active', 'planned'
+            - winner: 'control' | 'variant' | None
+            - lift_pct: float | None
+            - monthly_revenue_impact: float | None
+            - duration_days: int | None
+
+    Returns:
+        total_experiments, active, completed, win_rate, avg_lift,
+        cumulative_monthly_revenue_impact, avg_time_to_decision,
+        velocity (tests/month)
+    """
+    completed = [e for e in experiments if e.get("status") == "completed"]
+    active = [e for e in experiments if e.get("status") == "active"]
+    won = [e for e in completed if e.get("winner") == "variant"]
+
+    win_rate = (len(won) / len(completed) * 100) if completed else 0
+    lifts = [e["lift_pct"] for e in won if e.get("lift_pct") is not None]
+    avg_lift = float(np.mean(lifts)) if lifts else 0
+
+    cumulative_revenue = sum(
+        e.get("monthly_revenue_impact", 0) or 0 for e in won
+    )
+
+    durations = [e["duration_days"] for e in completed if e.get("duration_days") is not None]
+    avg_duration = float(np.mean(durations)) if durations else 0
+
+    return {
+        "total_experiments": len(experiments),
+        "active": len(active),
+        "completed": len(completed),
+        "planned": len([e for e in experiments if e.get("status") == "planned"]),
+        "win_rate_pct": round(win_rate, 1),
+        "avg_lift_pct": round(avg_lift, 2),
+        "cumulative_monthly_revenue_impact": round(cumulative_revenue, 2),
+        "avg_time_to_decision_days": round(avg_duration, 1),
+    }

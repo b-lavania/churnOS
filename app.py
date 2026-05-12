@@ -285,6 +285,11 @@ nav_structure = {
         st.Page("pages/2_Unit_Economics.py", title="Unit Economics"),
         st.Page("pages/3_Conversion.py", title="Conversion & Funnel"),
     ],
+    "🧪  CRO PROGRAM": [
+        st.Page("pages/12_CRO_Program.py", title="CRO Program Dashboard"),
+        st.Page("pages/13_Revenue_Leakage.py", title="Revenue Leakage"),
+        st.Page("pages/14_Conversion_Forecast.py", title="Conversion Forecast"),
+    ],
     "🛒  ECOMMERCE": [
         st.Page("pages/8_ECommerce_Analytics.py", title="RFM & Inventory"),
     ],
