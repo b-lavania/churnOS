@@ -18,7 +18,8 @@ from analytics.product_metrics import (
     signup_momentum_latest_vs_prior_month,
 )
 from analytics.retention import cohort_retention_matrix
-from data.generator import generate_all_data
+from ui.journey import require_workspace
+from analytics.journeys import event_funnel, DEFAULT_JOURNEY_STEPS
 
 st.set_page_config(page_title="Product Lifecycle", layout="wide")
 
@@ -44,6 +45,10 @@ if "model" not in st.session_state:
     st.warning("No model defined. Go to **Business Model** to configure your business first.")
     st.stop()
 
+ws = require_workspace("lifecycle")
+if ws is None:
+    st.stop()
+
 s = st.session_state["model_summary"]
 config = st.session_state["model_config"]
 
@@ -65,25 +70,9 @@ with st.expander("Metric definitions (read me first)"):
     )
 
 
-@st.cache_data
-def load_data(seed: int = 42):
-    return generate_all_data(seed=int(seed))
-
-
-seed_slider = st.sidebar.number_input(
-    "Synthetic data seed",
-    min_value=0,
-    max_value=99999,
-    value=42,
-    step=1,
-    key="pl_seed",
-)
-
-
-data = load_data(seed=int(seed_slider))
-cust = data["customers"]
-tx = data["transactions"]
-events = data["product_events"]
+cust = ws.customers
+tx = ws.transactions
+events = ws.product_events
 
 cohort_signups = cohort_signups_by_month(cust)
 act = activation_and_ttf_metrics(cust, tx)
@@ -104,7 +93,9 @@ gap_min = st.sidebar.slider(
 
 sess_events = sessionize_product_events(events, gap_minutes=int(gap_min))
 
-tab_score, tab_inst, tab_model = st.tabs(["[01] Scorecard", "[02] Instrumentation", "[03] Causal tie-in"])
+tab_score, tab_journeys, tab_inst, tab_model = st.tabs(
+    ["[01] Scorecard", "[02] Journeys", "[03] Instrumentation", "[04] Causal tie-in"]
+)
 
 with tab_score:
     st.markdown('<div class="terminal-header">ACQUISITION // MONTHLY SIGNUPS</div>', unsafe_allow_html=True)
@@ -177,6 +168,21 @@ with tab_score:
         f"**Inter-purchase gap** • median `{gaps.get('median_gap_days')}` days • "
         f"IQR `{gaps.get('q25_gap_days')}`–`{gaps.get('q75_gap_days')}` • `{gaps.get('n_gaps')}` transitions."
     )
+
+with tab_journeys:
+    st.markdown('<div class="terminal-header">EVENT-FIRST FUNNEL (RETROACTIVE)</div>', unsafe_allow_html=True)
+    steps_raw = st.text_input(
+        "Ordered event steps (comma-separated)",
+        value=", ".join(DEFAULT_JOURNEY_STEPS),
+        key="journey_steps",
+    )
+    steps = [s.strip() for s in steps_raw.split(",") if s.strip()]
+    jdf = event_funnel(events, steps)
+    if not jdf.empty:
+        fig_j = px.bar(jdf, x="step", y="users", color="users", color_continuous_sequence=["#00f2ff"])
+        fig_j.update_layout(**PLOTLY_THEME["layout"], showlegend=False)
+        st.plotly_chart(fig_j, use_container_width=True)
+        st.dataframe(jdf, hide_index=True, use_container_width=True)
 
 with tab_inst:
     st.markdown('<div class="terminal-header">SESSIONIZATION + FEATURE FLAGS</div>', unsafe_allow_html=True)

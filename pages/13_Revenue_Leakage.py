@@ -41,15 +41,17 @@ if "model" not in st.session_state:
 s = st.session_state["model_summary"]
 config = st.session_state["model_config"]
 
-from data.generator import generate_funnel_events
+from ui.journey import require_workspace
 from analytics.conversion import segment_revenue_gap
 
-if "leakage_funnel" not in st.session_state:
-    st.session_state["leakage_funnel"] = generate_funnel_events(n_sessions=30000)
+ws = require_workspace("leakage")
+if ws is None:
+    st.stop()
 
-funnel_df = st.session_state["leakage_funnel"]
+funnel_df = ws.funnel
 
-dimension = st.selectbox("Segment By", ["device", "source", "region", "visitor_type"], key="leak_dim")
+dimension = st.selectbox("Segment By", ["device", "source"], key="leak_dim")
+st.info("Primary analysis lives on **Experimentation Hub → Funnel & Leakage** tab (shared workspace).")
 
 gap_df = segment_revenue_gap(
     funnel_df,

@@ -26,8 +26,8 @@ PLOTLY_THEME = {
     }
 }
 
-st.markdown('<div class="terminal-header">DEEP DIVE // CONVERSION & FUNNEL</div>', unsafe_allow_html=True)
-st.markdown('<h1 class="gradient-text">Conversion & Funnel</h1>', unsafe_allow_html=True)
+st.markdown('<div class="terminal-header">EXPERIMENT // PRODUCT ANALYTICS HUB</div>', unsafe_allow_html=True)
+st.markdown('<h1 class="gradient-text">Experimentation Hub</h1>', unsafe_allow_html=True)
 
 with st.expander("Concept Playbook: How to use this page"):
     st.markdown('''
@@ -41,53 +41,49 @@ if "model" not in st.session_state:
     st.warning("No model defined. Go to **Business Model** to configure your business first.")
     st.stop()
 
-model = st.session_state["model"]
-s = st.session_state["model_summary"]
-config = st.session_state["model_config"]
-
-# ── Generate funnel data (using existing generator : kept for conversion analysis) ──
-from data.generator import generate_customers, generate_funnel_events, generate_transactions
+from ui.journey import require_workspace
 from analytics.product_metrics import conversion_lift_orders_margin, refund_exposure_rates
 from analytics.conversion import (
     funnel_summary, segment_conversion, ab_test_significance,
     calculate_sample_size, estimate_test_duration, calculate_mde, calculate_power,
     validate_test_reliability, plan_multivariate_test, calculate_cro_metrics,
-    bayesian_ab_test, revenue_at_stake, experiment_roi, conversion_to_ltv_impact
+    bayesian_ab_test, revenue_at_stake, segment_revenue_gap, program_metrics,
+    conversion_to_ltv_impact, experiment_roi,
 )
+from analytics.experimentation import (
+    analyze_workspace_experiment,
+    design_from_workspace,
+    registry_entry_from_analysis,
+    sequential_testing_warning,
+)
+from analytics.metrics import resolve_metric
+from core.workspace import build_workspace, sync_workspace_to_session
 
-# Funnel simulation controls
-st.markdown('<div class="terminal-header">FUNNEL SIMULATION</div>', unsafe_allow_html=True)
-col_a, col_b, col_c, col_d, col_e = st.columns(5)
-with col_a:
-    new_sess = st.number_input("SESSIONS", 5000, 100000, 30000, step=5000, key="conv_sess", help="A group of user interactions with your website that take place within a given time frame.")
-with col_b:
-    new_dropoff = st.slider("CHECKOUT DROPOFF", 0.5, 2.0, 1.0, 0.1, key="conv_dropoff", help="The rate at which users leave the funnel at a specific step.")
-with col_c:
-    new_mobile = st.slider("MOBILE SHARE", 0.1, 0.9, 0.48, 0.05, key="conv_mobile", help="Interactions occurring on mobile devices.")
-with col_d:
-    st.markdown('<div style="margin-top: 1.8rem;"></div>', unsafe_allow_html=True)
-    new_fs = st.toggle("FREE SHIPPING", value=False, key="conv_fs")
-with col_e:
-    st.markdown('<div style="margin-top: 1.8rem;"></div>', unsafe_allow_html=True)
-    regen = st.button("Calculate", type="primary", key="conv_regen")
+ws = require_workspace("experimentation")
+if ws is None:
+    st.stop()
 
-# Cache or regenerate funnel data
-if regen or "funnel_data" not in st.session_state:
-    st.session_state["funnel_data"] = generate_funnel_events(
-        n_sessions=new_sess,
-        checkout_dropoff_modifier=new_dropoff,
-        mobile_share=new_mobile,
-        free_shipping=new_fs,
-    )
+model = st.session_state["model"]
+s = st.session_state["model_summary"]
+config = st.session_state["model_config"]
 
-funnel_df = st.session_state["funnel_data"]
+resync_cols = st.columns([1, 1, 4])
+with resync_cols[0]:
+    new_seed = st.number_input("Workspace seed", 0, 99999, int(ws.seed), key="conv_ws_seed")
+with resync_cols[1]:
+    if st.button("Resync workspace", type="primary", key="conv_resync"):
+        sync_workspace_to_session(
+            st.session_state,
+            build_workspace(config, seed=int(new_seed)),
+        )
+        st.session_state["workspace_seed"] = int(new_seed)
+        st.rerun()
+
+funnel_df = ws.funnel
 summary = funnel_summary(funnel_df)
+_guard_tx = ws.transactions
 
-if "conversion_guard_transactions" not in st.session_state:
-    _ck = generate_customers(seed=202)
-    st.session_state["conversion_guard_transactions"] = generate_transactions(_ck, seed=202)
-
-_guard_tx = st.session_state["conversion_guard_transactions"]
+cvr_metric = resolve_metric("session_to_purchase_cvr", ws)
 
 # ── KPIs ──
 total_s = summary.loc[summary["step"] == "Visit", "sessions"].iloc[0]
@@ -97,19 +93,18 @@ cvr = total_p / total_s * 100 if total_s > 0 else 0
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("SESSIONS", f"{total_s:,}")
 c2.metric("PURCHASES", f"{total_p:,}")
-c3.metric("OVERALL CVR", f"{cvr:.2f}%")
+c3.metric("OVERALL CVR (catalog)", cvr_metric["display"])
 c4.metric("CART ADD RATE", f"{summary.loc[summary['step'] == 'Add to Cart', 'conversion_rate'].iloc[0]}%")
 
 # ── Tabs ──
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "[ 01 ] FUNNEL", 
-    "[ 02 ] SEGMENT MAP", 
-    "[ 03 ] CVR → CLV IMPACT",
-    "[ 04 ] A/B TEST PLANNING",
-    "[ 05 ] A/B TEST ANALYSIS & MVT"
+tab_funnel, tab_design, tab_results, tab_program = st.tabs([
+    "[ 01 ] FUNNEL & LEAKAGE",
+    "[ 02 ] DESIGN",
+    "[ 03 ] RESULTS (WORKSPACE TEST)",
+    "[ 04 ] PROGRAM",
 ])
 
-with tab1:
+with tab_funnel:
     st.markdown('<div class="terminal-header">VISUAL FUNNEL BREAKDOWN</div>', unsafe_allow_html=True)
     fig = go.Figure(go.Funnel(
         y=summary["step"], x=summary["sessions"],
@@ -145,7 +140,21 @@ with tab1:
     st.plotly_chart(fig_rev, use_container_width=True)
     st.caption("Revenue at stake = sessions lost × AOV × gross margin %. Fix the biggest bar first.")
 
-with tab2:
+    st.markdown('<div class="terminal-header">SEGMENT REVENUE LEAKAGE</div>', unsafe_allow_html=True)
+    leak_dim = st.selectbox("Leakage dimension", ["device", "source"], key="exp_leak_dim")
+    gap_df = segment_revenue_gap(
+        funnel_df, segment_by=leak_dim, aov=s["aov"], gross_margin_pct=s["gross_margin_pct"]
+    )
+    if not gap_df.empty:
+        fig_gap = px.bar(
+            gap_df, x=leak_dim, y="revenue_gap",
+            color="revenue_gap",
+            color_continuous_scale=["#14b8a6", "#ff9d00", "#f43f5e"],
+            labels={leak_dim: leak_dim.upper(), "revenue_gap": "REVENUE GAP ($)"},
+        )
+        fig_gap.update_layout(**PLOTLY_THEME["layout"], coloraxis_showscale=False)
+        st.plotly_chart(fig_gap, use_container_width=True)
+
     st.markdown('<div class="terminal-header">CVR BY DEVICE CLASS</div>', unsafe_allow_html=True)
     dev_conv = segment_conversion(funnel_df, by="device")
     fig2 = px.bar(
@@ -168,7 +177,20 @@ with tab2:
     fig3.update_layout(**PLOTLY_THEME["layout"], showlegend=False)
     st.plotly_chart(fig3, use_container_width=True)
 
-with tab3:
+new_sess = int(cvr_metric["meta"].get("visits", 30_000))
+baseline_cvr_frac = float(cvr_metric["value"] or cvr) / 100.0
+
+with tab_design:
+    st.markdown('<div class="terminal-header">WORKSPACE DESIGN PLANNER</div>', unsafe_allow_html=True)
+    plan = design_from_workspace(ws, mde_relative=0.10)
+    d1, d2, d3 = st.columns(3)
+    d1.metric("Baseline CVR", f"{plan['baseline_cvr']*100:.2f}%")
+    d2.metric("Per-variant N", f"{plan['sample_size']['sample_size_per_variant']:,}")
+    d3.metric("Est. days", plan["duration"]["days_to_completion"])
+    for w in plan["sample_size"].get("warnings", []) + plan["duration"].get("warnings", []):
+        st.warning(w)
+    st.caption(f"Assumes ~{plan['daily_traffic_assumed']:,} sessions/day from workspace funnel.")
+
     st.markdown('<div class="terminal-header">CONVERSION RATE → REVENUE IMPACT</div>', unsafe_allow_html=True)
     st.markdown(
         '<p style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 1rem;">'
@@ -181,7 +203,7 @@ with tab3:
     step_to_improve = st.selectbox("Funnel Step to Improve", ["Product View", "Add to Cart", "Checkout", "Purchase"], key="conv_step", help="Adjust this parameter to see its impact on the model.")
     improvement_pct = st.slider("Improvement (%)", 1, 50, 10, step=1, key="conv_improve", help="Adjust this parameter to see its impact on the model.")
 
-    baseline_cvr = cvr / 100.0
+    baseline_cvr = baseline_cvr_frac
     step_data = summary[summary["step"] == step_to_improve]
     if len(step_data) > 0:
         step_rate = step_data["conversion_rate"].iloc[0] / 100.0
@@ -212,7 +234,6 @@ with tab3:
 
         st.caption(f"Each month, {ltv_impact['additional_customers_per_month']:.1f} additional customers enter the retention curve, generating ${ltv_impact['incremental_monthly_revenue']:,.2f}/mo in incremental margin.")
 
-with tab4:
     st.markdown('<div class="terminal-header">SAMPLE SIZE & DURATION ESTIMATOR</div>', unsafe_allow_html=True)
     c1, c2, c3, c4 = st.columns(4)
     with c1:
@@ -288,20 +309,58 @@ with tab4:
         except Exception as e:
             st.error(f"Error: {e}")
 
-with tab5:
-    st.markdown('<div class="terminal-header">A/B TEST RELIABILITY VALIDATOR</div>', unsafe_allow_html=True)
+with tab_results:
+    analysis = analyze_workspace_experiment(ws)
+    counts = analysis["counts"]
+    freq = analysis["frequentist"]
+    bayes = analysis["bayesian"]
+    srm = analysis["srm"]
+
+    st.markdown('<div class="terminal-header">WORKSPACE EXPERIMENT (USER-ASSIGNED)</div>', unsafe_allow_html=True)
+    st.dataframe(ws.experiment_outcomes, hide_index=True, use_container_width=True)
+
+    r1, r2, r3, r4 = st.columns(4)
+    r1.metric("Frequentist lift", f"{freq['lift_pct']:+.2f}%")
+    r2.metric("p-value", f"{freq['p_value']:.4f}")
+    r3.metric("P(variant wins)", f"{bayes['prob_b_better']:.1%}")
+    r4.metric("SRM p-value", f"{srm['p_value']:.4f}")
+
+    if not srm["passed"]:
+        st.error(srm["message"])
+    else:
+        st.success(srm["message"])
+    st.info(bayes["interpretation"])
+    st.caption(analysis["notes"])
+
+    gr = analysis["guardrails"]
+    g1, g2 = st.columns(2)
+    g1.metric("Guardrail refund %", f"{gr.get('refund_rate_orders_pct', '—')}%")
+    g2.metric("Orders / buyer", f"{gr.get('orders_per_active_buyer', '—')}")
+
+    if "cro_experiments" not in st.session_state:
+        st.session_state["cro_experiments"] = []
+    if st.button("Save workspace result to program registry", key="save_exp_registry"):
+        entry = registry_entry_from_analysis(
+            "Workspace funnel test",
+            "Synthetic user-level assignment on shared warehouse",
+            analysis,
+        )
+        st.session_state["cro_experiments"].append(entry)
+        st.success(f"Added {entry['id']} to program registry.")
+
+    st.markdown('<div class="terminal-header">MANUAL VALIDATOR (OVERRIDE COUNTS)</div>', unsafe_allow_html=True)
     c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
-        cv = st.number_input("CONTROL VISITORS", 1000, 100000, 10000, key="val_cv")
+        cv = st.number_input("CONTROL VISITORS", 1000, 100000, counts["control_visitors"], key="val_cv")
     with c2:
-        cc = st.number_input("CONTROL CONV.", 10, 10000, 350, key="val_cc")
+        cc = st.number_input("CONTROL CONV.", 10, 10000, counts["control_conversions"], key="val_cc")
     with c3:
-        vv = st.number_input("VARIANT VISITORS", 1000, 100000, 10000, key="val_vv")
+        vv = st.number_input("VARIANT VISITORS", 1000, 100000, counts["variant_visitors"], key="val_vv")
     with c4:
-        vc = st.number_input("VARIANT CONV.", 10, 10000, 420, key="val_vc")
+        vc = st.number_input("VARIANT CONV.", 10, 10000, counts["variant_conversions"], key="val_vc")
     with c5:
         duration = st.number_input("DURATION (DAYS)", 1, 365, 14, key="val_dur")
-        
+
     if st.button("VALIDATE TEST", type="primary", key="val_run"):
         sig_res = ab_test_significance(cv, cc, vv, vc)
         val_res = validate_test_reliability(cv, cc, vv, vc, duration, sig_res['lift_pct'])
@@ -331,7 +390,7 @@ with tab5:
         b3.metric("95% CREDIBLE INT.", f"[{bayes_res['credible_interval'][0]:+.2f}%, {bayes_res['credible_interval'][1]:+.2f}%]")
         b4.metric("EXPECTED LOSS", f"{bayes_res['expected_loss_pct']:.3f}%")
         st.info(bayes_res['interpretation'])
-                
+
     st.markdown('<div class="terminal-header" style="margin-top: 2rem;">EXPERIMENT → BUSINESS READ-THROUGH</div>', unsafe_allow_html=True)
 
     rtl = st.slider(
@@ -344,7 +403,7 @@ with tab5:
     )
 
     read = conversion_lift_orders_margin(
-        baseline_cvr_pct=float(cvr),
+        baseline_cvr_pct=float(cvr_metric["value"] or cvr),
         relative_lift_pct=float(rtl),
         baseline_sessions=int(new_sess),
         margin_per_incremental_buyer_monthly=float(s["margin_per_active_monthly"]),
@@ -416,3 +475,20 @@ with tab5:
         cm3.metric("AVG TIME ON PAGE", f"{cro_metrics['avg_time_on_page']:.1f}s")
     except Exception as e:
         st.info("💡 Additional CRO metrics (bounce rate, time on page) require extended event tracking data. Current tracking only records funnel progression.")
+
+with tab_program:
+    if "cro_experiments" not in st.session_state:
+        st.session_state["cro_experiments"] = []
+    experiments = st.session_state["cro_experiments"]
+    warn = sequential_testing_warning(sum(1 for e in experiments if e.get("status") == "active"))
+    if warn:
+        st.warning(warn)
+    metrics = program_metrics(experiments)
+    p1, p2, p3, p4 = st.columns(4)
+    p1.metric("Total tests", metrics["total_experiments"])
+    p2.metric("Win rate", f"{metrics['win_rate_pct']:.1f}%")
+    p3.metric("Avg lift", f"{metrics['avg_lift_pct']:+.2f}%")
+    p4.metric("Cumulative $/mo", f"${metrics['cumulative_monthly_revenue_impact']:,.2f}")
+    if experiments:
+        st.dataframe(pd.DataFrame(experiments), hide_index=True, use_container_width=True)
+    st.caption("Full program analytics also live on **CRO Program Dashboard** (legacy route).")

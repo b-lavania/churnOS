@@ -323,8 +323,23 @@ if run_model or "model" not in st.session_state:
     st.session_state["model_config"] = config
     st.session_state["model_summary"] = model.compute_summary()
 
+    from core.workspace import build_workspace, sync_workspace_to_session
+
+    ws_seed = int(st.session_state.get("workspace_seed", 42))
+    workspace = build_workspace(config, seed=ws_seed)
+    sync_workspace_to_session(st.session_state, workspace)
+
     with status_col:
-        st.success("Model computed. Navigate to **Executive Summary** to see results.")
+        st.success("Model + analytics workspace synced. Open **Executive Summary** or **Experimentation Hub**.")
+
+if "workspace" not in st.session_state and "model_config" in st.session_state:
+    from core.workspace import build_workspace, sync_workspace_to_session
+
+    ws_seed = int(st.session_state.get("workspace_seed", 42))
+    sync_workspace_to_session(
+        st.session_state,
+        build_workspace(st.session_state["model_config"], seed=ws_seed),
+    )
 
 # ── Quick Preview ──
 if "model_summary" in st.session_state:

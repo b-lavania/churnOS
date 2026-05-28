@@ -1,0 +1,67 @@
+# Governed metric definitions (Mixpanel Lexicon-style)
+# Each metric resolves against a Workspace via analytics/metrics.py
+
+metrics:
+  session_to_purchase_cvr:
+    label: "Session → Purchase CVR"
+    type: ratio
+    numerator: purchases
+    denominator: visits
+    unit: percent
+    caveats: "Session-level binomial proxy; not user-level conversion."
+
+  activated_within_7d:
+    label: "Activated within 7d"
+    type: product
+    resolver: activation_7d
+    unit: percent
+    caveats: "First net-revenue-positive order within 7 days of signup."
+
+  activated_within_28d:
+    label: "Activated within 28d"
+    type: product
+    resolver: activation_28d
+    unit: percent
+    caveats: "First qualifying purchase within 28 days of signup."
+
+  refund_rate_orders:
+    label: "Refund rate (orders)"
+    type: guardrail
+    resolver: refund_rate
+    unit: percent
+    caveats: "Share of orders flagged refunded in synthetic transactions."
+
+  orders_per_active_buyer:
+    label: "Orders per active buyer"
+    type: monetization
+    resolver: orders_per_buyer
+    unit: count
+    caveats: "Mean orders among customers with at least one qualifying transaction."
+
+  weekly_purchase_stickiness:
+    label: "Purchase stickiness (DAU/WAU proxy)"
+    type: engagement
+    resolver: stickiness
+    unit: ratio
+    caveats: "Purchase timestamps only—not authenticated product DAU."
+
+  signup_momentum_mom:
+    label: "Signup MoM delta"
+    type: acquisition
+    resolver: signup_momentum
+    unit: percent
+    caveats: "Latest vs prior signup cohort month in synthetic calendar."
+
+  experiment_active_count:
+    label: "Active experiments"
+    type: program
+    resolver: experiment_active
+    unit: count
+    caveats: "From session experiment registry when present."
+
+  north_star_activation_ratio:
+    label: "North Star proxy (activated / signups)"
+    type: north_star
+    resolver: north_star
+    unit: percent
+    caveats: "Portfolio proxy combining activation and signup scale—not a production NSM."

@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 
+from core.workspace import get_workspace_from_session
 from data.generator import generate_all_data
 from analytics.attribution import build_and_sample_mmm, extract_roas_posteriors
 
@@ -26,12 +27,11 @@ with st.expander("Concept Playbook: How to use this page"):
     ''')
 
 
-@st.cache_data
-def load_data():
-    return generate_all_data()
-
-data = load_data()
-df = data['marketing']
+ws = get_workspace_from_session(st.session_state)
+if ws is not None:
+    df = ws.marketing
+else:
+    df = generate_all_data()["marketing"]
 
 st.markdown("---")
 

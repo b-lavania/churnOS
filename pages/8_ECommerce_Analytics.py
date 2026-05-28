@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 
+from core.workspace import get_workspace_from_session
 from data.generator import generate_all_data
 from analytics.ecommerce import calculate_rfm_segments, inventory_volatility_impact, discount_cannibalization_analysis
 
@@ -25,13 +26,11 @@ with st.expander("Concept Playbook: How to use this page"):
     ''')
 
 
-# Generate Data
-@st.cache_data
-def load_data():
-    return generate_all_data()
-
-data = load_data()
-transactions = data['transactions']
+ws = get_workspace_from_session(st.session_state)
+if ws is not None:
+    transactions = ws.transactions
+else:
+    transactions = generate_all_data()["transactions"]
 
 st.markdown("---")
 

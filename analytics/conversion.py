@@ -883,9 +883,10 @@ def validate_test_reliability(
     """
     Validate A/B test reliability against statistical best practices.
     
-    Performs five reliability checks:
-    1. Minimum sample size (>= 350 conversions per variant)
-    2. Minimum duration (>= 7 days)
+    Performs reliability checks on **visitors** and **conversions** per variant:
+    1. Minimum conversions per variant (>= 350)
+    2. Minimum visitors per variant (>= 350)
+    3. Minimum duration (>= 7 days)
     3. Business cycles (>= 2 weekday/weekend cycles)
     4. Twyman's Law (if lift > 50%, sample size >= 1000)
     5. Statistical significance using existing ab_test_significance function
@@ -924,10 +925,12 @@ def validate_test_reliability(
         ... )
         >>> print(f"Reliability: {result['is_reliable']}, Score: {result['reliability_score']}")
     """
-    # Calculate sample sizes per variant
-    control_sample_size = control_conversions
-    variant_sample_size = variant_conversions
-    min_sample_size = min(control_sample_size, variant_sample_size)
+    control_conversions_n = int(control_conversions)
+    variant_conversions_n = int(variant_conversions)
+    control_visitors_n = int(control_visitors)
+    variant_visitors_n = int(variant_visitors)
+    min_conversions = min(control_conversions_n, variant_conversions_n)
+    min_visitors = min(control_visitors_n, variant_visitors_n)
     
     # Initialize checks dictionary
     checks = {}
@@ -937,21 +940,35 @@ def validate_test_reliability(
     recommendations = []
     
     # ============================================================================
-    # Check 1: Minimum Sample Size (>= 350 per variant)
+    # Check 1: Minimum conversions per variant (>= 350)
     # ============================================================================
-    min_sample_size_threshold = 350
-    sample_size_passed = min_sample_size >= min_sample_size_threshold
-    checks['minimum_sample_size'] = sample_size_passed
-    
-    if not sample_size_passed:
+    min_conversions_threshold = 350
+    conversions_passed = min_conversions >= min_conversions_threshold
+    checks["minimum_conversions_per_variant"] = conversions_passed
+
+    if not conversions_passed:
         warnings.append(
-            f"⚠️ Small Sample Size Warning: Minimum conversions per variant is {min_sample_size}, "
-            f"which is below the recommended minimum of {min_sample_size_threshold}. "
-            f"Small samples exaggerate effects and results may be unreliable."
+            f"⚠️ Low conversions per variant: minimum is {min_conversions}, "
+            f"below recommended {min_conversions_threshold}."
         )
         recommendations.append(
-            f"Increase sample size to achieve at least {min_sample_size_threshold} conversions per variant. "
-            f"Current total sample size is {control_sample_size + variant_sample_size}."
+            f"Target at least {min_conversions_threshold} conversions per variant "
+            f"(currently {control_conversions_n} control / {variant_conversions_n} variant)."
+        )
+
+    # Check 1b: Minimum visitors per variant (>= 350)
+    min_visitors_threshold = 350
+    visitors_passed = min_visitors >= min_visitors_threshold
+    checks["minimum_visitors_per_variant"] = visitors_passed
+
+    if not visitors_passed:
+        warnings.append(
+            f"⚠️ Low visitors per variant: minimum is {min_visitors}, "
+            f"below recommended {min_visitors_threshold}."
+        )
+        recommendations.append(
+            f"Target at least {min_visitors_threshold} visitors per variant "
+            f"(currently {control_visitors_n} control / {variant_visitors_n} variant)."
         )
     
     # ============================================================================
@@ -1001,17 +1018,17 @@ def validate_test_reliability(
     
     if observed_lift > twyman_lift_threshold:
         # Twyman's Law applies - check if sample size is adequate
-        twyman_passed = min_sample_size >= twyman_sample_size_threshold
+        twyman_passed = min_conversions >= twyman_sample_size_threshold
         if not twyman_passed:
             warnings.append(
                 f"⚠️ Twyman's Law Violation Warning: Observed lift of {observed_lift:.1f}% exceeds 50%, "
-                f"but minimum sample size ({min_sample_size}) is below {twyman_sample_size_threshold}. "
+                f"but minimum conversions per variant ({min_conversions}) is below {twyman_sample_size_threshold}. "
                 f"Extreme results from small samples are likely unreliable."
             )
             recommendations.append(
                 f"With such a large observed lift ({observed_lift:.1f}%), increase sample size to at least "
                 f"{twyman_sample_size_threshold} per variant to confirm the result is reliable. "
-                f"Current minimum sample size is {min_sample_size}."
+                f"Current minimum conversions per variant is {min_conversions}."
             )
     
     checks['twymans_law'] = twyman_passed
@@ -1052,7 +1069,8 @@ def validate_test_reliability(
     # - Significance: 10%
     
     score = 0
-    score += 30 if sample_size_passed else 0      # Sample size: 30%
+    score += 15 if conversions_passed else 0
+    score += 15 if visitors_passed else 0
     score += 25 if duration_passed else 0         # Duration: 25%
     score += 20 if business_cycles_passed else 0  # Business cycles: 20%
     score += 15 if twyman_passed else 0           # Twyman's Law: 15%
@@ -1073,6 +1091,9 @@ def validate_test_reliability(
             f"Address the following failed checks to improve reliability: {', '.join(failed_checks)}."
         )
     
+    # Backward-compatible alias used in older tests/UI
+    checks["minimum_sample_size"] = conversions_passed
+
     return {
         'is_reliable': is_reliable,
         'reliability_score': reliability_score,

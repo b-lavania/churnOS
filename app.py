@@ -113,6 +113,19 @@ def executive_summary():
     m5.metric("MONTHLY CHURN", f"{s['monthly_churn_eff']}%")
     m6.metric("GROSS MARGIN", f"{s['gross_margin_pct']}%")
 
+    from core.workspace import get_workspace_from_session
+    from analytics.metrics import resolve_pinned_metrics
+
+    ws = get_workspace_from_session(st.session_state)
+    if ws is not None:
+        registry = st.session_state.get("cro_experiments", [])
+        st.markdown('<div class="terminal-header" style="margin-top: 1rem;">PINNED PRODUCT METRICS (LEXICON)</div>', unsafe_allow_html=True)
+        pins = resolve_pinned_metrics(ws, registry=registry)
+        pc = st.columns(len(pins))
+        for col, pin in zip(pc, pins):
+            col.metric(pin["label"], pin["display"])
+            col.caption(pin["caveats"][:80] + ("…" if len(pin.get("caveats", "")) > 80 else ""))
+
     # ── Two-column layout: Waterfall + Cohort Survival ──
     col_left, col_right = st.columns(2)
 
@@ -283,10 +296,10 @@ nav_structure = {
     "📦  B2C / SAAS": [
         st.Page("pages/1_Retention_Churn.py", title="Retention & Churn"),
         st.Page("pages/2_Unit_Economics.py", title="Unit Economics"),
-        st.Page("pages/3_Conversion.py", title="Conversion & Funnel"),
     ],
-    "🧪  CRO PROGRAM": [
-        st.Page("pages/12_CRO_Program.py", title="CRO Program Dashboard"),
+    "🧪  EXPERIMENT": [
+        st.Page("pages/3_Conversion.py", title="Experimentation Hub"),
+        st.Page("pages/12_CRO_Program.py", title="CRO Program (legacy)"),
         st.Page("pages/13_Revenue_Leakage.py", title="Revenue Leakage"),
         st.Page("pages/14_Conversion_Forecast.py", title="Conversion Forecast"),
     ],

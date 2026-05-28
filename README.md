@@ -1,8 +1,7 @@
 # churnOS · Causal growth & operations intelligence
 
-_Portfolio-ready Streamlit toolkit for experimentation-minded analytics leaders._
-It stitches together causal unit economics, retention science, ecommerce depth, marketplace dynamics,
-marketing mix modelling, and a **deliberately honest product analytics overlay** sourced from transactional + synthetic behavioural events.
+_Portfolio-ready **simulated Product Analytics OS** for experimentation-minded analytics leaders._
+Configure a business once, then explore behaviour, run statistically literate experiments, and translate wins into unit economics—on a **single synthetic event warehouse** (Mixpanel/Heap/Amplitude-style spine, not disconnected dashboards).
 
 ---
 
@@ -37,7 +36,7 @@ Further reading: **[Methodology appendix](docs/methodology.md)** (assumptions, a
 | **Executive calibration** | Causal waterfall, sensitivity grid, simulated cohort segmentation |
 | **Retention & churn** | Survival modelling, churn drivers with interpretability caveat, triangles |
 | **Product analytics** | Activation windows, behavioural stickiness analogue, instrumentation sandbox |
-| **Experimentation Ops** | CRO math, MVT planning, uplift → monetisation bridging + refunds guardrails |
+| **Experimentation hub** | Shared workspace, user assignment, SRM, z-test + Bayesian, governed guardrails, program registry |
 | **Market intelligence** | Take-rate gymnastics, liquidity, seller cohort behaviour |
 | **Attribution rigour** | PyMC Bayesian MMM with diminishing returns scaffolding |
 
@@ -50,8 +49,9 @@ Simulation controls regenerate synthetic facts per surface; alternatively upload
 | Sidebar group | Modules |
 | --- | --- |
 | **CORE** | Business Model • Executive Summary • Concepts & Playbook • System Architecture (this README rendered in-app) |
-| **PRODUCT** | Lifecycle & NSM Proxies (`pages/11_Product_Lifecycle.py`) |
-| **B2C / SaaS** | Retention & Churn • Unit Economics • Conversion & Funnel |
+| **PRODUCT** | Lifecycle & NSM Proxies (`pages/11_Product_Lifecycle.py`) — includes event-first journeys |
+| **B2C / SaaS** | Retention & Churn • Unit Economics |
+| **EXPERIMENT** | Experimentation Hub • CRO Program (legacy) • Revenue Leakage • Conversion Forecast |
 | **ECOMMERCE** | RFM & Inventory |
 | **MARKETPLACES** | Pricing Analytics • Seller Analytics • Marketplace Liquidity |
 | **ATTRIBUTION** | Attribution & MMM |
@@ -65,6 +65,10 @@ Simulation controls regenerate synthetic facts per surface; alternatively upload
 ```
 churnOS/
 ├── app.py                               # Landing + grouped navigation bootstrap
+├── core/
+│   └── workspace.py                     # Unified synthetic warehouse + experiment tables
+├── metrics/
+│   └── lexicon.yaml                     # Governed KPI definitions
 ├── requirements.txt                     # Pip dependencies (+ testing stack)
 ├── .python-version                      # Target interpreter (validated locally on 3.12.x)
 ├── LICENSE                              # MIT
@@ -93,7 +97,8 @@ churnOS/
     ├── 8_ECommerce_Analytics.py
     ├── 9_Marketplace_Liquidity.py
     ├── 10_Attribution_MMM.py
-    └── 11_Product_Lifecycle.py       # Acquisition / Activation / Monetisation scoreboard
+    ├── 11_Product_Lifecycle.py       # Acquisition / Activation / Monetisation scoreboard
+    └── ui/journey.py                   # Breadcrumb + data-contract chrome
 ```
 
 ### Data flow cheat sheet

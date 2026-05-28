@@ -51,3 +51,19 @@ such as refunds, discount leakage, latency, fraud, cannibalisation, or margin co
 
 North Star narratives should align with an **overall evaluation criterion (OEC)** plus explicit guardrail
 tiles; uplift stories from MMM, incrementality lifts, or product onboarding metrics must reconcile to avoid double counting.
+
+## Experimentation (workspace-backed)
+
+churnOS simulates **user-level assignment** (`experiment_assignments`) and session-level outcomes derived from the shared funnel warehouse. This mirrors Amplitude Experiment / Optimizely patterns at a teaching depth—not production SDK fidelity.
+
+| Check | What churnOS does | What production adds |
+|-------|-------------------|----------------------|
+| Randomization unit | Customers split 50/50, sessions linked synthetically | Stable device/user IDs, feature flags, holdouts |
+| Exposure | Post-assignment sessions only | Explicit `exposure` events, delayed metrics |
+| SRM | Chi-square on assignment counts | Automated alerts + kill switches |
+| Inference | Two-proportion z-test + Beta–Binomial Bayesian | CUPED, sequential alpha spending, cluster/geo designs |
+| Guardrails | Refund + discount mix from transactions | Latency, CS tickets, margin, cannibalization dashboards |
+
+**Reliability validator** distinguishes **visitors per variant** vs **conversions per variant** (historically conflated). Both must clear recommended floors before treating a lift as decision-grade.
+
+**Not modeled here:** interference between experiments, network effects, pre-experiment covariate adjustment (CUPED), or automatic peeking corrections. See `analytics/experimentation.py` and the Experimentation Hub UI for inline caveats.

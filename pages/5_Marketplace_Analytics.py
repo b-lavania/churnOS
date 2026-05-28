@@ -39,15 +39,20 @@ with st.expander("Concept Playbook: How to use this page"):
     ''')
 
 
-# ── Data Load ──
-if "app_data" not in st.session_state:
-    from data.generator import generate_all_data
-    st.session_state["app_data"] = generate_all_data()
+# ── Data Load (workspace spine) ──
+from core.workspace import get_workspace_from_session
+from data.generator import generate_all_data
 
-data = st.session_state["app_data"]
-marketplace = data["marketplace"]
-buyers = data["buyers"]
-transactions = data["transactions"]
+ws = get_workspace_from_session(st.session_state)
+if ws is not None:
+    marketplace = ws.marketplace
+    buyers = ws.buyers
+    transactions = ws.transactions
+else:
+    data = generate_all_data()
+    marketplace = data["marketplace"]
+    buyers = data["buyers"]
+    transactions = data["transactions"]
 
 # ── Imports ──
 from analytics.marketplace import (
