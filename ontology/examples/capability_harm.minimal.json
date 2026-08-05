@@ -1,0 +1,46 @@
+{
+  "record_id": "gdr_cap_001",
+  "vertical": "capability_lifecycle",
+  "schema_version": "1.0.0",
+  "ontology_version": "capability_lifecycle_v1",
+  "evaluated_at": "2025-08-01T12:00:00Z",
+  "evaluator_id": "churnos_emitter",
+  "subject": {
+    "workspace_id": "WS-0001",
+    "entity_type": "capability",
+    "capability_id": "CAP-003",
+    "capability_version": "CAP-003-v2",
+    "agent_id": "AGT-001"
+  },
+  "exceptions": [
+    {
+      "exception_id": "exc_001",
+      "category": "capability_harm",
+      "title": "Usage correlates with churn uplift",
+      "description": "Associational signal only; no experiment_id on subject.",
+      "confidence": 0.72,
+      "rank": 1,
+      "severity": "high",
+      "owner": "data_science",
+      "blocks_subject": true,
+      "blocked_entity": { "entity_type": "capability", "entity_id": "CAP-003" },
+      "impact": { "cost_usd": 4200 }
+    }
+  ],
+  "economics": {
+    "primary_metric_usd": 4200,
+    "primary_metric_label": "cost_of_leaving_live_usd",
+    "currency": "USD",
+    "breakdown": [
+      { "label": "ltv_at_risk", "amount_usd": 3800 },
+      { "label": "run_cost_weekly", "amount_usd": 400 }
+    ]
+  },
+  "decision": {
+    "verdict": "destructive",
+    "recommended_action": "throttle",
+    "final_action": "throttle",
+    "rationale": "Harm signal exceeds policy threshold.",
+    "requires_review": false
+  }
+}

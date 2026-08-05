@@ -12,6 +12,9 @@ css_path = Path(__file__).parent.parent / "assets" / "style.css"
 if css_path.exists():
     st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
 
+from ui.legacy_banner import render_legacy_banner
+render_legacy_banner()
+
 from analytics.causal_model import BusinessModel, TEMPLATES
 
 # ── Header ──

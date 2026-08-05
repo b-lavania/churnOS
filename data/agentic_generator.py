@@ -1,0 +1,505 @@
+"""
+Synthetic agentic warehouse generator for churnOS v2.
+"""
+
+from __future__ import annotations
+
+from datetime import timedelta
+from typing import Any
+
+import numpy as np
+import pandas as pd
+
+SEED = 42
+DATA_VERSION = "2.1-agentic"
+
+EVENT_TYPES = [
+    "capability_expose",
+    "run_start",
+    "run_success",
+    "run_fail",
+    "approval_requested",
+    "human_decision",
+    "connector_error",
+    "trust_flag",
+    "churn_mark",
+    "retention_horizon_hit",
+]
+
+CAPABILITY_KINDS = ["agent", "workflow", "tool", "automation", "skill"]
+CONNECTORS = ["gmail", "calendar", "hubspot", "slack", "mcp", "rest_api", "computer_use"]
+APPROVAL_DECISIONS = ["approve", "edit", "dismiss", "escalate"]
+
+
+def generate_agentic_warehouse(
+    profile: dict[str, Any],
+    *,
+    seed: int = SEED,
+) -> dict[str, pd.DataFrame]:
+    """Generate all agentic tables from an AgenticProductProfile dict."""
+    priors = profile.get("priors", {})
+    rng = np.random.default_rng(seed)
+
+    n_seats = int(priors.get("n_seats", 500))
+    n_caps = int(priors.get("n_capabilities", 10))
+    activation_rate = float(priors.get("activation_rate", 0.55))
+    habit_rate = float(priors.get("weekly_habit_rate", 0.45))
+    approval_fatigue = float(priors.get("approval_fatigue_rate", 0.2))
+    trust_rate = float(priors.get("trust_incident_rate", 0.04))
+    conn_err = float(priors.get("connector_error_rate", 0.1))
+    run_cost = float(priors.get("run_cost_per_success", 0.5))
+    arpu = float(priors.get("seat_arpu_monthly", 59.0))
+    churn_base = float(priors.get("monthly_churn_base", 0.06))
+
+    start = pd.Timestamp("2024-01-01")
+    end = pd.Timestamp("2025-12-31")
+
+    workspaces = pd.DataFrame(
+        {
+            "workspace_id": [f"WS-{i:04d}" for i in range(max(1, n_seats // 8))],
+            "plan": rng.choice(["starter", "pro", "enterprise"], size=max(1, n_seats // 8), p=[0.4, 0.45, 0.15]),
+            "created_at": start + pd.to_timedelta(rng.integers(0, 300, size=max(1, n_seats // 8)), unit="D"),
+        }
+    )
+
+    ws_ids = workspaces["workspace_id"].values
+    seat_rows = []
+    for i in range(n_seats):
+        signup = start + pd.Timedelta(days=int(rng.integers(0, 600)))
+        activated = rng.random() < activation_rate
+        churned = rng.random() < churn_base * (1.4 if not activated else 1.0)
+        churn_date = signup + pd.Timedelta(days=int(rng.integers(30, 400))) if churned else pd.NaT
+        seat_rows.append(
+            {
+                "seat_id": f"SEAT-{i:05d}",
+                "workspace_id": rng.choice(ws_ids),
+                "signup_date": signup,
+                "is_activated": activated,
+                "is_churned": churned,
+                "churn_date": churn_date,
+                "seat_arpu_monthly": arpu * rng.uniform(0.85, 1.15),
+                "weekly_delegation": rng.random() < habit_rate if activated else False,
+            }
+        )
+    seats = pd.DataFrame(seat_rows)
+
+    agents = pd.DataFrame(
+        {
+            "agent_id": [f"AGT-{i:03d}" for i in range(max(3, n_caps // 3))],
+            "workspace_id": rng.choice(ws_ids, size=max(3, n_caps // 3)),
+            "name": [f"Agent {i}" for i in range(max(3, n_caps // 3))],
+        }
+    )
+
+    cap_rows = []
+    ver_rows = []
+    for i in range(n_caps):
+        cap_id = f"CAP-{i:03d}"
+        kind = rng.choice(CAPABILITY_KINDS)
+        harm = rng.random() < 0.15
+        dead = rng.random() < 0.1
+        cap_rows.append(
+            {
+                "capability_id": cap_id,
+                "agent_id": rng.choice(agents["agent_id"].values),
+                "name": f"{kind.title()} {i}",
+                "capability_kind": kind,
+                "harm_correlation": harm,
+                "is_dead": dead,
+            }
+        )
+        for v in range(2):
+            ver_rows.append(
+                {
+                    "capability_version_id": f"{cap_id}-v{v+1}",
+                    "capability_id": cap_id,
+                    "version": f"v{v+1}",
+                    "shipped_at": start + pd.Timedelta(days=int(rng.integers(60, 500))),
+                }
+            )
+    capabilities = pd.DataFrame(cap_rows)
+    capability_versions = pd.DataFrame(ver_rows)
+
+    run_rows = []
+    approval_rows = []
+    connector_rows = []
+    event_rows = []
+    run_id = 0
+    for _, seat in seats.iterrows():
+        n_runs = int(rng.integers(2, 25)) if seat["is_activated"] else int(rng.integers(0, 3))
+        for _ in range(n_runs):
+            run_id += 1
+            rid = f"RUN-{run_id:06d}"
+            cap_ver = rng.choice(capability_versions["capability_version_id"].values)
+            cap_id = capability_versions.loc[
+                capability_versions["capability_version_id"] == cap_ver, "capability_id"
+            ].iloc[0]
+            ts = seat["signup_date"] + pd.Timedelta(days=int(rng.integers(1, 200)))
+            success = rng.random() > conn_err * 0.8
+            trust = rng.random() < trust_rate
+            cost = run_cost * rng.uniform(0.5, 2.0)
+            run_rows.append(
+                {
+                    "run_id": rid,
+                    "seat_id": seat["seat_id"],
+                    "capability_id": cap_id,
+                    "capability_version_id": cap_ver,
+                    "started_at": ts,
+                    "success": success,
+                    "run_cost_usd": round(cost, 3),
+                    "trust_incident": trust,
+                }
+            )
+            # loop_count / steps filled after DataFrame build (bimodal geometric)
+            event_rows.append(
+                {"seat_id": seat["seat_id"], "event_ts": ts, "event_name": "run_start", "capability_id": cap_id}
+            )
+            if success:
+                event_rows.append(
+                    {
+                        "seat_id": seat["seat_id"],
+                        "event_ts": ts + timedelta(minutes=5),
+                        "event_name": "run_success",
+                        "capability_id": cap_id,
+                    }
+                )
+            else:
+                event_rows.append(
+                    {
+                        "seat_id": seat["seat_id"],
+                        "event_ts": ts + timedelta(minutes=2),
+                        "event_name": "run_fail",
+                        "capability_id": cap_id,
+                    }
+                )
+            if rng.random() < 0.35:
+                dismiss_p = 0.2 if approval_fatigue < 0.25 else 0.35
+                probs = [0.5, 0.2, dismiss_p, 0.1]
+                probs = [p / sum(probs) for p in probs]
+                decision = rng.choice(APPROVAL_DECISIONS, p=probs)
+                approval_rows.append(
+                    {
+                        "approval_id": f"APR-{run_id:06d}",
+                        "run_id": rid,
+                        "seat_id": seat["seat_id"],
+                        "decision": decision,
+                        "decided_at": ts + timedelta(minutes=3),
+                    }
+                )
+                event_rows.append(
+                    {
+                        "seat_id": seat["seat_id"],
+                        "event_ts": ts + timedelta(minutes=3),
+                        "event_name": "human_decision",
+                        "props_json": decision,
+                    }
+                )
+            for _ in range(int(rng.integers(1, 4))):
+                conn = rng.choice(CONNECTORS)
+                ok = rng.random() > conn_err
+                # Downstream write confirmation only meaningful after a successful run + connector ok
+                outcome_confirmed = bool(success and ok and rng.random() < 0.8)
+                connector_rows.append(
+                    {
+                        "connector_event_id": f"CONN-{run_id:06d}-{conn}",
+                        "run_id": rid,
+                        "connector_id": conn,
+                        "success": ok,
+                        "latency_ms": int(rng.integers(50, 2000)),
+                        "outcome_confirmed": outcome_confirmed,
+                    }
+                )
+                if not ok:
+                    event_rows.append(
+                        {
+                            "seat_id": seat["seat_id"],
+                            "event_ts": ts,
+                            "event_name": "connector_error",
+                            "props_json": conn,
+                        }
+                    )
+            if trust:
+                event_rows.append(
+                    {
+                        "seat_id": seat["seat_id"],
+                        "event_ts": ts,
+                        "event_name": "trust_flag",
+                        "capability_id": cap_id,
+                    }
+                )
+
+    runs = pd.DataFrame(run_rows)
+    if not runs.empty:
+        # Bimodal loop depth: successes complete quickly; failures thrash
+        n = len(runs)
+        ok_mask = runs["success"].to_numpy()
+        loops = np.empty(n, dtype=int)
+        n_ok = int(ok_mask.sum())
+        n_fail = n - n_ok
+        if n_ok:
+            loops[ok_mask] = rng.geometric(0.7, size=n_ok)
+        if n_fail:
+            loops[~ok_mask] = rng.geometric(0.15, size=n_fail)
+        loops = np.clip(loops, 1, 24)
+        runs["loop_count"] = loops
+        runs["steps_to_completion"] = loops * rng.integers(2, 5, size=n)
+        runs["tokens_in"] = (runs["steps_to_completion"] * rng.integers(400, 1200, size=n)).astype(int)
+        runs["tokens_out"] = (runs["steps_to_completion"] * rng.integers(80, 400, size=n)).astype(int)
+        runs["model_id"] = "gpt-4o"
+    else:
+        runs["loop_count"] = pd.Series(dtype=int)
+        runs["steps_to_completion"] = pd.Series(dtype=int)
+        runs["tokens_in"] = pd.Series(dtype=int)
+        runs["tokens_out"] = pd.Series(dtype=int)
+        runs["model_id"] = pd.Series(dtype=str)
+
+    approvals = pd.DataFrame(approval_rows) if approval_rows else pd.DataFrame(
+        columns=["approval_id", "run_id", "seat_id", "decision", "decided_at"]
+    )
+    connector_events = (
+        pd.DataFrame(connector_rows)
+        if connector_rows
+        else pd.DataFrame(
+            columns=[
+                "connector_event_id",
+                "run_id",
+                "connector_id",
+                "success",
+                "latency_ms",
+                "outcome_confirmed",
+            ]
+        )
+    )
+
+    retention_rows = []
+    for _, seat in seats.iterrows():
+        for horizon in (14, 28):
+            retained = not seat["is_churned"] or (
+                pd.notna(seat["churn_date"])
+                and (seat["churn_date"] - seat["signup_date"]).days > horizon
+            )
+            retention_rows.append(
+                {
+                    "seat_id": seat["seat_id"],
+                    "horizon_days": horizon,
+                    "retained": retained,
+                }
+            )
+        if seat["is_churned"]:
+            event_rows.append(
+                {
+                    "seat_id": seat["seat_id"],
+                    "event_ts": seat["churn_date"],
+                    "event_name": "churn_mark",
+                }
+            )
+    retention_marks = pd.DataFrame(retention_rows)
+    product_events = pd.DataFrame(event_rows)
+
+    experiment_id = "EXP-CAP-VERSION-001"
+    cap_vers = capability_versions["capability_version_id"].unique()
+    assign_rows = []
+    for _, seat in seats.iterrows():
+        assign_rows.append(
+            {
+                "seat_id": seat["seat_id"],
+                "experiment_id": experiment_id,
+                "capability_version_id": rng.choice(cap_vers),
+                "variant": rng.choice(["control", "variant"]),
+                "assigned_at": seat["signup_date"] + timedelta(days=int(rng.integers(0, 14))),
+            }
+        )
+    experiment_assignments = pd.DataFrame(assign_rows)
+
+    exp_out = []
+    for variant in ("control", "variant"):
+        sub = experiment_assignments[experiment_assignments["variant"] == variant]
+        seat_ids = set(sub["seat_id"])
+        sub_runs = runs[runs["seat_id"].isin(seat_ids)]
+        successes = sub_runs[sub_runs["success"]]
+        exposed = max(len(seat_ids), 1)
+        converted = min(len(successes), exposed - 1)  # ensure room for beta prior
+        exp_out.append(
+            {
+                "experiment_id": experiment_id,
+                "variant": variant,
+                "exposed_seats": exposed,
+                "successful_runs": converted,
+                "success_rate_pct": round(converted / max(len(sub_runs), 1) * 100, 2),
+                # legacy columns for funnel-based tooling
+                "visitors": exposed,
+                "conversions": converted,
+            }
+        )
+    experiment_outcomes = pd.DataFrame(exp_out)
+    experiment_exposures = experiment_assignments.groupby("seat_id", as_index=False).first()
+
+    methodology = _build_methodology_tables(
+        workspaces, seats, runs, connector_events, priors, rng, start,
+        billing_model=profile.get("billing_model", "b2b_subscription"),
+    )
+
+    from data.challenge_seed import enrich_challenge_data
+
+    payload = {
+        "workspaces": workspaces,
+        "seats": seats,
+        "agents": agents,
+        "capabilities": capabilities,
+        "capability_versions": capability_versions,
+        "runs": runs,
+        "approvals": approvals,
+        "connector_events": connector_events,
+        "product_events": product_events,
+        "retention_marks": retention_marks,
+        "experiment_assignments": experiment_assignments,
+        "experiment_exposures": experiment_exposures,
+        "experiment_outcomes": experiment_outcomes,
+        **methodology,
+    }
+    return enrich_challenge_data(payload, profile, seed=seed)
+
+
+def _build_methodology_tables(
+    workspaces: pd.DataFrame,
+    seats: pd.DataFrame,
+    runs: pd.DataFrame,
+    connector_events: pd.DataFrame,
+    priors: dict[str, Any],
+    rng: np.random.Generator,
+    start: pd.Timestamp,
+    billing_model: str = "b2b_subscription",
+) -> dict[str, pd.DataFrame]:
+    """Methodology-layer entities (§3–4) with thin legacy adapters (seats/runs)."""
+    billing = billing_model
+    accounts = pd.DataFrame(
+        {
+            "account_id": workspaces["workspace_id"],
+            "tier": workspaces["plan"],
+            "pricing_model": billing,
+            "onboarding_completed": rng.random(len(workspaces)) > 0.2,
+            "created_at": workspaces["created_at"],
+        }
+    )
+
+    end_users = seats.rename(columns={"seat_id": "end_user_id"}).copy()
+    end_users["account_id"] = end_users["workspace_id"]
+    seat_to_workspace = seats.set_index("seat_id")["workspace_id"].to_dict()
+    seat_to_signup = pd.to_datetime(seats.set_index("seat_id")["signup_date"]).to_dict()
+    end_user_to_account = end_users.set_index("end_user_id")["account_id"].to_dict()
+    verified_run_ids: set[str] = set()
+    if not connector_events.empty and "outcome_confirmed" in connector_events.columns:
+        verified_run_ids = set(
+            connector_events.groupby("run_id")["outcome_confirmed"].any().loc[lambda s: s].index.astype(str)
+        )
+
+    session_rows: list[dict[str, Any]] = []
+    span_rows: list[dict[str, Any]] = []
+    outcome_rows: list[dict[str, Any]] = []
+    usage_rows: list[dict[str, Any]] = []
+
+    if not runs.empty:
+        run_df = runs.copy()
+        run_df["started_at"] = pd.to_datetime(run_df["started_at"])
+        run_df["session_day"] = run_df["started_at"].dt.floor("D")
+        for (seat_id, day), grp in run_df.groupby(["seat_id", "session_day"]):
+            session_id = f"SES-{seat_id}-{day.strftime('%Y%m%d')}"
+            session_rows.append(
+                {
+                    "session_id": session_id,
+                    "end_user_id": seat_id,
+                    "account_id": seat_to_workspace.get(seat_id, "WS-0000"),
+                    "started_at": grp["started_at"].min(),
+                    "ended_at": grp["started_at"].max(),
+                    "run_count": len(grp),
+                }
+            )
+            for _, run in grp.iterrows():
+                loops = int(run.get("loop_count", 1) or 1)
+                for li in range(loops):
+                    span_rows.append(
+                        {
+                            "span_id": f"SPN-{run['run_id']}-{li}",
+                            "agent_run_id": run["run_id"],
+                            "session_id": session_id,
+                            "loop_iteration": li + 1,
+                            "tokens_in": int(run.get("tokens_in", 0) / max(loops, 1)),
+                            "tokens_out": int(run.get("tokens_out", 0) / max(loops, 1)),
+                            "success": bool(run["success"] if li == loops - 1 else True),
+                        }
+                    )
+                usage_rows.append(
+                    {
+                        "usage_event_id": f"USE-{run['run_id']}",
+                        "account_id": end_user_to_account.get(seat_id, "WS-0000"),
+                        "agent_run_id": run["run_id"],
+                        "tokens_in": int(run.get("tokens_in", 0)),
+                        "tokens_out": int(run.get("tokens_out", 0)),
+                        "cost_usd": float(run.get("run_cost_usd", 0)),
+                        "recorded_at": run["started_at"],
+                    }
+                )
+                if run["success"]:
+                    verified = str(run["run_id"]) in verified_run_ids
+                    verified_by = "connector_write" if verified else None
+                    signup = seat_to_signup.get(seat_id)
+                    days_since = int((run["started_at"] - signup).days) if signup is not None else 0
+                    outcome_rows.append(
+                        {
+                            "outcome_id": f"OUT-{run['run_id']}",
+                            "account_id": end_user_to_account.get(seat_id, "WS-0000"),
+                            "end_user_id": seat_id,
+                            "agent_run_id": run["run_id"],
+                            "outcome_type": "task_completion",
+                            "success": True,
+                            "verified": verified,
+                            "verified_by": verified_by,
+                            "occurred_at": run["started_at"],
+                            "days_since_signup": days_since,
+                        }
+                    )
+
+    sessions = pd.DataFrame(session_rows) if session_rows else pd.DataFrame(
+        columns=["session_id", "end_user_id", "account_id", "started_at", "ended_at", "run_count"]
+    )
+    agent_runs = runs.copy()
+    if not agent_runs.empty:
+        agent_runs["agent_run_id"] = agent_runs["run_id"]
+    spans = pd.DataFrame(span_rows) if span_rows else pd.DataFrame(
+        columns=["span_id", "agent_run_id", "session_id", "loop_iteration", "tokens_in", "tokens_out", "success"]
+    )
+    outcomes = pd.DataFrame(outcome_rows) if outcome_rows else pd.DataFrame(
+        columns=[
+            "outcome_id", "account_id", "end_user_id", "agent_run_id",
+            "outcome_type", "success", "verified", "verified_by", "occurred_at", "days_since_signup",
+        ]
+    )
+
+    sub_rows = []
+    for _, acc in accounts.iterrows():
+        seat_sub = seats[seats["workspace_id"] == acc["account_id"]]
+        mrr = float(seat_sub["seat_arpu_monthly"].sum()) if len(seat_sub) else float(priors.get("seat_arpu_monthly", 59))
+        sub_rows.append(
+            {
+                "subscription_id": f"SUB-{acc['account_id']}",
+                "account_id": acc["account_id"],
+                "mrr_usd": round(mrr, 2),
+                "started_at": acc["created_at"],
+                "tier": acc["tier"],
+            }
+        )
+    subscriptions = pd.DataFrame(sub_rows)
+    usage_events = pd.DataFrame(usage_rows) if usage_rows else pd.DataFrame(
+        columns=["usage_event_id", "account_id", "agent_run_id", "tokens_in", "tokens_out", "cost_usd", "recorded_at"]
+    )
+
+    return {
+        "accounts": accounts,
+        "end_users": end_users,
+        "sessions": sessions,
+        "agent_runs": agent_runs,
+        "spans": spans,
+        "outcomes": outcomes,
+        "subscriptions": subscriptions,
+        "usage_events": usage_events,
+    }

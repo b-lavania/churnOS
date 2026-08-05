@@ -1,0 +1,21 @@
+# Token pricing oracle — versioned unit prices for synthetic / teaching economics.
+# Costs are USD per 1K tokens. Update effective_from when providers change pricing.
+
+default_model: gpt-4o
+
+models:
+  gpt-4o:
+    input_cost_per_1k: 0.005
+    output_cost_per_1k: 0.015
+    cached_input_cost_per_1k: 0.0025
+    effective_from: "2024-05-01"
+  gpt-4o-mini:
+    input_cost_per_1k: 0.00015
+    output_cost_per_1k: 0.0006
+    cached_input_cost_per_1k: 0.000075
+    effective_from: "2024-07-01"
+  claude-3-5-sonnet:
+    input_cost_per_1k: 0.003
+    output_cost_per_1k: 0.015
+    cached_input_cost_per_1k: 0.0003
+    effective_from: "2024-10-01"

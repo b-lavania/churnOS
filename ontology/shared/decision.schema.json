@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://churnos.local/ontology/shared/decision.schema.json",
+  "title": "Decision",
+  "type": "object",
+  "properties": {
+    "verdict": { "type": "string" },
+    "recommended_action": { "type": "string" },
+    "final_action": { "type": "string" },
+    "rationale": { "type": "string" },
+    "requires_review": { "type": "boolean" },
+    "override_reason": { "type": "string" },
+    "decided_by": { "type": "string" },
+    "decided_at": { "type": "string", "format": "date-time" }
+  }
+}

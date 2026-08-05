@@ -1,321 +1,168 @@
 """
-churnOS: Causal Business Intelligence for Retention & Growth
-==============================================================
-Main entry point. Defines the navigation and the Executive Summary (home page).
+churnOS — Decision-grade analytics for agentic software systems.
+Navigation: START → DECIDE → LEARN (+ Reference / Legacy expanders).
 """
 
 import streamlit as st
 from pathlib import Path
 
-# ── Page Configuration ──
-st.set_page_config(
-    page_title="churnOS",
-    layout="wide",
-    initial_sidebar_state="expanded",
+from core.workspace import get_workspace_from_session
+from ui.decision_card import render_decision_card
+from ui.explain import how_it_works, measurement_honesty
+from ui.magazine import load_magazine_css, masthead, section_kicker
+from ui.viz import agentic_health_composite, portfolio_tornado
+from ui.workspace_banner import (
+    empty_workspace_panel,
+    render_sidebar_brand_and_status,
+    render_sidebar_secondary_nav,
 )
 
-# ── Load Custom CSS ──
+st.set_page_config(page_title="churnOS", layout="wide", initial_sidebar_state="expanded")
+
 css_path = Path(__file__).parent / "assets" / "style.css"
 if css_path.exists():
     st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
 
-# ── Sidebar Branding ──
-with st.sidebar:
-    st.markdown(
-        """
-        <div style="padding: 1rem 0;">
-            <div class="terminal-header">SYSTEM STATUS: ACTIVE</div>
-            <h2 style="margin: 0; font-family: 'Outfit';">churnOS</h2>
-            <p style="font-family: 'JetBrains Mono'; font-size: 0.7rem; color: #00f2ff; opacity: 0.8;">
-                CAUSAL BUSINESS INTELLIGENCE
-            </p>
-        </div>
-        <hr style="border-color: rgba(255,255,255,0.08); margin: 0.5rem 0 1.5rem;">
-        <div class="terminal-header" style="margin-bottom: 1rem;">NAVIGATION</div>
-        
-        <!-- Navigation Group Labels removed since native st.navigation handles them -->
-        """,
-        unsafe_allow_html=True,
+def capability_risk_radar():
+    from ui.explain import page_help
+
+    load_magazine_css()
+    masthead(
+        "Capability Risk Radar",
+        "What to ship, throttle, or kill",
+        "Ranked GrowthDecisionRecords priced by cost of leaving live.",
     )
-
-
-# ──────────────────────────────────────────────
-#  Executive Summary: the Home Page
-# ──────────────────────────────────────────────
-
-def executive_summary():
-    """Home page: health score, key metrics, waterfall, and sensitivity heatmap."""
-    import plotly.graph_objects as go
-    import plotly.express as px
-    import pandas as pd
-    import numpy as np
-
-    PLOTLY_THEME = {
-        "layout": {
-            "plot_bgcolor": "rgba(0,0,0,0)",
-            "paper_bgcolor": "rgba(0,0,0,0)",
-            "font": {"family": "JetBrains Mono", "color": "#94a3b8", "size": 11},
-            "xaxis": {"gridcolor": "rgba(255,255,255,0.05)", "zeroline": False, "linecolor": "rgba(255,255,255,0.1)"},
-            "yaxis": {"gridcolor": "rgba(255,255,255,0.05)", "zeroline": False, "linecolor": "rgba(255,255,255,0.1)"},
-            "margin": {"t": 40, "b": 40, "l": 40, "r": 20},
-        }
-    }
-
-    st.markdown('<div class="terminal-header">HOME // EXECUTIVE SUMMARY</div>', unsafe_allow_html=True)
-    st.markdown('<h1 class="gradient-text" style="font-size:3rem; margin-bottom:0.5rem;">Executive Summary</h1>', unsafe_allow_html=True)
-
-    # ── Check for model ──
-    if "model" not in st.session_state:
-        st.markdown(
-            """
-            <div class="techno-card" style="border-top: 2px solid #ff9d00; text-align: center; padding: 3rem;">
-                <h3 style="color: #ff9d00; margin-bottom: 1rem;">No Business Model Defined</h3>
-                <p style="font-size: 0.95rem;">
-                    Navigate to <strong>Business Model</strong> in the sidebar to define your business
-                    parameters. churnOS will then compute your full causal chain.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        return
-
-    model = st.session_state["model"]
-    s = st.session_state["model_summary"]
-    config = st.session_state["model_config"]
-
-    # ── Health Score + Key Metrics ──
-    health = s["health_score"]
-    health_color = "#14b8a6" if health >= 70 else "#ff9d00" if health >= 40 else "#f43f5e"
-
-    st.markdown(
-        f"""
-        <div class="techno-card" style="border-top: 3px solid {health_color}; text-align: center; padding: 1.5rem 1rem 0.5rem;">
-            <div class="terminal-header" style="border: none; text-align: center;">BUSINESS HEALTH INDEX</div>
-            <div style="font-family: 'JetBrains Mono'; font-size: 5rem; font-weight: 800; color: {health_color}; line-height: 1;">
-                {health}
-            </div>
-            <div style="font-family: 'JetBrains Mono'; font-size: 0.8rem; color: #94a3b8; margin-top: 0.3rem;">
-                / 100: {config['business_type'].upper()}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Key metric cards
-    m1, m2, m3, m4, m5, m6 = st.columns(6)
-    m1.metric("CLV (24mo)", f"${s['clv_24']:,.2f}")
-    m2.metric("BLENDED CAC", f"${s['cac']:,.2f}")
-    m3.metric("LTV : CAC", f"{s['ltv_cac']}x")
-    payback_label = f"Month {s['payback_month']}" if s['payback_month'] else "Never"
-    m4.metric("PAYBACK", payback_label)
-    m5.metric("MONTHLY CHURN", f"{s['monthly_churn_eff']}%")
-    m6.metric("GROSS MARGIN", f"{s['gross_margin_pct']}%")
-
-    from core.workspace import get_workspace_from_session
-    from analytics.metrics import resolve_pinned_metrics
+    page_help("radar", show_card_glossary=True)
+    how_it_works(expanded=False)
+    measurement_honesty()
 
     ws = get_workspace_from_session(st.session_state)
-    if ws is not None:
-        registry = st.session_state.get("cro_experiments", [])
-        st.markdown('<div class="terminal-header" style="margin-top: 1rem;">PINNED PRODUCT METRICS (LEXICON)</div>', unsafe_allow_html=True)
-        pins = resolve_pinned_metrics(ws, registry=registry)
-        pc = st.columns(len(pins))
-        for col, pin in zip(pc, pins):
-            col.metric(pin["label"], pin["display"])
-            col.caption(pin["caveats"][:80] + ("…" if len(pin.get("caveats", "")) > 80 else ""))
+    if ws is None:
+        empty_workspace_panel(page_label="Radar")
+        st.caption("New here? The loop is Profile → Generate → Radar.")
+        return
 
-    # ── Two-column layout: Waterfall + Cohort Survival ──
-    col_left, col_right = st.columns(2)
+    from analytics.decisions import emit_account_records, emit_capability_records
+    from analytics.metrics import resolve_metric
 
-    # Waterfall chart
-    with col_left:
-        st.markdown('<div class="terminal-header">REVENUE WATERFALL // PER ORDER</div>', unsafe_allow_html=True)
-        waterfall = model.compute_waterfall()
+    section_kicker("Agentic Health")
+    health_fig = agentic_health_composite(ws)
+    if health_fig is not None:
+        st.plotly_chart(health_fig, use_container_width=True)
+    h1, h2, h3, h4 = st.columns(4)
+    h1.metric("Health score", resolve_metric("agentic_health_score", ws)["display"])
+    h2.metric("CPSO", resolve_metric("cost_per_successful_outcome", ws)["display"])
+    h3.metric("TTFV", resolve_metric("time_to_first_value", ws)["display"])
+    h4.metric("Unattributed spend", resolve_metric("unattributed_spend_percentage", ws)["display"])
 
-        colors = []
-        for _, row in waterfall.iterrows():
-            if row["type"] == "absolute":
-                colors.append("#00f2ff")
-            elif row["type"] == "total":
-                colors.append("#14b8a6" if row["amount"] >= 0 else "#f43f5e")
-            else:
-                colors.append("#f43f5e" if row["amount"] < 0 else "#14b8a6")
+    acc_records = emit_account_records(ws, ws.profile)
+    cap_records = emit_capability_records(ws, ws.profile)
+    st.session_state["growth_records"] = acc_records + cap_records
 
-        fig_wf = go.Figure(go.Waterfall(
-            orientation="v",
-            measure=waterfall["type"].tolist(),
-            x=waterfall["label"].tolist(),
-            y=waterfall["amount"].tolist(),
-            connector={"line": {"color": "rgba(255,255,255,0.1)"}},
-            decreasing={"marker": {"color": "#f43f5e"}},
-            increasing={"marker": {"color": "#14b8a6"}},
-            totals={"marker": {"color": "#8a2be2"}},
-            textposition="outside",
-            text=[f"${abs(v):.2f}" for v in waterfall["amount"]],
-        ))
-        fig_wf.update_layout(**PLOTLY_THEME["layout"], showlegend=False)
-        fig_wf.update_yaxes(title="$ PER ORDER")
-        st.plotly_chart(fig_wf, use_container_width=True)
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Account GDRs", len(acc_records))
+    c2.metric("Capability GDRs", len(cap_records))
+    c3.metric("Seats", len(ws.seats))
+    c4.metric("Profile", ws.profile.get("preset_id", "—"))
 
-    # Cohort survival curve
-    with col_right:
-        st.markdown('<div class="terminal-header">COHORT SURVIVAL // 24 MONTH PROJECTION</div>', unsafe_allow_html=True)
-        cohort = model.simulate_cohort(n_months=24)
+    def _apply_override(rec, action, reason):
+        from analytics.decisions import apply_override
+        from ontology.store import append_record
 
-        fig_surv = go.Figure()
-        fig_surv.add_trace(go.Scatter(
-            x=cohort["month"], y=cohort["active_pct"],
-            mode="lines+markers",
-            name="Active %",
-            line=dict(color="#00f2ff", width=3),
-            marker=dict(size=4),
-            fill="tozeroy",
-            fillcolor="rgba(0, 242, 255, 0.05)",
-        ))
-        # Add CAC payback line
-        if s["payback_month"]:
-            fig_surv.add_vline(
-                x=s["payback_month"], line_dash="dash",
-                line_color="#ff9d00", annotation_text=f"Payback M{s['payback_month']}",
-                annotation_font_color="#ff9d00",
-            )
-        fig_surv.update_layout(**PLOTLY_THEME["layout"], showlegend=False)
-        fig_surv.update_xaxes(title="MONTH")
-        fig_surv.update_yaxes(title="ACTIVE %", range=[0, 105])
-        st.plotly_chart(fig_surv, use_container_width=True)
-
-    # ── Sensitivity Analysis Heatmap ──
-    st.markdown('<div class="terminal-header" style="margin-top: 1rem;">SENSITIVITY ANALYSIS // WHAT MATTERS MOST</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<p style="font-size: 0.85rem; max-width: 700px; margin-bottom: 1rem;">'
-        'Each input is perturbed ±10%. The bars show how much that changes your CLV. '
-        'Longer bars = higher leverage. Focus your optimization efforts here.'
-        '</p>',
-        unsafe_allow_html=True,
-    )
-
-    sensitivity = model.compute_sensitivity(output_metric="clv_24", delta_pct=0.10)
-    # Top 8 most impactful
-    top_sens = sensitivity.head(8)
-
-    fig_sens = go.Figure()
-    # Show as tornado: low_output and high_output around base
-    base_clv = top_sens["base_output"].iloc[0]
-    for _, row in top_sens.iterrows():
-        fig_sens.add_trace(go.Bar(
-            y=[row["input_name"]],
-            x=[row["high_output"] - base_clv],
-            name="+10%",
-            orientation="h",
-            marker_color="#14b8a6",
-            showlegend=False,
-            text=f"${row['high_output']:.2f}",
-            textposition="outside",
-        ))
-        fig_sens.add_trace(go.Bar(
-            y=[row["input_name"]],
-            x=[row["low_output"] - base_clv],
-            name="-10%",
-            orientation="h",
-            marker_color="#f43f5e",
-            showlegend=False,
-            text=f"${row['low_output']:.2f}",
-            textposition="outside",
-        ))
-
-    fig_sens.update_layout(
-        **PLOTLY_THEME["layout"],
-        barmode="overlay",
-        height=max(350, len(top_sens) * 50),
-    )
-    fig_sens.update_xaxes(title="CLV CHANGE FROM BASELINE ($)", zeroline=True, zerolinecolor="rgba(255,255,255,0.2)")
-    fig_sens.update_yaxes(autorange="reversed")
-    st.plotly_chart(fig_sens, use_container_width=True)
-
-    # ── Segment Comparison ──
-    st.markdown('<div class="terminal-header" style="margin-top: 1rem;">SEGMENT BREAKDOWN // BY-SEGMENT ECONOMICS</div>', unsafe_allow_html=True)
-    seg_cohort = model.simulate_cohort_by_segment(n_months=24)
-
-    # Survival by segment
-    seg_col1, seg_col2 = st.columns(2)
-    with seg_col1:
-        fig_seg = go.Figure()
-        seg_colors = {"Budget": "#f43f5e", "Mid-Range": "#ff9d00", "Premium": "#8a2be2", "Enterprise": "#14b8a6"}
-        for seg_name in seg_cohort["segment"].unique():
-            seg_data = seg_cohort[seg_cohort["segment"] == seg_name]
-            fig_seg.add_trace(go.Scatter(
-                x=seg_data["month"], y=seg_data["active_pct"],
-                name=seg_name.upper(),
-                line=dict(color=seg_colors.get(seg_name, "#00f2ff"), width=2),
-            ))
-        fig_seg.update_layout(**PLOTLY_THEME["layout"])
-        fig_seg.update_xaxes(title="MONTH")
-        fig_seg.update_yaxes(title="RETENTION %", range=[0, 105])
-        st.plotly_chart(fig_seg, use_container_width=True)
-
-    # CLV by segment at M24
-    with seg_col2:
-        seg_24 = seg_cohort[seg_cohort["month"] == 24][["segment", "ltv_to_date", "active_pct"]].copy()
-        seg_24.columns = ["Segment", "CLV (24mo)", "Retention %"]
-        fig_clv_seg = px.bar(
-            seg_24, x="Segment", y="CLV (24mo)",
-            color="Segment",
-            color_discrete_map=seg_colors,
-            text_auto=".2f",
+        records = st.session_state.get("growth_records") or []
+        idx = next(
+            (i for i, r in enumerate(records) if r["record_id"] == rec["record_id"]),
+            None,
         )
-        fig_clv_seg.update_layout(**PLOTLY_THEME["layout"], showlegend=False)
-        fig_clv_seg.update_yaxes(title="CLV ($)")
-        st.plotly_chart(fig_clv_seg, use_container_width=True)
+        updated = apply_override(rec, action, reason)
+        if idx is not None:
+            records[idx] = updated
+            st.session_state["growth_records"] = records
+        append_record(updated)
 
-    # ── Footer ──
-    st.markdown("---")
-    unit_econ_cols = st.columns(4)
-    unit_econ_cols[0].metric("NET REV / ORDER", f"${s['net_revenue_per_order']:,.2f}")
-    unit_econ_cols[1].metric("MARGIN / ACTIVE / MO", f"${s['margin_per_active_monthly']:,.2f}")
-    unit_econ_cols[2].metric("AOV", f"${s['aov']:,.2f}")
-    unit_econ_cols[3].metric("PURCHASE FREQ", f"{s['purchase_frequency']}x / mo")
+    tab_accounts, tab_caps = st.tabs(["Accounts at risk", "Capabilities to act on"])
+
+    with tab_accounts:
+        fig = portfolio_tornado(acc_records)
+        if fig is not None:
+            st.plotly_chart(fig, use_container_width=True)
+        st.caption(f"Top {min(8, len(acc_records))} of {len(acc_records)} account decisions — expand a row to act.")
+        if not acc_records:
+            st.info("No account GDRs for this seed — try regenerating or another preset.")
+        for i, rec in enumerate(acc_records[:8]):
+            render_decision_card(
+                rec,
+                key_prefix=f"radar_acc_{i}",
+                on_override=_apply_override,
+                expanded=(i == 0),
+            )
+
+    with tab_caps:
+        fig = portfolio_tornado(cap_records)
+        if fig is not None:
+            st.plotly_chart(fig, use_container_width=True)
+        st.caption(f"Top {min(8, len(cap_records))} of {len(cap_records)} capability decisions — expand a row to act.")
+        if not cap_records:
+            st.info("No capability GDRs for this seed.")
+        for i, rec in enumerate(cap_records[:8]):
+            render_decision_card(
+                rec,
+                key_prefix=f"radar_cap_{i}",
+                on_override=_apply_override,
+                expanded=(i == 0),
+            )
 
 
-# ──────────────────────────────────────────────
-#  Navigation
-# ──────────────────────────────────────────────
+_REFERENCE_PAGES = [
+    st.Page("pages/7_Concepts.py", title="Concepts", url_path="concepts", visibility="hidden"),
+    st.Page("pages/6_README.py", title="Architecture", url_path="architecture", visibility="hidden"),
+    st.Page("pages/21_Semantics_Console.py", title="Semantics", url_path="semantics", visibility="hidden"),
+    st.Page("pages/22_Taxonomy_Browser.py", title="Taxonomy", url_path="taxonomy", visibility="hidden"),
+    st.Page("pages/23_Record_Inspector.py", title="Record Inspector", url_path="records", visibility="hidden"),
+]
 
-# ── Define Navigation Structure with Group Metadata ──
+_LEGACY_PAGES = [
+    st.Page("pages/99_Legacy_Index.py", title="Legacy (reference)", url_path="legacy", visibility="hidden"),
+    st.Page("pages/0_Business_Model.py", title="Business Model", url_path="legacy_business_model", visibility="hidden"),
+    st.Page("pages/1_Retention_Churn.py", title="Retention & Churn", url_path="legacy_retention", visibility="hidden"),
+    st.Page("pages/2_Unit_Economics.py", title="Unit Economics", url_path="legacy_unit_economics", visibility="hidden"),
+    st.Page("pages/11_Product_Lifecycle.py", title="Lifecycle & NSM", url_path="legacy_lifecycle", visibility="hidden"),
+    st.Page("pages/4_Marketplace.py", title="Pricing Analytics", url_path="legacy_pricing", visibility="hidden"),
+    st.Page("pages/5_Marketplace_Analytics.py", title="Seller Analytics", url_path="legacy_sellers", visibility="hidden"),
+    st.Page("pages/8_ECommerce_Analytics.py", title="RFM & Inventory", url_path="legacy_rfm", visibility="hidden"),
+    st.Page("pages/9_Marketplace_Liquidity.py", title="Marketplace Liquidity", url_path="legacy_liquidity", visibility="hidden"),
+    st.Page("pages/10_Attribution_MMM.py", title="Attribution & MMM", url_path="legacy_mmm", visibility="hidden"),
+    st.Page("pages/12_CRO_Program.py", title="CRO Program", url_path="legacy_cro", visibility="hidden"),
+    st.Page("pages/13_Revenue_Leakage.py", title="Revenue Leakage", url_path="legacy_leakage", visibility="hidden"),
+    st.Page("pages/14_Conversion_Forecast.py", title="Conversion Forecast", url_path="legacy_forecast", visibility="hidden"),
+]
+
 nav_structure = {
-    "⚙️  CORE": [
-        st.Page("pages/0_Business_Model.py", title="Business Model"),
-        st.Page(executive_summary, title="Executive Summary"),
-        st.Page("pages/7_Concepts.py", title="Concepts & Playbook"),
-        st.Page("pages/6_README.py", title="System Architecture"),
+    "START": [
+        st.Page(
+            "pages/00_Agentic_Product_Profile.py",
+            title="Product Profile",
+            url_path="profile",
+            default=True,
+        ),
     ],
-    "📈  PRODUCT": [
-        st.Page("pages/11_Product_Lifecycle.py", title="Lifecycle & NSM Proxies"),
+    "DECIDE": [
+        st.Page(capability_risk_radar, title="Radar", url_path="radar"),
+        st.Page("pages/15_Activation_Habit.py", title="Activation & Habit", url_path="activation"),
+        st.Page("pages/16_Trust_Approval.py", title="Trust & Approval", url_path="trust"),
+        st.Page("pages/17_Run_Economics.py", title="Run Economics", url_path="run_economics"),
+        st.Page("pages/18_Connector_Blast_Radius.py", title="Connectors", url_path="connectors"),
     ],
-    "📦  B2C / SAAS": [
-        st.Page("pages/1_Retention_Churn.py", title="Retention & Churn"),
-        st.Page("pages/2_Unit_Economics.py", title="Unit Economics"),
+    "LEARN": [
+        st.Page("pages/3_Conversion.py", title="Experiments", url_path="experiments"),
+        st.Page("pages/25_Agentic_Flags.py", title="Agentic Flags", url_path="agentic_flags"),
+        st.Page("pages/20_Outcome_Flywheel.py", title="Outcome Flywheel", url_path="flywheel"),
+        *_REFERENCE_PAGES,
+        *_LEGACY_PAGES,
     ],
-    "🧪  EXPERIMENT": [
-        st.Page("pages/3_Conversion.py", title="Experimentation Hub"),
-        st.Page("pages/12_CRO_Program.py", title="CRO Program (legacy)"),
-        st.Page("pages/13_Revenue_Leakage.py", title="Revenue Leakage"),
-        st.Page("pages/14_Conversion_Forecast.py", title="Conversion Forecast"),
-    ],
-    "🛒  ECOMMERCE": [
-        st.Page("pages/8_ECommerce_Analytics.py", title="RFM & Inventory"),
-    ],
-    "🏪  MARKETPLACES": [
-        st.Page("pages/4_Marketplace.py", title="Pricing Analytics"),
-        st.Page("pages/5_Marketplace_Analytics.py", title="Seller Analytics"),
-        st.Page("pages/9_Marketplace_Liquidity.py", title="Marketplace Liquidity"),
-    ],
-    "📡  ATTRIBUTION": [
-        st.Page("pages/10_Attribution_MMM.py", title="Attribution & MMM"),
-    ]
 }
 
-pg = st.navigation(nav_structure)
+pg = st.navigation(nav_structure, expanded=True)
+render_sidebar_brand_and_status(st.session_state)
+render_sidebar_secondary_nav()
 pg.run()
-

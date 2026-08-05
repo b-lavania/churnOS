@@ -1,0 +1,43 @@
+{
+  "record_id": "gdr_acc_001",
+  "vertical": "capability_lifecycle",
+  "schema_version": "1.0.0",
+  "ontology_version": "capability_lifecycle_v1",
+  "evaluated_at": "2025-08-01T12:00:00Z",
+  "evaluator_id": "churnos_emitter",
+  "subject": {
+    "workspace_id": "WS-0001",
+    "entity_type": "account",
+    "account_id": "WS-0001"
+  },
+  "exceptions": [
+    {
+      "exception_id": "exc_acc_001",
+      "category": "tourist",
+      "title": "No verified outcome within 14 days",
+      "description": "Account activated but no verified business outcome in activation window.",
+      "confidence": 0.81,
+      "rank": 1,
+      "severity": "high",
+      "owner": "growth_lead",
+      "blocks_subject": true,
+      "blocked_entity": { "entity_type": "account", "entity_id": "WS-0001" },
+      "impact": { "cost_usd": 2400 }
+    }
+  ],
+  "economics": {
+    "primary_metric_usd": 2400,
+    "primary_metric_label": "cost_of_leaving_live_usd",
+    "currency": "USD",
+    "breakdown": [
+      { "label": "ltv_at_risk", "amount_usd": 2400 }
+    ]
+  },
+  "decision": {
+    "verdict": "leaking",
+    "recommended_action": "experiment",
+    "final_action": "experiment",
+    "rationale": "Tourist pattern — intervene on activation before churn.",
+    "requires_review": false
+  }
+}

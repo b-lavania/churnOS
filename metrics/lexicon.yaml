@@ -1,67 +1,259 @@
-# Governed metric definitions (Mixpanel Lexicon-style)
-# Each metric resolves against a Workspace via analytics/metrics.py
+# Governed metric definitions — agentic churnOS lexicon
 
 metrics:
-  session_to_purchase_cvr:
-    label: "Session → Purchase CVR"
+  weekly_delegation_habit:
+    label: "Weekly delegation habit"
+    type: north_star
+    resolver: weekly_delegation_habit
+    unit: percent
+    role: oec
+    caveats: "Share of active seats with ≥1 trusted successful run per week."
+
+  trust_incident_rate:
+    label: "Trust incident rate"
+    type: guardrail
+    resolver: trust_incident_rate
+    unit: percent
+    role: guardrail
+    caveats: "trust_flag events / runs."
+
+  cost_per_successful_run:
+    label: "Cost per successful run"
+    type: guardrail
+    resolver: cost_per_successful_run
+    unit: usd
+    role: guardrail
+    caveats: "Credits or $ / run_success."
+
+  approval_fatigue_index:
+    label: "Approval fatigue index"
+    type: guardrail
+    resolver: approval_fatigue_index
+    unit: ratio
+    role: guardrail
+    caveats: "Dismiss rate + queue depth proxy."
+
+  cost_of_leaving_live_usd:
+    label: "Cost of leaving live"
+    type: economics
+    resolver: cost_of_leaving_live
+    unit: usd
+    role: economics_headline
+    caveats: "On GrowthDecisionRecord; teaching formula with LTV-at-risk."
+
+  seat_activation_rate:
+    label: "Seat activation rate"
+    type: product
+    resolver: seat_activation
+    unit: percent
+    caveats: "First trusted successful run within activation window."
+
+  steps_per_successful_task:
+    label: "Steps per successful task"
+    type: guardrail
+    resolver: steps_per_successful_task
+    unit: count
+    role: guardrail
+    caveats: "Lower is better. Baseline at 28d p50 per capability."
+
+  loop_exhaustion_rate:
+    label: "Loop exhaustion rate"
+    type: guardrail
+    resolver: loop_exhaustion_rate
+    unit: percent
+    role: guardrail
+    caveats: "Runs hitting max_loops / total runs."
+
+  outcome_confirmation_rate:
+    label: "Outcome confirmation rate"
+    type: product
+    resolver: outcome_confirmation_rate
+    unit: percent
+    role: leading
+    caveats: "Downstream write events / successful runs."
+
+  eval_score_delta:
+    label: "Eval score delta"
+    type: economics
+    resolver: eval_score_delta
+    unit: percent
+    role: signal
+    caveats: "Current eval score minus prior version score."
+
+  capability_trend_slope:
+    label: "Capability trend slope"
+    type: economics
+    resolver: capability_trend_slope
+    unit: ratio
+    role: signal
+    caveats: "Weekly drift in primary guardrail metric."
+
+    session_to_purchase_cvr:
+    label: "Session → Purchase CVR (legacy)"
     type: ratio
     numerator: purchases
     denominator: visits
     unit: percent
-    caveats: "Session-level binomial proxy; not user-level conversion."
+    caveats: "LEGACY ecomm metric; not agentic OEC."
 
-  activated_within_7d:
-    label: "Activated within 7d"
+  activation_verified_14d:
+    label: "Activation verified ≤14d"
     type: product
-    resolver: activation_7d
+    resolver: activation_verified_14d
     unit: percent
-    caveats: "First net-revenue-positive order within 7 days of signup."
+    caveats: "Share of activated accounts with first verified outcome within 14 days."
 
-  activated_within_28d:
-    label: "Activated within 28d"
-    type: product
-    resolver: activation_28d
-    unit: percent
-    caveats: "First qualifying purchase within 28 days of signup."
-
-  refund_rate_orders:
-    label: "Refund rate (orders)"
-    type: guardrail
-    resolver: refund_rate
-    unit: percent
-    caveats: "Share of orders flagged refunded in synthetic transactions."
-
-  orders_per_active_buyer:
-    label: "Orders per active buyer"
-    type: monetization
-    resolver: orders_per_buyer
-    unit: count
-    caveats: "Mean orders among customers with at least one qualifying transaction."
-
-  weekly_purchase_stickiness:
-    label: "Purchase stickiness (DAU/WAU proxy)"
-    type: engagement
-    resolver: stickiness
-    unit: ratio
-    caveats: "Purchase timestamps only—not authenticated product DAU."
-
-  signup_momentum_mom:
-    label: "Signup MoM delta"
-    type: acquisition
-    resolver: signup_momentum
-    unit: percent
-    caveats: "Latest vs prior signup cohort month in synthetic calendar."
-
-  experiment_active_count:
-    label: "Active experiments"
-    type: program
-    resolver: experiment_active
-    unit: count
-    caveats: "From session experiment registry when present."
-
-  north_star_activation_ratio:
-    label: "North Star proxy (activated / signups)"
+  delegation_ratio:
+    label: "Delegation ratio"
     type: north_star
-    resolver: north_star
+    resolver: delegation_ratio
     unit: percent
-    caveats: "Portfolio proxy combining activation and signup scale—not a production NSM."
+    caveats: "Weekly agent runs vs eligible manual tasks (teaching proxy)."
+
+  autonomy_ratio:
+    label: "Autonomy ratio"
+    type: guardrail
+    resolver: autonomy_ratio
+    unit: percent
+    caveats: "Agent-resolved / (agent + HITL approvals)."
+
+  cost_per_successful_outcome:
+    label: "Cost per successful outcome"
+    type: guardrail
+    resolver: cost_per_successful_outcome
+    unit: usd
+    caveats: "Gross run cost / verified successful outcomes."
+
+  contribution_margin_nrr:
+    label: "CM-NRR (teaching)"
+    type: economics
+    resolver: contribution_margin_nrr
+    unit: percent
+    caveats: "Contribution-margin net revenue retention on synthetic subscriptions."
+
+  outcome_success_drift:
+    label: "Outcome success drift"
+    type: signal
+    resolver: outcome_success_drift
+    unit: percent
+    caveats: "WoW verified outcome success rate change."
+
+  power_user_margin_leakage:
+    label: "Power-user margin leakage"
+    type: economics
+    resolver: power_user_margin_leakage
+    unit: usd
+
+  context_utilization_rate:
+    label: "Context window utilization"
+    type: guardrail
+    resolver: context_utilization_rate
+    unit: percent
+
+  retry_amplification_factor:
+    label: "Retry amplification factor"
+    type: guardrail
+    resolver: retry_amplification_factor
+    unit: ratio
+
+  unattributed_spend_percentage:
+    label: "Unattributed spend %"
+    type: guardrail
+    resolver: unattributed_spend_percentage
+    unit: percent
+
+  static_decision_age_median:
+    label: "Static routing decision age"
+    type: signal
+    resolver: static_decision_age_median
+    unit: days
+
+  time_to_first_production_agent:
+    label: "Time to first production agent"
+    type: signal
+    resolver: time_to_first_production_agent
+    unit: days
+
+  time_to_first_value:
+    label: "Time to first value (TTFV)"
+    type: product
+    resolver: time_to_first_value
+    unit: days
+
+  paying_but_dormant_rate:
+    label: "Paying-but-dormant rate"
+    type: revenue
+    resolver: paying_but_dormant_rate
+    unit: percent
+
+  activation_conversion_paid_success:
+    label: "Paid → first success (14d)"
+    type: product
+    resolver: activation_conversion_paid_success
+    unit: percent
+
+  first_win_definition_coverage:
+    label: "First-win definition coverage"
+    type: product
+    resolver: first_win_definition_coverage
+    unit: percent
+
+  integration_depth_score:
+    label: "Integration depth score"
+    type: retention
+    resolver: integration_depth_score
+    unit: score
+
+  rebuild_competitor_churn_share:
+    label: "Rebuild/competitor churn share"
+    type: retention
+    resolver: rebuild_competitor_churn_share
+    unit: percent
+
+  context_export_rate:
+    label: "Context export before churn"
+    type: retention
+    resolver: context_export_rate
+    unit: percent
+
+  catastrophic_event_rate:
+    label: "Catastrophic event rate"
+    type: guardrail
+    resolver: catastrophic_event_rate
+    unit: per_1k_runs
+
+  human_intervention_rate:
+    label: "Human intervention rate"
+    type: guardrail
+    resolver: human_intervention_rate
+    unit: percent
+
+  post_failure_trust_drop:
+    label: "Post-failure trust drop"
+    type: guardrail
+    resolver: post_failure_trust_drop
+    unit: points
+
+  verified_outcome_success_rate:
+    label: "Verified outcome success rate"
+    type: product
+    resolver: verified_outcome_success_rate
+    unit: percent
+
+  coordination_overhead:
+    label: "Agent coordination overhead"
+    type: guardrail
+    resolver: coordination_overhead
+    unit: percent
+
+  high_ltv_activation_path_share:
+    label: "High-LTV activation path share"
+    type: product
+    resolver: high_ltv_activation_path_share
+    unit: percent
+
+  agentic_health_score:
+    label: "Agentic health score"
+    type: north_star
+    resolver: agentic_health_score
+    unit: score

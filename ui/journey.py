@@ -1,6 +1,4 @@
-"""
-Journey chrome: breadcrumbs, related pages, workspace data contract.
-"""
+"""Journey chrome: breadcrumbs, related pages, workspace data contract."""
 
 from __future__ import annotations
 
@@ -13,56 +11,72 @@ from core.workspace import Workspace, get_workspace_from_session
 
 
 JOURNEY_PAGES: dict[str, dict[str, Any]] = {
-    "executive": {
-        "phase": "Impact",
-        "title": "Executive Summary",
-        "related": ["business_model", "lifecycle", "experimentation"],
+    "radar": {
+        "phase": "Decide",
+        "title": "Capability Risk Radar",
+        "related": ["profile", "activation", "record_inspector"],
     },
-    "business_model": {
-        "phase": "Setup",
-        "title": "Business Model",
-        "related": ["executive", "experimentation"],
+    "profile": {
+        "phase": "Configure",
+        "title": "Agentic Product Profile",
+        "related": ["radar", "semantics"],
     },
-    "lifecycle": {
+    "activation": {
         "phase": "Observe",
-        "title": "Lifecycle & NSM Proxies",
-        "tables": ["customers", "transactions", "product_events"],
-        "related": ["experimentation", "retention", "ecommerce"],
+        "title": "Activation & Habit",
+        "tables": ["seats", "runs", "product_events"],
+        "related": ["trust", "radar"],
+    },
+    "trust": {
+        "phase": "Observe",
+        "title": "Trust & Approval Health",
+        "tables": ["approvals", "runs"],
+        "related": ["activation", "run_economics"],
+    },
+    "run_economics": {
+        "phase": "Observe",
+        "title": "Run Economics",
+        "tables": ["runs", "seats"],
+        "related": ["connector", "unit_economics"],
+    },
+    "connector": {
+        "phase": "Observe",
+        "title": "Connector Blast Radius",
+        "tables": ["connector_events", "capabilities"],
+        "related": ["run_economics"],
     },
     "experimentation": {
         "phase": "Experiment",
-        "title": "Experimentation Hub",
-        "tables": ["funnel", "experiment_assignments", "experiment_outcomes"],
-        "related": ["lifecycle", "cro_program", "leakage", "unit_economics"],
+        "title": "Experimentation Court",
+        "tables": ["experiment_assignments", "experiment_outcomes"],
+        "related": ["outcome_flywheel", "record_inspector"],
+    },
+    "outcome_flywheel": {
+        "phase": "Learn",
+        "title": "Outcome Flywheel",
+        "related": ["experimentation", "retention"],
     },
     "retention": {
         "phase": "Observe",
-        "title": "Retention & Churn",
-        "tables": ["customers", "transactions"],
-        "related": ["lifecycle", "unit_economics"],
+        "title": "Seat Retention & Churn",
+        "tables": ["seats", "retention_marks"],
+        "related": ["activation", "unit_economics"],
     },
-    "leakage": {
-        "phase": "Observe",
-        "title": "Revenue Leakage",
-        "tables": ["funnel"],
-        "related": ["experimentation"],
+    "semantics": {
+        "phase": "Ontology",
+        "title": "Semantics Console",
+        "related": ["taxonomy", "concepts"],
     },
-    "cro_program": {
-        "phase": "Experiment",
-        "title": "CRO Program",
-        "related": ["experimentation"],
+    "taxonomy": {
+        "phase": "Ontology",
+        "title": "Taxonomy Browser",
+        "related": ["semantics", "record_inspector"],
     },
-    "ecommerce": {
-        "phase": "Observe",
-        "title": "E-Commerce Analytics",
-        "tables": ["transactions"],
-        "related": ["lifecycle"],
-    },
-    "mmm": {
-        "phase": "Impact",
-        "title": "Attribution & MMM",
-        "tables": ["marketing"],
-        "related": ["executive"],
+    "record_inspector": {
+        "phase": "Ontology",
+        "title": "Record Inspector",
+        "tables": ["growth_records"],
+        "related": ["radar", "outcome_flywheel"],
     },
 }
 
@@ -74,43 +88,30 @@ def render_journey_header(page_key: str) -> Workspace | None:
     title = spec.get("title", page_key)
 
     st.markdown(
-        f'<p style="font-family: JetBrains Mono; font-size: 0.7rem; color: #00f2ff; '
-        f'letter-spacing: 0.12em; margin-bottom: 0.25rem;">{phase} › {title}</p>',
+        f'<p class="mag-kicker" style="margin-bottom:0.25rem;">{phase} · {title}</p>',
         unsafe_allow_html=True,
     )
 
     ws = get_workspace_from_session(st.session_state)
-    related = spec.get("related", [])
-    if related:
-        labels = [JOURNEY_PAGES.get(k, {}).get("title", k) for k in related]
-        st.caption("Related: " + " · ".join(labels))
-
-    with st.expander("Data contract (workspace)", expanded=False):
+    with st.expander("Data contract", expanded=False):
         if ws is None:
-            st.warning("No workspace loaded. Run **Business Model** first or resync below.")
-        else:
-            st.write(f"**Seed:** `{ws.seed}` · **Built:** {ws.built_at}")
-            tables = spec.get("tables", ["customers", "transactions", "funnel", "product_events"])
-            for t in tables:
-                df = getattr(ws, t, None)
-                if df is not None and hasattr(df, "__len__"):
-                    st.write(f"- `{t}`: {len(df):,} rows")
-
+            st.caption("No workspace loaded. Configure Agentic Product Profile.")
+            return None
+        st.caption(f"Seed {ws.seed} · {ws.meta.get('data_version', '—')}")
+        for table in spec.get("tables", []):
+            df = getattr(ws, table, None)
+            if isinstance(df, pd.DataFrame):
+                st.write(f"**{table}**: {len(df):,} rows")
+        records = st.session_state.get("growth_records", [])
+        if records:
+            st.write(f"**growth_records**: {len(records)} open")
     return ws
 
 
 def require_workspace(page_key: str) -> Workspace | None:
-    """Render header and stop page if workspace missing (after model check)."""
-    ws = render_journey_header(page_key)
-    if ws is None and "model" in st.session_state:
-        if st.button("Build workspace from current model", type="primary", key=f"build_ws_{page_key}"):
-            from core.workspace import build_workspace
+    """Journey-page wrapper — delegates to workspace_banner with journey title."""
+    from ui.workspace_banner import require_workspace as _require
 
-            cfg = st.session_state.get("model_config", {})
-            seed = int(st.session_state.get("workspace_seed", 42))
-            ws_new = build_workspace(cfg, seed=seed)
-            from core.workspace import sync_workspace_to_session
-
-            sync_workspace_to_session(st.session_state, ws_new)
-            st.rerun()
-    return get_workspace_from_session(st.session_state)
+    spec = JOURNEY_PAGES.get(page_key, {})
+    title = spec.get("title", page_key.replace("_", " ").title())
+    return _require(st.session_state, page_label=title)

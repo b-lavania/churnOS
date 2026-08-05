@@ -2,995 +2,1525 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChurnOS - The Ultimate Causal Analytics Platform</title>
-    <meta name="description"
-        content="ChurnOS is a live interactive business calculator covering churn analysis, unit-economics, retention, conversion optimization, e-commerce, and marketplace pricing.">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Outfit:wght@400;700&display=swap"
-        rel="stylesheet">
-    <style>
-        :root {
-            --bg-dark: #0a0a0f;
-            --bg-card: rgba(255, 255, 255, 0.03);
-            --border-card: rgba(255, 255, 255, 0.08);
-            --primary: #8b5cf6;
-            --secondary: #ec4899;
-            --accent: #3b82f6;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>churnOS: Ship, throttle, or kill agent accounts &amp; capabilities</title>
+  <meta name="description"
+    content="For agentic product teams. See which accounts and capabilities to ship, throttle, or kill, ranked by cost of leaving them live. Try the live demo.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --ink: #0f1112;
+      --ink-mid: #3a3f45;
+      --ink-soft: #5c6370;
+      --ink-light: #8b92a0;
+      --rule: #e8eaed;
+      --teal: #0a5a46;
+      --teal-light: #f1f8f6;
+      --teal-mid: #1d9e75;
+      --amber: #ba7517;
+      --amber-light: #fdf6ec;
+      --blue: #185fa5;
+      --blue-light: #f0f7ff;
+      --page: #faf9f7;
+      --white: #ffffff;
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.02), 0 10px 15px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.04), 0 20px 48px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
+      --radius: 0px;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            line-height: 1.6;
-            overflow-x: hidden;
-        }
+    html {
+      background: var(--page);
+      scroll-behavior: smooth;
+    }
 
-        h1,
-        h2,
-        h3,
-        h4 {
-            font-family: 'Outfit', sans-serif;
-            font-weight: 700;
-        }
+    body {
+      font-family: var(--sans);
+      font-size: 19px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--page);
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 80px 40px 120px;
+      -webkit-font-smoothing: antialiased;
+    }
 
-        /* Abstract Background Elements */
-        .bg-glow {
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(10, 10, 15, 0) 70%);
-            border-radius: 50%;
-            z-index: -1;
-            filter: blur(60px);
-            animation: float 10s infinite ease-in-out alternate;
-        }
+    a {
+      color: var(--blue);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
 
-        .bg-glow.top-left {
-            top: -200px;
-            left: -200px;
-        }
+    a:hover {
+      color: var(--teal);
+    }
 
-        .bg-glow.bottom-right {
-            bottom: -200px;
-            right: -200px;
-            background: radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, rgba(10, 10, 15, 0) 70%);
-            animation-delay: -5s;
-        }
+    .skip-link {
+      position: absolute;
+      top: -100px;
+      left: 20px;
+      background: var(--teal);
+      color: var(--white);
+      padding: 12px 24px;
+      z-index: 100;
+    }
 
-        @keyframes float {
-            0% {
-                transform: translate(0, 0);
-            }
+    .skip-link:focus {
+      top: 20px;
+    }
 
-            100% {
-                transform: translate(50px, 50px);
-            }
-        }
+    h1,
+    h2,
+    h3 {
+      font-family: var(--sans);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      color: var(--ink);
+    }
 
-        /* Navbar */
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 2rem 5%;
-            backdrop-filter: blur(10px);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 100;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
+    h1 {
+      font-size: 58px;
+      margin-bottom: 24px;
+    }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
-        }
+    h1 em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--teal);
+    }
 
-        .nav-links a {
-            color: var(--text-main);
-            text-decoration: none;
-            margin-left: 2rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            transition: color 0.3s ease;
-        }
+    h2 {
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
 
-        .nav-links a:hover {
-            color: var(--primary);
-        }
+    .kicker {
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 16px;
+      display: block;
+    }
 
-        /* Hero Section */
-        .hero {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding: 12rem 5% 6rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        .hero-badge {
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            color: #d8b4fe;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            letter-spacing: 0.5px;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
-        }
+    .subhead {
+      font-size: 20px;
+      color: var(--ink-mid);
+      margin-bottom: 16px;
+      max-width: 800px;
+      line-height: 1.5;
+    }
 
-        .hero h1 {
-            font-size: 4.5rem;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -2px;
-        }
+    .subhead-secondary {
+      font-size: 17px;
+      color: var(--ink-soft);
+      max-width: 760px;
+      line-height: 1.55;
+      margin-bottom: 0;
+    }
 
-        .hero p {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            margin-bottom: 2.5rem;
-            max-width: 750px;
-        }
+    .section-intro {
+      color: var(--ink-mid);
+      font-size: 17px;
+      line-height: 1.55;
+      max-width: 760px;
+      margin-bottom: 28px;
+    }
 
-        .cta-buttons {
-            display: flex;
-            gap: 1rem;
-        }
+    .section-closer {
+      color: var(--ink-mid);
+      font-size: 17px;
+      font-style: italic;
+      margin-top: 28px;
+      max-width: 680px;
+    }
 
-        .btn {
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
+    header {
+      margin-bottom: 64px;
+      position: relative;
+    }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            box-shadow: 0 10px 20px -10px rgba(139, 92, 246, 0.5);
-        }
+    .hero-layout {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 64px;
+      align-items: start;
+    }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 25px -10px rgba(139, 92, 246, 0.7);
-        }
+    .contact-card {
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-lg);
+      position: sticky;
+      top: 40px;
+    }
 
-        .btn-secondary {
-            background: transparent;
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+    .contact-name {
+      font-family: var(--sans);
+      font-size: 21px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.15;
+    }
 
-        .btn-secondary:hover {
-            border-color: white;
-            background: rgba(255, 255, 255, 0.05);
-        }
+    .contact-seeking {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-bottom: 10px;
+      line-height: 1.45;
+    }
 
-        /* Dashboard Mockup */
-        .dashboard-preview {
-            max-width: 1200px;
-            margin: 0 auto 8rem;
-            padding: 0 5%;
-            perspective: 1000px;
-        }
+    .contact-card .btn-group {
+      margin-top: 14px;
+      gap: 8px;
+    }
 
-        .dashboard-img {
-            width: 100%;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
-            transform: rotateX(5deg) scale(0.95);
-            transition: transform 0.5s ease;
-        }
+    .contact-card .btn {
+      padding: 9px 12px;
+      font-size: 14px;
+    }
 
-        .dashboard-preview:hover .dashboard-img {
-            transform: rotateX(0deg) scale(1);
-        }
+    .btn-group {
+      display: flex;
+      gap: 12px;
+    }
 
-        /* Features Section */
-        .features {
-            padding: 5rem 5%;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+    .btn {
+      display: inline-block;
+      padding: 12px 20px;
+      border-radius: 0;
+      font-weight: 500;
+      font-size: 15px;
+      text-decoration: none;
+      text-align: center;
+      flex: 1;
+    }
 
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 4rem;
-        }
+    .btn-primary {
+      background: linear-gradient(to bottom, var(--teal), #084838);
+      color: var(--white);
+      border: 1px solid #063a2e;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
 
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 2rem;
-        }
+    .btn-primary:hover {
+      background: linear-gradient(to bottom, #128265, var(--teal));
+      border-color: #084838;
+      color: var(--white);
+    }
 
-        .feature-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: 20px;
-            padding: 2.5rem;
-            backdrop-filter: blur(10px);
-            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
-            transform: skewX(-20deg);
-            transition: left 0.5s ease;
-        }
+    .btn-secondary {
+      background: linear-gradient(to bottom, #ffffff, #f4f4f2);
+      color: var(--ink);
+      border: 1px solid var(--rule);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), inset 0 1px 0 #fff;
+    }
 
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(139, 92, 246, 0.5);
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
-        }
-        
-        .feature-card:hover::before {
-            left: 200%;
-        }
+    .btn-secondary:hover {
+      border-color: var(--ink-light);
+      background: #fcfcfb;
+      color: var(--ink);
+    }
 
-        .feature-icon {
-            width: 50px;
-            height: 50px;
-            background: rgba(139, 92, 246, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-            color: var(--primary);
-        }
+    .who-section {
+      margin-bottom: 80px;
+      padding-bottom: 64px;
+      border-bottom: 2px solid var(--rule);
+    }
 
-        .feature-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-            background: linear-gradient(to right, #fff, #a5b4fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+    .what-if-section {
+      margin-bottom: 80px;
+      padding-bottom: 64px;
+      border-bottom: 2px solid var(--rule);
+    }
 
-        .feature-card p {
-            color: var(--text-muted);
-            font-size: 1rem;
-            margin-bottom: 1.5rem;
-            flex-grow: 1;
-        }
+    .what-if-section .work-principles {
+      margin-bottom: 8px;
+    }
 
-        .feature-details {
-            margin-top: auto;
-            padding-top: 1.5rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
+    .what-if-section .principle-num {
+      color: var(--teal);
+    }
 
-        .detail-group {
-            margin-bottom: 0;
-        }
+    .persona-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 8px;
+    }
 
-        .detail-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--primary);
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
+    .persona-card {
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+    }
 
-        .detail-list {
-            list-style: none;
-        }
+    .persona-role {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--ink);
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
 
-        .detail-list li {
-            position: relative;
-            padding-left: 1.25rem;
-            font-size: 0.85rem;
-            color: #cbd5e1;
-            margin-bottom: 0.5rem;
-        }
+    .persona-pain {
+      font-size: 15px;
+      color: var(--ink-mid);
+      line-height: 1.55;
+    }
 
-        .detail-list li::before {
-            content: '▹';
-            position: absolute;
-            left: 0;
-            color: var(--secondary);
-            font-size: 0.9rem;
-        }
+    .narrative {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      margin-bottom: 80px;
+    }
 
-        .feature-why {
-            grid-column: 1 / -1;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 1.25rem;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            border-left: 4px solid var(--accent);
-            color: #f1f5f9;
-            margin-top: 0.5rem;
-        }
+    .narrative h2 {
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 16px;
+      margin-bottom: 32px;
+    }
 
-        .feature-why strong {
-            color: white;
-            display: block;
-            margin-bottom: 0.25rem;
-        }
+    .narrative p {
+      color: var(--ink-mid);
+      font-size: 17px;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
 
-        /* Simulation Banner */
-        .simulation-banner {
-            margin: 8rem 5%;
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 30px;
-            padding: 5rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
+    .systems {
+      margin-bottom: 80px;
+    }
 
-        .simulation-banner::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=');
-            z-index: 0;
-        }
+    .demo-path {
+      margin-bottom: 80px;
+      padding-bottom: 64px;
+      border-bottom: 2px solid var(--rule);
+    }
 
-        .simulation-content {
-            position: relative;
-            z-index: 1;
-        }
+    .demo-path h2 {
+      margin-bottom: 12px;
+    }
 
-        .simulation-content h2 {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
-        }
+    .systems-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+    }
 
-        .simulation-content p {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            max-width: 600px;
-            margin: 0 auto 2rem;
-        }
+    .sys-card {
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: var(--shadow-md);
+    }
 
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 3rem 5%;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-        
-        /* Scroll Animations */
-        .reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s ease-out;
-        }
-        
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    .sys-tag {
+      font-family: var(--mono);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
 
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 3rem;
-            }
+    .sys-teal .sys-tag {
+      color: var(--teal);
+    }
 
-            .nav-links {
-                display: none;
-            }
+    .sys-amber .sys-tag {
+      color: var(--amber);
+    }
 
-            .simulation-banner {
-                padding: 3rem 2rem;
-            }
+    .sys-blue .sys-tag {
+      color: var(--blue);
+    }
 
-            .simulation-content h2 {
-                font-size: 2rem;
-            }
+    .sys-title {
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1.3;
+    }
 
-            .feature-details {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-            .stats-bar { gap: 1rem; }
-            .stat-pill { min-width: 130px; padding: 1rem 1.25rem; }
-            .about-builder { padding: 3rem 2rem; }
-            .about-builder h2 { font-size: 2rem; }
-        }
+    .sys-desc {
+      font-size: 15px;
+      color: var(--ink-mid);
+      line-height: 1.6;
+    }
 
-        /* Nav GitHub Button */
-        .btn-nav-github {
-            padding: 0.45rem 1.1rem;
-            background: rgba(139, 92, 246, 0.1);
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 50px;
-            color: #d8b4fe !important;
-            font-size: 0.85rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .btn-nav-github:hover {
-            background: rgba(139, 92, 246, 0.22);
-            border-color: rgba(139, 92, 246, 0.6);
-            color: white !important;
-        }
+    .how-i-work {
+      margin-bottom: 64px;
+    }
 
-        /* Stats Bar */
-        .stats-bar {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-            padding: 0 5%;
-            max-width: 900px;
-            margin: -1rem auto 5rem;
-        }
-        .stat-pill {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: rgba(139, 92, 246, 0.07);
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            border-radius: 16px;
-            padding: 1.25rem 2rem;
-            min-width: 160px;
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.07);
-        }
-        .stat-num {
-            font-family: 'Outfit', sans-serif;
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1;
-            margin-bottom: 0.25rem;
-        }
-        .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
+    .how-i-work h2 {
+      margin-bottom: 28px;
+    }
 
-        /* Tech Strip */
-        .tech-strip {
-            text-align: center;
-            padding: 3rem 5% 1rem;
-            max-width: 860px;
-            margin: 0 auto;
-        }
-        .tech-strip-label {
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--text-muted);
-            margin-bottom: 1.25rem;
-            font-weight: 600;
-        }
-        .tech-pills {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.65rem;
-        }
-        .tech-pill {
-            padding: 0.45rem 1.1rem;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50px;
-            font-size: 0.88rem;
-            color: #cbd5e1;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        .tech-pill:hover {
-            border-color: var(--primary);
-            color: #d8b4fe;
-            background: rgba(139, 92, 246, 0.08);
-            box-shadow: 0 0 12px rgba(139, 92, 246, 0.15);
-        }
+    .work-principles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
 
-        /* About Builder */
-        .about-builder {
-            margin: 3rem 5% 6rem;
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.07), rgba(236, 72, 153, 0.07));
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 30px;
-            padding: 5rem;
-            text-align: center;
-        }
-        .about-eyebrow {
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            color: var(--primary);
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-        .about-builder h2 {
-            font-size: 3rem;
-            background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 1.25rem;
-        }
-        .about-bio {
-            color: var(--text-muted);
-            font-size: 1.05rem;
-            max-width: 620px;
-            margin: 0 auto 1.75rem;
-            line-height: 1.75;
-        }
-        .about-tags {
-            display: flex;
-            justify-content: center;
-            gap: 0.65rem;
-            flex-wrap: wrap;
-            margin-bottom: 2.25rem;
-        }
-        .about-tag {
-            padding: 0.38rem 1rem;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50px;
-            font-size: 0.82rem;
-            color: #a5b4fc;
-            font-weight: 600;
-        }
-        .about-links {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-    </style>
+    .principle {
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .principle-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-light);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .principle-title {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--ink);
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .principle-desc {
+      font-size: 14px;
+      color: var(--ink-mid);
+      line-height: 1.6;
+    }
+
+    .honesty-chip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      align-items: baseline;
+      padding: 0.85rem 1rem;
+      margin-top: 24px;
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .honesty-chip-kicker {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      white-space: nowrap;
+    }
+
+    .honesty-chip-body {
+      font-size: 14px;
+      color: var(--ink-mid);
+      line-height: 1.45;
+      flex: 1 1 16rem;
+    }
+
+    .close-section .honesty-chip {
+      margin-top: 16px;
+      margin-bottom: 0;
+      max-width: 560px;
+    }
+
+    .table-container {
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 40px;
+      margin-bottom: 64px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .table-container .section-intro {
+      margin-bottom: 32px;
+    }
+
+    .outcome-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .outcome-table th {
+      font-family: var(--mono);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--ink-light);
+      text-align: left;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    .outcome-table td {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--rule);
+      font-size: 17px;
+    }
+
+    .td-metric {
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .td-before {
+      color: var(--ink-soft);
+    }
+
+    .td-after {
+      color: var(--teal);
+      font-weight: 700;
+    }
+
+    .close-section {
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .close-section h2 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .close-section h2 em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--teal);
+    }
+
+    .close-section p {
+      color: var(--ink-mid);
+      font-size: 16px;
+      margin-bottom: 8px;
+      max-width: 560px;
+    }
+
+    .close-section .install-hint {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink-light);
+      margin-bottom: 0;
+    }
+
+    .cta-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .btn-cta {
+      display: inline-block;
+      background: linear-gradient(to bottom, var(--teal), #084838);
+      color: var(--white);
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px 24px;
+      border-radius: 0;
+      text-decoration: none;
+      text-align: center;
+      box-shadow: 0 2px 2px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-cta:hover {
+      background: linear-gradient(to bottom, #128265, var(--teal));
+      color: var(--white);
+    }
+
+    .btn-cta-secondary {
+      display: inline-block;
+      background: linear-gradient(to bottom, #ffffff, #f4f4f2);
+      color: var(--ink);
+      font-weight: 500;
+      font-size: 14px;
+      padding: 10px 18px;
+      border: 1px solid var(--rule);
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .btn-cta-secondary:hover {
+      border-color: var(--ink-light);
+      color: var(--ink);
+    }
+
+    footer {
+      margin-top: 48px;
+      padding-top: 64px;
+      border-top: 1px solid var(--rule);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .footer-left {
+      max-width: 500px;
+    }
+
+    .footer-tag {
+      font-family: var(--sans);
+      font-style: italic;
+      font-size: 20px;
+      color: var(--ink-soft);
+    }
+
+    .footer-right {
+      font-size: 14px;
+      color: var(--ink-light);
+      text-align: right;
+    }
+
+    /* Radar preview */
+    .radar-section {
+      margin-bottom: 80px;
+      padding-bottom: 64px;
+      border-bottom: 2px solid var(--rule);
+    }
+
+    .radar-preview {
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      box-shadow: var(--shadow-lg);
+      padding: 28px 32px 32px;
+      margin-top: 28px;
+    }
+
+    .radar-masthead {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .radar-masthead-kicker {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 6px;
+    }
+
+    .radar-masthead-title {
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--ink);
+      margin-bottom: 4px;
+      line-height: 1.2;
+    }
+
+    .radar-masthead-deck {
+      font-size: 14px;
+      color: var(--ink-soft);
+      line-height: 1.45;
+    }
+
+    .radar-preview .honesty-chip {
+      margin-top: 20px;
+      margin-bottom: 0;
+    }
+
+    .health-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 32px;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .health-gauge-wrap {
+      text-align: center;
+    }
+
+    .health-gauge {
+      --gauge-value: 62;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: conic-gradient(var(--amber) calc(var(--gauge-value) * 3.6deg), var(--rule) 0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px;
+    }
+
+    .health-gauge-inner {
+      width: 92px;
+      height: 92px;
+      background: var(--white);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 0 1px var(--rule);
+    }
+
+    .health-gauge-score {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .health-gauge-band {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-top: 4px;
+    }
+
+    .health-gauge-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-soft);
+      letter-spacing: 0.05em;
+    }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .metric-cell {
+      padding: 12px 14px;
+      background: var(--page);
+      border: 1px solid var(--rule);
+    }
+
+    .metric-cell-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 6px;
+    }
+
+    .metric-cell-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.2;
+    }
+
+    .tab-radar input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tab-radar-nav {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--rule);
+      margin-bottom: 24px;
+    }
+
+    .tab-radar-nav label {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 12px 20px;
+      cursor: pointer;
+      color: var(--ink-soft);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color 0.15s;
+    }
+
+    .tab-radar-nav label:hover {
+      color: var(--ink);
+    }
+
+    #tab-accounts:checked ~ .tab-radar-nav label[for="tab-accounts"],
+    #tab-caps:checked ~ .tab-radar-nav label[for="tab-caps"] {
+      color: var(--teal);
+      border-bottom-color: var(--teal);
+      font-weight: 500;
+    }
+
+    .tab-radar-panel {
+      display: none;
+    }
+
+    #tab-accounts:checked ~ .panel-accounts,
+    #tab-caps:checked ~ .panel-caps {
+      display: block;
+    }
+
+    .tornado-chart {
+      margin-bottom: 24px;
+    }
+
+    .tornado-axis-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-light);
+      text-align: right;
+      margin-top: 8px;
+      letter-spacing: 0.04em;
+    }
+
+    .tornado-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 72px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+
+    .tornado-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-mid);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tornado-bar-track {
+      height: 20px;
+      background: var(--page);
+      border: 1px solid var(--rule);
+      position: relative;
+    }
+
+    .tornado-bar {
+      height: 100%;
+      background: var(--amber);
+      min-width: 4px;
+    }
+
+    .tornado-cost {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-soft);
+      text-align: right;
+    }
+
+    .decision-card {
+      background: var(--page);
+      border: 2px solid var(--rule);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .decision-card .verdict {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .verdict--leaking {
+      color: var(--amber);
+    }
+
+    .verdict--destructive {
+      color: #a32a2a;
+    }
+
+    .verdict--healthy {
+      color: var(--teal);
+    }
+
+    .decision-card .cap {
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .decision-card .evidence {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-bottom: 8px;
+    }
+
+    .decision-card .gloss {
+      font-size: 14px;
+      color: var(--ink-mid);
+      font-style: italic;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .decision-card .rationale {
+      font-size: 14px;
+      color: var(--ink-mid);
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .decision-card .cost {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--teal);
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+
+    .decision-card .cost-label {
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-bottom: 14px;
+    }
+
+    .evidence-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .chip {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 4px 10px;
+      background: var(--white);
+      border: 1px solid var(--rule);
+      color: var(--ink-mid);
+    }
+
+    .decision-card .action {
+      padding-top: 16px;
+      border-top: 1px solid var(--rule);
+      font-size: 15px;
+      color: var(--ink-mid);
+      line-height: 1.5;
+    }
+
+    .decision-card .action strong {
+      color: var(--teal);
+    }
+
+    .verdict-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 24px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--rule);
+      font-size: 13px;
+      color: var(--ink-mid);
+      line-height: 1.45;
+    }
+
+    .verdict-legend-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .verdict-legend span strong {
+      font-weight: 600;
+    }
+
+    .verdict-legend .verdict--leaking,
+    .verdict-legend .verdict--destructive,
+    .verdict-legend .verdict--healthy {
+      font-weight: 600;
+    }
+
+    .preview-cta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px 24px;
+      margin-top: 28px;
+    }
+
+    .preview-cta .btn-cta {
+      flex-shrink: 0;
+    }
+
+    .preview-cta-link {
+      font-size: 15px;
+    }
+
+    .narrative-pointer {
+      font-size: 15px;
+      color: var(--ink-soft);
+      font-style: italic;
+      margin-top: 16px;
+      padding: 16px 20px;
+      background: var(--teal-light);
+      border-left: 3px solid var(--teal);
+      line-height: 1.5;
+    }
+
+    @media (max-width: 960px) {
+      body {
+        padding: 40px 24px;
+      }
+
+      .hero-layout {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      .contact-card {
+        position: static;
+        width: 100%;
+      }
+
+      .persona-grid,
+      .narrative,
+      .systems-grid,
+      .work-principles {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      h1 {
+        font-size: 44px;
+      }
+
+      .close-section {
+        padding: 28px 24px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 24px;
+      }
+
+      .footer-right {
+        text-align: left;
+      }
+
+      .health-row {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .metric-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .tab-radar-nav {
+        flex-direction: column;
+      }
+
+      .tab-radar-nav label {
+        width: 100%;
+        text-align: left;
+      }
+
+      .tornado-row {
+        grid-template-columns: 100px 1fr 60px;
+        gap: 8px;
+      }
+
+      .preview-cta {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
 
-    <div class="bg-glow top-left"></div>
-    <div class="bg-glow bottom-right"></div>
-
-    <nav>
-        <div class="logo">ChurnOS</div>
-        <div class="nav-links">
-            <a href="#features">Features</a>
-            <a href="https://github.com/b-lavania/churnOS" target="_blank" class="btn-nav-github">GitHub ↗</a>
+  <main id="main">
+    <header>
+      <div class="hero-layout">
+        <div class="hero-main">
+          <span class="kicker">For agentic product teams</span>
+          <h1>churn<em>OS</em></h1>
+          <p class="subhead">See which <strong>accounts</strong> and <strong>capabilities</strong> to ship, throttle, or
+            kill, ranked by what it costs to leave them live.</p>
+          <p class="subhead-secondary">Built for teams shipping assistants, workspace agents, and ops automations, not
+            another success-rate dashboard.</p>
         </div>
-    </nav>
-
-    <section class="hero reveal active">
-        <div class="hero-badge">Product Analytics &amp; Conversion Revenue Optimization Platform</div>
-        <h1>The Ultimate Causal Analytics Platform</h1>
-        <p>A full-stack product analytics and CRO platform built with Streamlit, PyMC, SciPy, and Plotly. Quantify revenue leakage, run Bayesian A/B tests, forecast conversion impact, and manage your entire experimentation program — with every variable causally connected to your P&amp;L.</p>
-        <div class="cta-buttons">
-            <a href="https://github.com/b-lavania/churnOS" target="_blank" class="btn btn-primary">View on GitHub ↗</a>
-            <a href="#features" class="btn btn-secondary">Explore Features</a>
+        <div class="contact-card">
+          <div class="contact-name">Try it now</div>
+          <div class="contact-seeking">
+            Open-source demo toolkit, no install required. Pick a product shape, generate sample data, and Radar fills
+            with both account and capability decisions in under a minute.
+          </div>
+          <div class="btn-group">
+            <a href="https://churnos.xblavania.workers.dev/profile" class="btn btn-primary" target="_blank"
+              rel="noopener">Live demo</a>
+            <a href="https://github.com/b-lavania/churnOS" class="btn btn-secondary" target="_blank"
+              rel="noopener">GitHub</a>
+          </div>
         </div>
+      </div>
+    </header>
+
+    <section class="radar-section" id="preview">
+      <span class="kicker">Weekly meeting, rendered</span>
+      <h2>What your agent review could look like</h2>
+      <p class="section-intro">Each row is a decision: what's wrong, what it may cost to leave live, and what to do.
+        Numbers come from the synthetic workspace (teaching data, not production telemetry).</p>
+
+      <div class="radar-preview" aria-label="Static preview of the Radar screen">
+        <div class="radar-masthead">
+          <div class="radar-masthead-kicker">Capability Risk Radar</div>
+          <div class="radar-masthead-title">What to ship, throttle, or kill</div>
+          <div class="radar-masthead-deck">Ranked decisions priced by cost of leaving live.</div>
+        </div>
+
+        <div class="health-row">
+          <div class="health-gauge-wrap">
+            <div class="health-gauge" style="--gauge-value: 62" aria-hidden="true">
+              <div class="health-gauge-inner">
+                <span class="health-gauge-score">62</span>
+                <span class="health-gauge-band">Yellow</span>
+              </div>
+            </div>
+            <div class="health-gauge-label">Agentic Health</div>
+          </div>
+          <div class="metric-strip">
+            <div class="metric-cell">
+              <div class="metric-cell-label">Health score</div>
+              <div class="metric-cell-value">62 (yellow)</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-cell-label">CPSO</div>
+              <div class="metric-cell-value">$0.42</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-cell-label">TTFV</div>
+              <div class="metric-cell-value">4.2d</div>
+            </div>
+            <div class="metric-cell">
+              <div class="metric-cell-label">Unattributed</div>
+              <div class="metric-cell-value">18%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-radar">
+          <input type="radio" name="radar-tab" id="tab-accounts" checked>
+          <input type="radio" name="radar-tab" id="tab-caps">
+          <div class="tab-radar-nav">
+            <label for="tab-accounts">Accounts at risk</label>
+            <label for="tab-caps">Capabilities to act on</label>
+          </div>
+
+          <div class="tab-radar-panel panel-accounts">
+            <div class="tornado-chart" aria-hidden="true">
+              <div class="tornado-row">
+                <span class="tornado-label">ACC · acme_west</span>
+                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 100%"></div></div>
+                <span class="tornado-cost">$84,200</span>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">ACC · globex_ops</span>
+                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 73%"></div></div>
+                <span class="tornado-cost">$61,500</span>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">ACC · initech_ai</span>
+                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 53%"></div></div>
+                <span class="tornado-cost">$44,800</span>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">ACC · umbra_corp</span>
+                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 37%"></div></div>
+                <span class="tornado-cost">$31,200</span>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">ACC · wayne_labs</span>
+                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 22%"></div></div>
+                <span class="tornado-cost">$18,900</span>
+              </div>
+              <div class="tornado-axis-label">Cost of leaving live (USD)</div>
+            </div>
+            <article class="decision-card" aria-hidden="true">
+              <div class="verdict verdict--leaking">Account · Leaking</div>
+              <div class="cap">acme_west</div>
+              <div class="evidence">3 exceptions · activation_leak, habit_collapse</div>
+              <p class="gloss">Activation or habit problems: value unfinished for many seats.</p>
+              <p class="rationale">Paying seats never hit weekly delegation; habit collapse correlates with churn on
+                this seed.</p>
+              <div class="cost">$84,200</div>
+              <div class="cost-label">Cost of leaving live</div>
+              <div class="evidence-chips">
+                <span class="chip">activation_leak 52%</span>
+                <span class="chip">habit_collapse 31%</span>
+                <span class="chip">approval_fatigue 17%</span>
+              </div>
+              <div class="action">Recommended: <strong>Throttle</strong>: Cap % traffic, rate, or tool budget.</div>
+            </article>
+          </div>
+
+          <div class="tab-radar-panel panel-caps">
+            <div class="tornado-chart" aria-hidden="true">
+              <div class="tornado-row">
+                <span class="tornado-label">CAP · inbox_triage</span>
+                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 100%"></div></div>
+                <span class="tornado-cost">$48,200</span>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">CAP · crm_sync</span>
+                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 81%"></div></div>
+                <span class="tornado-cost">$39,100</span>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">CAP · doc_summarize</span>
+                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 57%"></div></div>
+                <span class="tornado-cost">$27,600</span>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">CAP · approval_router</span>
+                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 40%"></div></div>
+                <span class="tornado-cost">$19,400</span>
+              </div>
+              <div class="tornado-row">
+                <span class="tornado-label">CAP · slack_digest</span>
+                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 27%"></div></div>
+                <span class="tornado-cost">$12,800</span>
+              </div>
+              <div class="tornado-axis-label">Cost of leaving live (USD)</div>
+            </div>
+            <article class="decision-card" aria-hidden="true">
+              <div class="verdict verdict--leaking">Capability · Leaking</div>
+              <div class="cap">inbox_triage</div>
+              <div class="evidence">2 exceptions · activation_leak, approval_fatigue</div>
+              <p class="gloss">Activation or habit problems: value unfinished for many seats.</p>
+              <p class="rationale">Seats activate but stop delegating weekly; habit collapse correlates with churn on
+                this seed.</p>
+              <div class="cost">$48,200</div>
+              <div class="cost-label">Cost of leaving live</div>
+              <div class="evidence-chips">
+                <span class="chip">activation_leak 58%</span>
+                <span class="chip">approval_fatigue 42%</span>
+              </div>
+              <div class="action">Recommended: <strong>Throttle</strong>: Cap % traffic, rate, or tool budget.</div>
+            </article>
+          </div>
+        </div>
+
+        <div class="verdict-legend" aria-hidden="true">
+          <span class="verdict-legend-title">What the labels mean</span>
+          <span><strong class="verdict--leaking">Leaking</strong>: activation/habit unfinished</span>
+          <span><strong class="verdict--destructive">Destructive</strong>: correlates with churn; throttle or rollback</span>
+          <span><strong style="color: var(--amber)">Uneconomic</strong>: margin-negative even if UX looks fine</span>
+          <span><strong class="verdict--healthy">Healthy</strong>: safe to keep shipping</span>
+        </div>
+
+        <div class="honesty-chip">
+          <span class="honesty-chip-kicker">Synthetic demo</span>
+          <span class="honesty-chip-body">Teaching warehouse and authored priors, not production telemetry.</span>
+        </div>
+      </div>
+
+      <div class="preview-cta">
+        <a href="https://churnos.xblavania.workers.dev/profile" class="btn-cta" target="_blank" rel="noopener">Open live
+          demo →</a>
+        <a href="https://churnos.xblavania.workers.dev/radar" class="preview-cta-link" target="_blank" rel="noopener">Already
+          generated? Jump to Radar →</a>
+      </div>
     </section>
 
-    <div class="stats-bar reveal">
-        <div class="stat-pill"><span class="stat-num">11</span><span class="stat-label">Analytics Modules</span></div>
-        <div class="stat-pill"><span class="stat-num">7</span><span class="stat-label">Statistical Methods</span></div>
-        <div class="stat-pill"><span class="stat-num">2,100+</span><span class="stat-label">Lines of Analytics Logic</span></div>
-        <div class="stat-pill"><span class="stat-num">Bayesian</span><span class="stat-label">A/B Testing</span></div>
-    </div>
-
-    <div class="dashboard-preview reveal">
-        <img src="assets/mockup.png" alt="ChurnOS Dashboard Mockup" class="dashboard-img">
-    </div>
-
-    <section id="features" class="features">
-        <h2 class="section-title reveal">Powerful Simulation Modules</h2>
-        <div class="features-grid">
-        
-            <div class="feature-card reveal">
-                <div class="feature-icon">🧠</div>
-                <h3>Causal Business Modeling</h3>
-                <p>A centralized engine linking CAC, churn, and AOV directly to your lifetime profitability and bottom line.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Simulation Inputs</span>
-                        <ul class="detail-list">
-                            <li>Blended CAC & Base Churn</li>
-                            <li>Average Order Value (AOV)</li>
-                            <li>Gross Margin %</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>LTV to CAC Sensitivity Matrix</li>
-                            <li>Executive Summary Dashboard</li>
-                            <li>Global Causal Graph</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        Directed acyclic graph (DAG) architecture links every input to outputs via deterministic causal chains, not correlations. Changing one parameter propagates through the entire model in real time.
-                    </div>
-                </div>
-            </div>
-
-            <div class="feature-card reveal">
-                <div class="feature-icon">🔮</div>
-                <h3>Bayesian Attribution (MMM)</h3>
-                <p>PyMC-based Marketing Mix Modeling (MMM) for true causal insights into your advertising spend and ROI.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Simulation Inputs</span>
-                        <ul class="detail-list">
-                            <li>Ad Spend per Channel</li>
-                            <li>Adstock Decay Parameters</li>
-                            <li>Saturation Coefficients</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>Diminishing Returns Curves</li>
-                            <li>Causal Spend Effectiveness</li>
-                            <li>Budget Optimization Scenarios</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        PyMC probabilistic model with adstock decay (geometric/Weibull) and Hill saturation curves. Posterior sampling via MCMC quantifies budget uncertainty, far beyond deterministic attribution.
-                    </div>
-                </div>
-            </div>
-
-            <div class="feature-card reveal">
-                <div class="feature-icon">🛒</div>
-                <h3>E-Commerce & RFM Analysis</h3>
-                <p>Advanced segmentation and inventory volatility modeling explicitly designed for modern D2C storefronts.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Simulation Inputs</span>
-                        <ul class="detail-list">
-                            <li>Refund Rate Volatility</li>
-                            <li>Unit COGS & Shipping</li>
-                            <li>Time-since-last-purchase</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>RFM Customer Segments</li>
-                            <li>Inventory Impact on Margin</li>
-                            <li>Repurchase Propensity</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        RFM scoring with recency-weighted segmentation. Inventory volatility is modeled as a margin shock propagated causally through the DAG: directly surfacing the P&L impact of supply disruptions.
-                    </div>
-                </div>
-            </div>
-            
-            <div class="feature-card reveal">
-                <div class="feature-icon">🌊</div>
-                <h3>Marketplace Liquidity</h3>
-                <p>Model the delicate balance of supply vs demand health and stimulate network effect flywheels.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Simulation Inputs</span>
-                        <ul class="detail-list">
-                            <li>Buyer-to-Seller Ratios</li>
-                            <li>Cross-Side Network Params</li>
-                            <li>Platform Subsidy %</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>Liquidity Health Metrics</li>
-                            <li>Network Effect Value Growth</li>
-                            <li>Subsidy Burn Rate Impact</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        Cross-side network effects modeled with Metcalfe's Law variants. Liquidity score derived from buyer-to-seller ratio dynamics, with cold-start subsidy optimization surfaced in real time.
-                    </div>
-                </div>
-            </div>
-
-            <div class="feature-card reveal">
-                <div class="feature-icon">📉</div>
-                <h3>Churn Analysis</h3>
-                <p>A comprehensive diagnostic suite for understanding customer attrition before it impacts your bottom line.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Simulation Inputs</span>
-                        <ul class="detail-list">
-                            <li>Base churn multiplier</li>
-                            <li>Premium segment mix (%)</li>
-                            <li>'Subscribe & Save' adoption</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>Kaplan-Meier survival curves</li>
-                            <li>Revenue vs Logo churn</li>
-                            <li>Random Forest Churn Drivers</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        Kaplan-Meier non-parametric survival estimator with log-rank hypothesis tests. Random Forest feature importances identify top churn drivers, without assuming proportional hazards.
-                    </div>
-                </div>
-            </div>
-
-            <div class="feature-card reveal">
-                <div class="feature-icon">🔁</div>
-                <h3>Retention & Unit Economics</h3>
-                <p>The ultimate LTV:CAC dashboard linking acquisition costs directly to long-term profitability.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Simulation Inputs</span>
-                        <ul class="detail-list">
-                            <li>Average Order Value (AOV)</li>
-                            <li>Refund Rates & COGS</li>
-                            <li>Blended CAC</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>Cohort heatmaps (Day-N)</li>
-                            <li>True Margin CLV</li>
-                            <li>Live LTV:CAC Ratio tracking</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        Cohort heatmaps built from first-purchase date bucketing. CLV uses margin-adjusted discounted cash flow across the simulated survival curve, not naive revenue multiples.
-                    </div>
-                </div>
-            </div>
-
-            <div class="feature-card reveal">
-                <div class="feature-icon">⚡</div>
-                <h3>Conversion Optimization</h3>
-                <p>Identify and plug the exact leaks in your user journey from first visit to final purchase.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Simulation Inputs</span>
-                        <ul class="detail-list">
-                            <li>Total session volume (N)</li>
-                            <li>Step-by-step dropoff</li>
-                            <li>'Free Shipping' threshold</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>Visit-to-Purchase funnels</li>
-                            <li>Segmented conversion rates</li>
-                            <li>A/B Test Z-scores</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        Two-proportion z-test for A/B significance with Bonferroni correction for MVT. Sample size calculator uses full power analysis: explicitly surfacing Type I / Type II error tradeoffs.
-                    </div>
-                </div>
-            </div>
-
-            <div class="feature-card reveal">
-                <div class="feature-icon">💰</div>
-                <h3>Marketplace Pricing</h3>
-                <p>Optimize your platform take-rate without destroying seller liquidity or buyer demand.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Key Inputs</span>
-                        <ul class="detail-list">
-                            <li>Take Rate &amp; Fee Split</li>
-                            <li>Seller Tier Distribution</li>
-                            <li>Buyer Price Sensitivity</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>Price Elasticity of Demand</li>
-                            <li>Effective Take Rate &amp; GMV</li>
-                            <li>Revenue by commission tier</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        <strong>Engineering Highlight</strong>
-                        Price elasticity modeled via log-linear demand curves. Commission tier optimization uses constrained revenue maximization to find the take-rate ceiling without triggering seller-exit risk.
-                    </div>
-                </div>
-            </div>
-
-            <div class="feature-card reveal">
-                <div class="feature-icon">🧪</div>
-                <h3>CRO Program Dashboard</h3>
-                <p>Command center for your entire experimentation program — track active tests, cumulative revenue impact, and program velocity.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Key Inputs</span>
-                        <ul class="detail-list">
-                            <li>Experiment Registry</li>
-                            <li>Win/Loss Outcomes</li>
-                            <li>Revenue Impact per Test</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>Cumulative Revenue Impact</li>
-                            <li>Win Rate &amp; Avg Lift</li>
-                            <li>Program Velocity KPIs</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        <strong>Engineering Highlight</strong>
-                        Full experiment lifecycle management with auto-computed program KPIs. Cumulative revenue waterfall shows the compounding effect of shipped winning tests over time.
-                    </div>
-                </div>
-            </div>
-
-            <div class="feature-card reveal">
-                <div class="feature-icon">🔍</div>
-                <h3>Revenue Leakage Analysis</h3>
-                <p>Quantify exactly how much revenue each segment leaves on the table vs your best performer.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Key Inputs</span>
-                        <ul class="detail-list">
-                            <li>Funnel Event Data</li>
-                            <li>Segment Dimensions</li>
-                            <li>AOV &amp; Margin %</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>Revenue Gap per Segment</li>
-                            <li>Best-in-Class CVR Benchmark</li>
-                            <li>Prioritized Fix Recommendations</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        <strong>Engineering Highlight</strong>
-                        Segment-level revenue gap computed as (best_cvr − segment_cvr) × sessions × margin. Ranks opportunities by dollar impact, not just conversion rate deltas.
-                    </div>
-                </div>
-            </div>
-
-            <div class="feature-card reveal">
-                <div class="feature-icon">📊</div>
-                <h3>Conversion Revenue Forecast</h3>
-                <p>Monte Carlo simulation of your CRO roadmap — project 12-month revenue impact with confidence bands.</p>
-                <div class="feature-details">
-                    <div class="detail-group">
-                        <span class="detail-label">Key Inputs</span>
-                        <ul class="detail-list">
-                            <li>Planned Improvements</li>
-                            <li>Expected Lift &amp; Uncertainty</li>
-                            <li>Deployment Timeline</li>
-                        </ul>
-                    </div>
-                    <div class="detail-group">
-                        <span class="detail-label">Generated Outputs</span>
-                        <ul class="detail-list">
-                            <li>12-Month Revenue Projection</li>
-                            <li>80% Confidence Bands</li>
-                            <li>Per-Improvement Contribution</li>
-                        </ul>
-                    </div>
-                    <div class="feature-why">
-                        <strong>Engineering Highlight</strong>
-                        1,000 Monte Carlo simulations with Gaussian uncertainty on each improvement's lift. Outputs median revenue path with 10th/90th percentile confidence bands.
-                    </div>
-                </div>
-            </div>
+    <section class="who-section">
+      <span class="kicker">Who this is for</span>
+      <h2>Builders shipping agent capabilities every week</h2>
+      <div class="persona-grid">
+        <div class="persona-card">
+          <div class="persona-role">Shipping new capabilities weekly</div>
+          <p class="persona-pain">Run success rates look fine, but nothing tells you which capability is quietly hurting
+            retention, or which one to kill.</p>
         </div>
+        <div class="persona-card">
+          <div class="persona-role">Owning retention for agent seats</div>
+          <p class="persona-pain">Trust incidents and approval fatigue pile up. You can't prioritize which problems to
+            fix first without a ranked list.</p>
+        </div>
+        <div class="persona-card">
+          <div class="persona-role">Watching inference burn climb</div>
+          <p class="persona-pain">Long reasoning loops eat margin. You see aggregate token spend but not which
+            capabilities are uneconomic per seat.</p>
+        </div>
+      </div>
+      <p class="section-closer">If your weekly review is a dashboard of run metrics, this is the missing decision
+        layer.</p>
     </section>
 
-    <section class="about-builder reveal" id="start">
-        <p class="about-eyebrow">About</p>
-        <p class="about-bio">For product leaders and Conversion, Retention, and Churn Specialists: ChurnOS was built to demonstrate specialized analytics for product growth and customer lifecycle optimization, providing the causal insights needed to drive sustainable revenue.</p>
-        <div class="about-tags">
-            <span class="about-tag">Product Strategy</span>
-            <span class="about-tag">Conversion Optimization</span>
-            <span class="about-tag">Retention Analysis</span>
+    <section class="what-if-section">
+      <span class="kicker">What if</span>
+      <h2>What if your weekly agent review looked like this?</h2>
+      <p class="section-intro">SaaS playbooks track seats and clicks. Agentic products fail on <strong>verified
+          outcomes</strong>, <strong>cost per successful outcome</strong>, and <strong>trust after multi-step
+          runs</strong>, not another trace explorer or success-rate dashboard.</p>
+      <div class="work-principles">
+        <div class="principle">
+          <span class="principle-num">What if</span>
+          <div class="principle-title">Paying looked healthy, but nobody got a first win?</div>
+          <p class="principle-desc">Revenue metrics stay green while accounts never hit a verified agent outcome. The
+            “AI churn wave” is often <strong>activation failure</strong> (time-to-first-value and paying-but-dormant
+            accounts), not classic feature adoption.</p>
         </div>
-        <div class="about-links">
-            <a href="https://github.com/b-lavania" target="_blank" class="btn btn-primary">GitHub Profile ↗</a>
-            <a href="https://linkedin.com/in/blavania" target="_blank" class="btn btn-secondary">LinkedIn ↗</a>
+        <div class="principle">
+          <span class="principle-num">What if</span>
+          <div class="principle-title">One intent burned a dozen metered steps?</div>
+          <p class="principle-desc">Agents plan, call tools, retry, and verify; a single query becomes a cost explosion.
+            <strong>CPSO</strong> and retry amplification show when “success” is margin-negative, especially for power
+            users under flat pricing.</p>
         </div>
+        <div class="principle">
+          <span class="principle-num">What if</span>
+          <div class="principle-title">The agent “worked” until humans took over?</div>
+          <p class="principle-desc">Rising human-in-the-loop, dismissals, and scary side effects erase trust faster than
+            usage dashboards admit. Progressive review and audit matter more than DAU.</p>
+        </div>
+      </div>
+      <p class="section-closer">Open <strong>Product Profile</strong> → generate → <strong>Radar</strong> ranks accounts
+        and capabilities to ship, throttle, or kill. Then explore <strong>Agentic Flags</strong> to see how CPSO and TTFV
+        move under synthetic treatments.</p>
+    </section>
+
+    <div class="narrative">
+      <div>
+        <h2>The problem</h2>
+        <p>You ship agent capabilities from traces and run logs, but traces don't tell you which ones to kill. Success
+          rates hide retention harm until seats churn.</p>
+        <p>Long reasoning loops turn a "successful" run into uneconomic margin. Humans start dismissing agent proposals
+          or flagging scary outputs: approval fatigue you can't quantify.</p>
+        <p>One fragile connector takes down dependent jobs, and you don't know the blast radius until support tickets
+          spike.</p>
+        <p>And when you throttle a capability, nothing writes back to retention. You never learn if the call helped.
+        </p>
+      </div>
+      <div>
+        <h2>The solution</h2>
+        <p>churnOS gives you a weekly decision list: configure your product shape, generate demo data, and review a
+          ranked home screen: accounts at risk and capabilities to act on, each with a recommended action and estimated
+          dollar impact if you leave them live.</p>
+        <p>Override recommendations when you disagree. Write back retention impact to close the loop, even in demo
+          mode, you see how decisions connect to churn.</p>
+        <p class="narrative-pointer">See the interactive-style preview above: accounts and capabilities ranked side by
+          side.</p>
+      </div>
+    </div>
+
+    <section class="systems">
+      <span class="kicker">Decision lenses</span>
+      <h2>What the ranking is built on</h2>
+      <p class="section-intro">The home screen ranks accounts and capabilities by estimated impact. These are the four
+        lenses behind every recommendation: habit, trust, economics, and connector risk.</p>
+      <div class="systems-grid">
+        <div class="sys-card sys-teal">
+          <span class="sys-tag">Activation</span>
+          <div class="sys-title">First trusted run &amp; habit</div>
+          <p class="sys-desc">Did seats get a successful run they trust, and keep using it weekly? Capabilities that
+            never activate or lose delegation habit surface here first.</p>
+        </div>
+        <div class="sys-card sys-amber">
+          <span class="sys-tag">Trust</span>
+          <div class="sys-title">Approvals &amp; trust incidents</div>
+          <p class="sys-desc">Are humans dismissing proposals or flagging scary runs? High dismiss rates and trust
+            incidents mean the agent is losing the room, even when runs technically succeed.</p>
+        </div>
+        <div class="sys-card sys-teal">
+          <span class="sys-tag">Economics</span>
+          <div class="sys-title">Cost per run vs seat value</div>
+          <p class="sys-desc">Is a "successful" capability still uneconomic after loop costs? Compare what each run
+            costs against what a seat is worth (subscription or usage-based).</p>
+        </div>
+        <div class="sys-card sys-blue">
+          <span class="sys-tag">Connectors</span>
+          <div class="sys-title">Blast radius</div>
+          <p class="sys-desc">If one integration fails (Gmail, HubSpot, an MCP tool). How many capabilities and seats
+            break? Fragile connectors rank higher because the fallout is wider.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="demo-path">
+      <span class="kicker">Demo path</span>
+      <h2>START → DECIDE → LEARN</h2>
+      <p class="section-intro">The live app follows one loop. Radar stays empty until you generate a workspace, which is
+        intentional, not a broken screen.</p>
+      <div class="work-principles">
+        <div class="principle">
+          <span class="principle-num">START</span>
+          <div class="principle-title">Product Profile</div>
+          <p class="principle-desc">Pick assistant-heavy, CRM workspace, or ops mission. Generate the synthetic warehouse:
+            seats, capabilities, runs, approvals, connectors.</p>
+        </div>
+        <div class="principle">
+          <span class="principle-num">DECIDE</span>
+          <div class="principle-title">Radar &amp; decision surfaces</div>
+          <p class="principle-desc">Radar ranks <strong>accounts at risk</strong> and <strong>capabilities to act
+              on</strong>: health score, tornado chart, and expandable decision cards. Filter by activation, trust,
+            economics, or connectors.</p>
+        </div>
+        <div class="principle">
+          <span class="principle-num">LEARN</span>
+          <div class="principle-title">Experiments &amp; flywheel</div>
+          <p class="principle-desc">Run governed tests, then write retention Δ and churn labels back onto the decision
+            record; see whether your override helped.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="how-i-work">
+      <span class="kicker">How it works</span>
+      <h2>Three steps to your first decision</h2>
+      <div class="work-principles">
+        <div class="principle">
+          <span class="principle-num">01</span>
+          <div class="principle-title">Profile → Generate</div>
+          <p class="principle-desc">Open Product Profile, pick a preset, and generate your workspace. One click fills the
+            synthetic warehouse that powers every decision screen.</p>
+        </div>
+        <div class="principle">
+          <span class="principle-num">02</span>
+          <div class="principle-title">Radar → Review</div>
+          <p class="principle-desc">Switch between account and capability tabs. Each card shows dollar impact, evidence
+            chips, and a recommended action; override any card when you disagree.</p>
+        </div>
+        <div class="principle">
+          <span class="principle-num">03</span>
+          <div class="principle-title">Override → Flywheel</div>
+          <p class="principle-desc">Disagree with a recommendation? Override and leave a reason. Outcome Flywheel writes
+            retention impact back so you can compare followed vs overridden calls.</p>
+        </div>
+      </div>
+      <div class="honesty-chip">
+        <span class="honesty-chip-kicker">Synthetic demo</span>
+        <span class="honesty-chip-body">Teaching warehouse and authored priors, not production telemetry. Use this to
+          learn the decision loop, not to certify live forecasts.</span>
+      </div>
+    </section>
+
+    <section class="table-container">
+      <h2>What changes for builders</h2>
+      <p class="section-intro">The shift isn't more dashboards; it's a weekly decision ritual with dollar impact and
+        an audit trail.</p>
+      <table class="outcome-table">
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Before</th>
+            <th>After</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-metric">Weekly review</td>
+            <td class="td-before">Run success rate dashboards</td>
+            <td class="td-after">Ranked ship / throttle / kill list</td>
+          </tr>
+          <tr>
+            <td class="td-metric">Harm signal</td>
+            <td class="td-before">Anecdotal support tickets</td>
+            <td class="td-after">Dollar impact per capability</td>
+          </tr>
+          <tr>
+            <td class="td-metric">Economics</td>
+            <td class="td-before">Aggregate token spend</td>
+            <td class="td-after">Cost per successful run vs revenue per seat</td>
+          </tr>
+          <tr>
+            <td class="td-metric">Audit trail</td>
+            <td class="td-before">Slack threads &amp; spreadsheets</td>
+            <td class="td-after">Saved decision records you can revisit</td>
+          </tr>
+          <tr>
+            <td class="td-metric">Account risk</td>
+            <td class="td-before">CSM spreadsheets &amp; gut feel</td>
+            <td class="td-after">Ranked account decisions with $ impact</td>
+          </tr>
+          <tr>
+            <td class="td-metric">Retention loop</td>
+            <td class="td-before">Decisions never revisit churn</td>
+            <td class="td-after">Write-back shows whether the call helped (demo)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="close-section" id="start">
+      <div>
+        <h2>Try it in <em>60 seconds</em></h2>
+        <p>Open the demo at <strong>Product Profile</strong>, pick a preset, and generate your workspace. Then open
+          <strong>Radar</strong> for ranked account and capability decisions: health score, tornado, and expandable
+          cards in one view.</p>
+        <p class="install-hint">Or run locally: pip install -r requirements.txt && streamlit run app.py</p>
+        <div class="honesty-chip">
+          <span class="honesty-chip-kicker">Synthetic demo</span>
+          <span class="honesty-chip-body">Teaching numbers, not production telemetry.</span>
+        </div>
+      </div>
+      <div class="cta-group">
+        <a href="https://churnos.xblavania.workers.dev/profile" class="btn-cta" target="_blank" rel="noopener">Open live
+          demo →</a>
+        <a href="https://churnos.xblavania.workers.dev/radar" class="btn-cta-secondary" target="_blank"
+          rel="noopener">Jump to Radar →</a>
+        <a href="https://github.com/b-lavania/churnOS" class="btn-cta-secondary" target="_blank" rel="noopener">View on
+          GitHub</a>
+      </div>
     </section>
 
     <footer>
-        <p>ChurnOS &middot; Conversion, Retention &amp; Churn Analytics &middot; <a href="https://linkedin.com/in/blavania" target="_blank" style="color:var(--text-muted);text-decoration:none;">LinkedIn</a> &middot; <a href="https://github.com/b-lavania" target="_blank" style="color:var(--text-muted);text-decoration:none;">github.com/b-lavania</a></p>
+      <div class="footer-left">
+        <p class="footer-tag">Turn weekly agent chaos into ranked account and capability decisions, with dollar impact.</p>
+      </div>
+      <div class="footer-right">
+        <a href="https://linkedin.com/in/blavania" target="_blank" rel="noopener">LinkedIn</a> ·
+        <a href="https://github.com/b-lavania" target="_blank" rel="noopener">github.com/b-lavania</a>
+      </div>
     </footer>
-
-    <script>
-        // Simple scroll animation for the dashboard mockup
-        window.addEventListener('scroll', () => {
-            const preview = document.querySelector('.dashboard-img');
-            const scrollY = window.scrollY;
-            if (scrollY < 500 && preview) {
-                preview.style.transform = `rotateX(${Math.max(0, 5 - scrollY / 100)}deg) scale(${Math.min(1, 0.95 + scrollY / 2000)})`;
-            }
-        });
-        
-        // Intersection Observer for scroll animations
-        document.addEventListener("DOMContentLoaded", function() {
-            const observerOptions = {
-                root: null,
-                rootMargin: '0px',
-                threshold: 0.1
-            };
-
-            const observer = new IntersectionObserver((entries, observer) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('active');
-                        // Optional: stop observing once animated
-                        // observer.unobserve(entry.target); 
-                    }
-                });
-            }, observerOptions);
-
-            const revealElements = document.querySelectorAll('.reveal');
-            revealElements.forEach(el => observer.observe(el));
-        });
-    </script>
+  </main>
 </body>
 
 </html>

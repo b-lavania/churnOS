@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://churnos.local/ontology/shared/growth_decision_record.base.schema.json",
+  "title": "GrowthDecisionRecord",
+  "type": "object",
+  "required": [
+    "record_id",
+    "vertical",
+    "schema_version",
+    "evaluated_at",
+    "subject",
+    "exceptions",
+    "decision"
+  ],
+  "properties": {
+    "record_id": { "type": "string" },
+    "vertical": {
+      "type": "string",
+      "enum": ["capability_lifecycle", "agent_runtime", "orchestration", "eval_governance"]
+    },
+    "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "ontology_version": { "type": "string" },
+    "evaluated_at": { "type": "string", "format": "date-time" },
+    "evaluator_id": { "type": "string" },
+    "subject": {
+      "type": "object",
+      "properties": {
+        "entity_type": {
+          "type": "string",
+          "enum": ["account", "capability"]
+        },
+        "workspace_id": { "type": "string" },
+        "account_id": { "type": "string" },
+        "capability_id": { "type": "string" },
+        "capability_version": { "type": "string" },
+        "agent_id": { "type": "string" },
+        "connector_id": { "type": "string" },
+        "cohort_id": { "type": "string" },
+        "experiment_id": { "type": "string" }
+      },
+      "anyOf": [
+        { "required": ["account_id"] },
+        { "required": ["capability_id"] }
+      ]
+    },
+    "exceptions": {
+      "type": "array",
+      "items": { "$ref": "exception_item.schema.json" }
+    },
+    "economics": { "$ref": "economics.schema.json" },
+    "decision": { "$ref": "decision.schema.json" },
+    "outcome": {
+      "type": "object",
+      "properties": {
+        "retention_delta_14d": { "type": "number" },
+        "retention_delta_28d": { "type": "number" },
+        "churn_happened": { "type": "boolean" },
+        "actual_run_cost_usd": { "type": "number" }
+      }
+    }
+  }
+}

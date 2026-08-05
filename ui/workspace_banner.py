@@ -1,0 +1,114 @@
+"""Shared workspace status strip + empty-state CTA for agentic pages."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import streamlit as st
+
+from core.workspace import Workspace, get_workspace_from_session
+
+PROFILE_PAGE = "pages/00_Agentic_Product_Profile.py"
+PROFILE_CTA_LABEL = "Open Product Profile → Generate workspace"
+
+REFERENCE_LINKS: list[tuple[str, str]] = [
+    ("pages/7_Concepts.py", "Concepts"),
+    ("pages/6_README.py", "Architecture"),
+    ("pages/21_Semantics_Console.py", "Semantics"),
+    ("pages/22_Taxonomy_Browser.py", "Taxonomy"),
+    ("pages/23_Record_Inspector.py", "Record Inspector"),
+]
+
+
+def empty_workspace_panel(*, page_label: str | None = None) -> None:
+    """Shared empty-state copy + Profile CTA (non-blocking — caller may return or stop)."""
+    target = page_label or "this screen"
+    st.markdown(
+        f"""
+        <div class="mag-empty-workspace">
+            <p class="mag-deck">
+                Generate a workspace before using <strong>{target}</strong>.
+                Open <strong>Product Profile</strong>, pick a preset, then
+                <strong>Generate workspace</strong>.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.page_link(PROFILE_PAGE, label=PROFILE_CTA_LABEL, icon="▶️")
+
+
+def render_sidebar_brand_and_status(session_state: Any) -> None:
+    """Blavania brand block with live workspace status or missing-workspace hint."""
+    ws = get_workspace_from_session(session_state)
+    with st.sidebar:
+        if ws is None:
+            status_html = (
+                '<p class="mag-sidebar-status mag-sidebar-status--empty">'
+                "No workspace — generate from Product Profile"
+                "</p>"
+            )
+        else:
+            preset = ws.profile.get("preset_id", "—")
+            n_accounts = len(getattr(ws, "accounts", ws.workspaces))
+            status_html = (
+                f'<p class="mag-sidebar-status">'
+                f"<span class=\"mag-sidebar-status-primary\">{preset}</span>"
+                f" · seed {ws.seed}<br>"
+                f"{len(ws.seats)} seats · {n_accounts} accounts"
+                f"</p>"
+            )
+
+        st.markdown(
+            f"""
+            <div class="mag-sidebar-brand">
+                <p class="mag-kicker">churnOS</p>
+                <p class="mag-sidebar-tagline">Profile → Generate → Radar</p>
+                {status_html}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        if ws is None:
+            st.page_link(PROFILE_PAGE, label="→ Product Profile", icon="⚙️")
+        elif st.button("Regenerate workspace", key="ws_banner_regen", type="secondary"):
+            session_state.pop("workspace", None)
+            session_state.pop("growth_records", None)
+            st.rerun()
+
+
+def render_sidebar_secondary_nav() -> None:
+    """Collapsed Reference + Legacy links (pages registered as hidden routes)."""
+    with st.sidebar:
+        st.markdown('<div class="mag-sidebar-secondary">', unsafe_allow_html=True)
+        with st.expander("Reference", expanded=False):
+            for path, label in REFERENCE_LINKS:
+                st.page_link(path, label=label)
+        with st.expander("Legacy", expanded=False):
+            st.page_link("pages/99_Legacy_Index.py", label="Legacy reference")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+# Backward-compatible alias
+render_workspace_sidebar_chip = render_sidebar_brand_and_status
+
+
+def require_workspace(
+    session_state: Any,
+    *,
+    page_label: str = "this page",
+) -> Workspace | None:
+    """If workspace missing, show shared empty panel and stop."""
+    ws = get_workspace_from_session(session_state)
+    if ws is not None:
+        return ws
+    empty_workspace_panel(page_label=page_label)
+    st.stop()
+    return None
+
+
+def empty_records_caption(filter_label: str) -> None:
+    st.caption(
+        f"No exceptions of type **{filter_label}** — classifiers may not have fired on this seed."
+    )

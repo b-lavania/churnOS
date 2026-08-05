@@ -63,7 +63,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - **Property 6: Time Estimation Arithmetic**
     - **Validates: Requirements 2.1, 2.5**
 
-- [~] 4. Checkpoint - Ensure all tests pass
+- [ ] 4. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 5. Implement MDE analyzer
@@ -134,7 +134,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - **Property 22: Reliability Check Completeness**
     - **Validates: Requirements 3.3, 11.1-11.7**
 
-- [~] 8. Checkpoint - Ensure all tests pass
+- [ ] 8. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 9. Implement multivariate test planner
@@ -185,7 +185,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - **Validates: Requirements 7.1-7.4, 9.1-9.4, 20.1-20.5**
 
 - [ ] 11. Implement segment performance analyzer
-  - [-] 11.1 Create analyze_segment_performance() function in analytics/conversion.py
+  - [ ] 11.1 Create analyze_segment_performance() function in analytics/conversion.py
     - Calculate conversion rates by device type (mobile, tablet, desktop)
     - Calculate conversion rates by traffic source (organic, paid, referral, direct, social)
     - Calculate conversion rates by geographic region
@@ -196,7 +196,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Generate traffic source recommendations
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 19.1, 19.2, 19.3, 19.4, 19.5, 19.6, 20.1-20.8_
 
-  - [~] 11.2 Write unit tests for segment analyzer
+  - [ ] 11.2 Write unit tests for segment analyzer
     - Test segment conversion rate calculations
     - Test underperforming segment detection
     - Test segment sorting by performance
@@ -204,32 +204,32 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Test traffic source recommendations
     - _Requirements: 9.1-9.7, 19.1-19.6, 20.1-20.8_
 
-  - [~] 11.3 Write property tests for segment analyzer
+  - [ ] 11.3 Write property tests for segment analyzer
     - **Property 16: Segment Sorting Correctness**
     - **Property 17: Underperformance Threshold Detection**
     - **Validates: Requirements 9.5, 9.6, 20.6, 20.7**
 
 - [ ] 12. Implement CRO glossary system
-  - [~] 12.1 Create get_cro_glossary() function in analytics/conversion.py
+  - [ ] 12.1 Create get_cro_glossary() function in analytics/conversion.py
     - Define all 20 CRO terms with definitions, when_to_use, examples, and common_pitfalls
     - Include terms: Baseline_CVR, MDE, Statistical_Power, Significance_Level, Type_I_Error, Type_II_Error, Twyman_Law, Bounce_Rate, CTR, Primary_Conversion, Secondary_Conversion, Confidence_Interval, Effect_Size, Sample_Size, Traffic_Source, Visitor_Segment, Multivariate_Test, A/B_Test, Funnel_Step, Lift
     - Provide contextual explanations for bounce rate by page type
     - Return dictionary mapping term names to content dictionaries
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 14.1, 14.2, 14.3, 14.4, 14.5, 14.7_
 
-  - [~] 12.2 Write unit tests for glossary system
+  - [ ] 12.2 Write unit tests for glossary system
     - Test all 20 terms are present
     - Test each term has required fields (definition, when_to_use, example, common_pitfalls)
     - Test bounce rate contextual content
     - _Requirements: 8.1-8.5, 14.1-14.7_
 
-- [~] 13. Checkpoint - Ensure all backend tests pass
+- [ ] 13. Checkpoint - Ensure all backend tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ### Phase 2: Frontend UI Components
 
 - [ ] 14. Extend Conversion page with new tabs structure
-  - [~] 14.1 Modify pages/3_Conversion.py to add new tab structure
+  - [ ] 14.1 Modify pages/3_Conversion.py to add new tab structure
     - Add tabs for: Sample Size Calculator, Power Analysis, MDE Analyzer, Test Validator, CRO Metrics Dashboard, MVT Planner
     - Maintain existing conversion analysis functionality in separate tab
     - Use st.tabs() for organization
@@ -237,7 +237,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - _Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7, 17.2, 17.3, 17.7_
 
 - [ ] 15. Implement Sample Size Calculator UI
-  - [~] 15.1 Create Sample Size Calculator tab UI
+  - [ ] 15.1 Create Sample Size Calculator tab UI
     - Add input fields: baseline_cvr (slider 0.1%-100%), mde (slider 1%-100%), power (slider 50%-99%), alpha (slider 1%-20%)
     - Add input field: daily_traffic for time estimation
     - Display calculated sample size per variant and total sample size
@@ -247,14 +247,14 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Apply PLOTLY_THEME for any visualizations
     - _Requirements: 1.1-1.9, 2.1-2.5, 3.1-3.5, 16.1-16.7, 18.1-18.7_
 
-  - [~] 15.2 Write integration test for Sample Size Calculator UI
+  - [ ] 15.2 Write integration test for Sample Size Calculator UI
     - Test UI renders correctly
     - Test input validation displays error messages
     - Test warnings display correctly
     - _Requirements: 1.1-1.9, 2.1-2.5, 18.1-18.7_
 
 - [ ] 16. Implement Power Analysis UI
-  - [~] 16.1 Create Power Analysis tab UI
+  - [ ] 16.1 Create Power Analysis tab UI
     - Add input fields: baseline_cvr, effect_size, sample_size_per_variant, alpha
     - Display calculated statistical power as percentage
     - Display Type I error (alpha) and Type II error (beta)
@@ -263,14 +263,14 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Use terminal-style styling and PLOTLY_THEME
     - _Requirements: 5.1-5.7, 16.1-16.7_
 
-  - [~] 16.2 Write integration test for Power Analysis UI
+  - [ ] 16.2 Write integration test for Power Analysis UI
     - Test UI renders correctly
     - Test power calculation displays correctly
     - Test underpowered warning displays
     - _Requirements: 5.1-5.7_
 
 - [ ] 17. Implement MDE Analyzer UI
-  - [~] 17.1 Create MDE Analyzer tab UI
+  - [ ] 17.1 Create MDE Analyzer tab UI
     - Add input fields: baseline_cvr, sample_size_per_variant, power, alpha
     - Display calculated MDE as both absolute (percentage points) and relative (percentage change)
     - Display target CVR
@@ -280,7 +280,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Use terminal-style styling and PLOTLY_THEME
     - _Requirements: 4.1-4.6, 16.1-16.7_
 
-  - [~] 17.2 Write integration test for MDE Analyzer UI
+  - [ ] 17.2 Write integration test for MDE Analyzer UI
     - Test UI renders correctly
     - Test MDE calculation displays correctly
     - Test interactive chart updates
@@ -290,7 +290,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 19. Implement Test Validator UI
-  - [~] 19.1 Create Test Validator section UI
+  - [ ] 19.1 Create Test Validator section UI
     - Add input fields: control_visitors, control_conversions, variant_visitors, variant_conversions, test_duration_days, observed_lift
     - Display reliability score (0-100) prominently using st.metric()
     - Display status of all 5 reliability checks with visual indicators
@@ -300,14 +300,14 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Use terminal-style styling
     - _Requirements: 3.1-3.5, 11.1-11.7, 16.1-16.7_
 
-  - [~] 19.2 Write integration test for Test Validator UI
+  - [ ] 19.2 Write integration test for Test Validator UI
     - Test UI renders correctly
     - Test reliability score displays correctly
     - Test check status indicators display correctly
     - _Requirements: 3.1-3.5, 11.1-11.7_
 
 - [ ] 20. Implement CRO Metrics Dashboard UI
-  - [~] 20.1 Create CRO Metrics Dashboard tab UI
+  - [ ] 20.1 Create CRO Metrics Dashboard tab UI
     - Add date range filter using st.date_input()
     - Display bounce rate with contextual help tooltip
     - Display above-the-fold and below-the-fold engagement rates
@@ -320,14 +320,14 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Use terminal-style styling
     - _Requirements: 7.1-7.8, 8.1-8.5, 16.1-16.7_
 
-  - [~] 20.2 Write integration test for CRO Metrics Dashboard UI
+  - [ ] 20.2 Write integration test for CRO Metrics Dashboard UI
     - Test UI renders correctly
     - Test date range filtering works
     - Test all metrics display correctly
     - _Requirements: 7.1-7.8_
 
 - [ ] 21. Implement MVT Planner UI
-  - [~] 21.1 Create MVT Planner tab UI
+  - [ ] 21.1 Create MVT Planner tab UI
     - Add dynamic input for elements: name and number of variations per element
     - Add button to add/remove elements
     - Add input fields: baseline_cvr, power, alpha
@@ -340,7 +340,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Use terminal-style styling
     - _Requirements: 10.1-10.6, 16.1-16.7_
 
-  - [~] 21.2 Write integration test for MVT Planner UI
+  - [ ] 21.2 Write integration test for MVT Planner UI
     - Test UI renders correctly
     - Test dynamic element addition/removal
     - Test calculations display correctly
@@ -352,14 +352,14 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
 ### Phase 3: Integration and Polish
 
 - [ ] 23. Implement glossary tooltip system
-  - [~] 23.1 Create tooltip component for CRO terms
+  - [ ] 23.1 Create tooltip component for CRO terms
     - Implement hover tooltips for all 20 CRO terms throughout the UI
     - Ensure tooltips display within 200ms of hover
     - Use st.help() or custom HTML/CSS for tooltips
     - Apply terminal-style styling to tooltips
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7_
 
-  - [~] 23.2 Create full glossary page
+  - [ ] 23.2 Create full glossary page
     - Add dedicated glossary page accessible from main navigation
     - Display all 20 terms with full definitions, examples, when to use, and common pitfalls
     - Use st.expander() for each term
@@ -367,7 +367,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - _Requirements: 14.7_
 
 - [ ] 24. Integrate CVR improvement with causal business model
-  - [~] 24.1 Create CVR impact simulator
+  - [ ] 24.1 Create CVR impact simulator
     - Add CVR improvement scenario input (percentage improvement)
     - Calculate impact on customer acquisition using existing causal model
     - Calculate monthly revenue impact using existing causal model
@@ -377,20 +377,20 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Display results using st.metric() with delta indicators
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5_
 
-  - [~] 24.2 Write integration test for causal model integration
+  - [ ] 24.2 Write integration test for causal model integration
     - Test CVR improvement calculations integrate correctly with causal model
     - Test monthly revenue and CLV calculations
     - Test ROI calculations
     - _Requirements: 13.1-13.5_
 
-  - [~] 24.3 Write property tests for CLV impact calculations
+  - [ ] 24.3 Write property tests for CLV impact calculations
     - **Property 23: CLV Impact Proportionality**
     - **Property 24: Causal Model Integration Consistency**
     - **Property 25: ROI Calculation Correctness**
     - **Validates: Requirements 13.1, 13.2, 13.3, 13.4**
 
 - [ ] 25. Implement best practices recommendation system
-  - [~] 25.1 Add contextual best practices throughout UI
+  - [ ] 25.1 Add contextual best practices throughout UI
     - Add recommendation to test one variable at a time for A/B tests
     - Add recommendation to run tests for at least 7 days
     - Add recommendation to achieve at least 350 conversions per variant
@@ -402,7 +402,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7_
 
 - [ ] 26. Implement segment-specific recommendations
-  - [~] 26.1 Add device-specific optimization recommendations to segment analyzer
+  - [ ] 26.1 Add device-specific optimization recommendations to segment analyzer
     - Display mobile optimization recommendations when mobile CVR is 30%+ below desktop
     - Include recommendations: page load speed, form simplification, touch target sizing
     - Display desktop optimization recommendations: above-the-fold content, trust signals
@@ -411,7 +411,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Allow A/B test segmentation by device type
     - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 19.6_
 
-  - [~] 26.2 Add traffic source performance analysis to segment analyzer
+  - [ ] 26.2 Add traffic source performance analysis to segment analyzer
     - Display conversion rates for all traffic sources (organic, paid, referral, direct, social)
     - Sort traffic sources by conversion rate
     - Highlight sources with CVR 30%+ below average
@@ -420,7 +420,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - _Requirements: 20.1-20.8_
 
 - [ ] 27. Implement traffic threshold recommendations
-  - [~] 27.1 Add traffic threshold guidance
+  - [ ] 27.1 Add traffic threshold guidance
     - Display minimum daily traffic recommendation (1000 for A/B, 5000 for MVT)
     - Suggest alternative approaches when traffic is below thresholds
     - Compute minimum traffic based on baseline CVR and desired MDE
@@ -428,7 +428,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
 - [ ] 28. Implement confidence interval display
-  - [~] 28.1 Add confidence interval calculations to test results
+  - [ ] 28.1 Add confidence interval calculations to test results
     - Calculate confidence interval for lift using user-specified confidence level (default 95%)
     - Display confidence interval as range in percentage points
     - Note when confidence interval includes zero (not statistically significant)
@@ -436,13 +436,13 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Integrate with existing ab_test_significance function
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
 
-  - [~] 28.2 Write property tests for confidence intervals
+  - [ ] 28.2 Write property tests for confidence intervals
     - **Property 13: Confidence Interval and Significance Consistency**
     - **Property 14: Confidence Interval Width Monotonicity**
     - **Validates: Requirements 6.2, 6.4**
 
 - [ ] 29. Performance optimization and caching
-  - [~] 29.1 Add caching for expensive calculations
+  - [ ] 29.1 Add caching for expensive calculations
     - Add @st.cache_data decorator to calculate_sample_size()
     - Add @st.cache_data decorator to calculate_mde()
     - Add @st.cache_data decorator to calculate_power()
@@ -450,7 +450,7 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - Ensure all cached functions complete in <100ms
     - _Requirements: Performance requirements from design_
 
-  - [~] 29.2 Write performance tests
+  - [ ] 29.2 Write performance tests
     - Test sample size calculation completes in <10ms
     - Test MDE calculation completes in <10ms
     - Test power calculation completes in <10ms
@@ -459,14 +459,14 @@ This implementation plan breaks down the CRO Analytics Enhancement feature into 
     - _Requirements: Performance requirements from design_
 
 - [ ] 30. Final integration testing and regression testing
-  - [~] 30.1 Write integration tests for complete workflows
+  - [ ] 30.1 Write integration tests for complete workflows
     - Test complete A/B test planning workflow (sample size → power → validation)
     - Test complete MVT planning workflow
     - Test complete segment analysis workflow
     - Test CVR improvement → CLV impact workflow
     - _Requirements: All requirements_
 
-  - [~] 30.2 Write regression tests for existing functionality
+  - [ ] 30.2 Write regression tests for existing functionality
     - Test existing funnel_summary function still works
     - Test existing segment_conversion function still works
     - Test existing ab_test_significance function still works

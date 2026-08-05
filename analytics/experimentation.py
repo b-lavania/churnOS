@@ -16,7 +16,7 @@ from analytics.conversion import (
     calculate_sample_size,
     estimate_test_duration,
 )
-from analytics.metrics import resolve_metric
+from analytics.metrics import resolve_metric, load_lexicon
 from analytics.product_metrics import refund_exposure_rates
 from core.workspace import Workspace
 
@@ -63,11 +63,18 @@ def outcomes_to_analysis_counts(outcomes: pd.DataFrame) -> dict[str, int]:
     """Map experiment_outcomes rows to ab_test_significance inputs."""
     ctrl = outcomes[outcomes["variant"] == "control"].iloc[0]
     var = outcomes[outcomes["variant"] == "variant"].iloc[0]
+    if "visitors" in outcomes.columns:
+        return {
+            "control_visitors": int(ctrl["visitors"]),
+            "control_conversions": int(ctrl["conversions"]),
+            "variant_visitors": int(var["visitors"]),
+            "variant_conversions": int(var["conversions"]),
+        }
     return {
-        "control_visitors": int(ctrl["visitors"]),
-        "control_conversions": int(ctrl["conversions"]),
-        "variant_visitors": int(var["visitors"]),
-        "variant_conversions": int(var["conversions"]),
+        "control_visitors": int(ctrl.get("exposed_seats", 0)),
+        "control_conversions": int(ctrl.get("successful_runs", 0)),
+        "variant_visitors": int(var.get("exposed_seats", 0)),
+        "variant_conversions": int(var.get("successful_runs", 0)),
     }
 
 
@@ -111,10 +118,15 @@ def design_from_workspace(
     power: float = 0.80,
     alpha: float = 0.05,
 ) -> dict[str, Any]:
-    """Plan sample size / duration using workspace funnel CVR."""
-    cvr_metric = resolve_metric("session_to_purchase_cvr", workspace)
-    baseline = float(cvr_metric["value"] or 3.0) / 100.0
-    visits = int(cvr_metric["meta"].get("visits", 30_000))
+    """Plan sample size / duration using workspace baseline rate."""
+    if "weekly_delegation_habit" in load_lexicon().get("metrics", {}):
+        cvr_metric = resolve_metric("weekly_delegation_habit", workspace)
+        baseline = float(cvr_metric["value"] or 40.0) / 100.0
+        visits = len(workspace.seats)
+    else:
+        cvr_metric = resolve_metric("session_to_purchase_cvr", workspace)
+        baseline = float(cvr_metric["value"] or 3.0) / 100.0
+        visits = int(cvr_metric["meta"].get("visits", 30_000))
 
     ss = calculate_sample_size(baseline, mde_relative, power=power, alpha=alpha)
     daily_traffic = max(100, visits // 30)

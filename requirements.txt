@@ -8,5 +8,4 @@ lifelines>=0.27.0
 pymc>=5.10.0
 arviz>=0.17.0
 hypothesis>=6.92.0
-pytest>=7.4.0
-PyYAML>=6.0.0
+jsonschema>=4.0.0

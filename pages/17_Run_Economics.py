@@ -1,0 +1,118 @@
+"""Run Economics — agentic challenge cost & visibility findings."""
+
+from pathlib import Path
+
+import streamlit as st
+
+from analytics.decisions import emit_account_records, emit_capability_records
+from analytics.economics import seat_margins
+from analytics.metrics import resolve_metric
+from ui.decision_card import render_decision_card
+from ui.explain import page_help
+from ui.magazine import load_magazine_css, masthead, section_kicker
+from ui.viz import (
+    cm_nrr_teaching_chart,
+    context_util_histogram,
+    cost_attribution_heatmap,
+    cost_waterfall_sample,
+    jevons_elasticity_chart,
+    loop_histogram,
+    power_user_margin_table,
+    retry_by_capability,
+    run_cost_by_capability,
+    run_gantt_sample,
+)
+from ui.workspace_banner import empty_records_caption, require_workspace
+
+css_path = Path(__file__).parent.parent / "assets" / "style.css"
+if css_path.exists():
+    st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
+
+load_magazine_css()
+masthead("Decisions", "Run Economics", "Cost opacity, Jevons paradox, and margin leakage (synthetic).")
+page_help("run_economics", show_card_glossary=True)
+st.caption("Synthetic teaching data — see docs/honesty.md")
+
+ws = require_workspace(st.session_state, page_label="Run Economics")
+
+billing_options = ["b2b_subscription", "usage_based"]
+current = ws.profile.get("billing_model", "b2b_subscription")
+billing = st.radio("Billing model simulation", billing_options, index=billing_options.index(current) if current in billing_options else 0, horizontal=True)
+view_profile = dict(ws.profile)
+view_profile["billing_model"] = billing
+
+margins = seat_margins(ws.runs, ws.seats, view_profile)
+neg_share = margins["margin_negative"].mean() * 100 if len(margins) else 0
+
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric("CPSO", resolve_metric("cost_per_successful_outcome", ws)["display"])
+c2.metric("Power-user margin", resolve_metric("power_user_margin_leakage", ws)["display"])
+c3.metric("Retry amplification", resolve_metric("retry_amplification_factor", ws)["display"])
+c4.metric("Unattributed spend", resolve_metric("unattributed_spend_percentage", ws)["display"])
+c5.metric("Static routing age", resolve_metric("static_decision_age_median", ws)["display"])
+
+section_kicker("Cost attribution heatmap")
+fig_hm = cost_attribution_heatmap(ws)
+if fig_hm is not None:
+    st.plotly_chart(fig_hm, use_container_width=True)
+
+section_kicker("Jevons elasticity")
+fig_j = jevons_elasticity_chart(ws)
+if fig_j is not None:
+    st.plotly_chart(fig_j, use_container_width=True)
+
+c6, c7 = st.columns(2)
+with c6:
+    section_kicker("Context window utilization")
+    fig_ctx = context_util_histogram(ws)
+    if fig_ctx is not None:
+        st.plotly_chart(fig_ctx, use_container_width=True)
+with c7:
+    section_kicker("Retry amplification by capability")
+    fig_retry = retry_by_capability(ws.runs, ws.capabilities)
+    if fig_retry is not None:
+        st.plotly_chart(fig_retry, use_container_width=True)
+
+section_kicker("Agent run Gantt (sample)")
+fig_gantt = run_gantt_sample(ws)
+if fig_gantt is not None:
+    st.plotly_chart(fig_gantt, use_container_width=True)
+
+section_kicker("CM-NRR teaching chart")
+fig_cm = cm_nrr_teaching_chart(getattr(ws, "subscriptions", __import__("pandas").DataFrame()), getattr(ws, "usage_events", __import__("pandas").DataFrame()), ws.runs)
+if fig_cm is not None:
+    st.plotly_chart(fig_cm, use_container_width=True)
+
+section_kicker("Loop depth & waterfall")
+col_a, col_b = st.columns(2)
+with col_a:
+    fig_loops = loop_histogram(ws.runs, float(ws.profile.get("max_loops_threshold", 8)))
+    if fig_loops is not None:
+        st.plotly_chart(fig_loops, use_container_width=True)
+with col_b:
+    fig_wf = cost_waterfall_sample(ws.runs)
+    if fig_wf is not None:
+        st.plotly_chart(fig_wf, use_container_width=True)
+
+section_kicker("Power-user margin leakage (top 5%)")
+pu = power_user_margin_table(ws)
+if not pu.empty:
+    st.dataframe(pu, use_container_width=True)
+
+section_kicker("Static routing decisions")
+if not ws.routing_decisions.empty:
+    st.dataframe(ws.routing_decisions, use_container_width=True)
+st.metric("Time to first production agent", resolve_metric("time_to_first_production_agent", ws)["display"])
+
+arpu = float(ws.seats["seat_arpu_monthly"].mean()) if len(ws.seats) else 0.0
+fig = run_cost_by_capability(ws.runs, ws.capabilities, arpu)
+if fig is not None:
+    section_kicker("Cost by capability")
+    st.plotly_chart(fig, use_container_width=True)
+
+records = emit_capability_records(ws, view_profile, filter_categories={"run_cost_blowout", "loop_exhaustion", "margin_leakage"}) + emit_account_records(ws, view_profile, filter_categories={"price"})
+section_kicker("Decision records")
+if not records:
+    empty_records_caption("run_cost_blowout / margin_leakage")
+for i, rec in enumerate(records[:5]):
+    render_decision_card(rec, key_prefix=f"econ_{i}", show_override=False)

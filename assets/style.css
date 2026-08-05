@@ -1,286 +1,621 @@
-/* ── Techno-Premium SF VC x Bloomberg Style ── */
+/* ── churnOS · Blavania design language ── */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');
 
-/* ── Root Variables ── */
 :root {
-    --bg-primary: #05050a;
-    --bg-secondary: #0a0f19;
-    --accent-primary: #00f2ff; /* Electric Cyan */
-    --accent-secondary: #ff9d00; /* Cyber Orange */
-    --accent-tertiary: #8a2be2; /* Ghost Purple */
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --glass-bg: rgba(10, 15, 25, 0.75);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --card-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.4);
-    --font-main: 'Inter', sans-serif;
-    --font-heading: 'Outfit', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    /* Blavania tokens */
+    --ink: #0f1112;
+    --ink-mid: #3a3f45;
+    --ink-soft: #5c6370;
+    --ink-light: #8b92a0;
+    --rule: #e8eaed;
+    --teal: #0a5a46;
+    --teal-light: #f1f8f6;
+    --teal-mid: #1d9e75;
+    --amber: #ba7517;
+    --amber-light: #fdf6ec;
+    --blue: #185fa5;
+    --blue-light: #f0f7ff;
+    --page: #faf9f7;
+    --white: #ffffff;
+    --surface-end: #fcfcfb;
+    --radius: 0px;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.02), 0 10px 15px rgba(0, 0, 0, 0.03),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.04), 0 20px 48px rgba(0, 0, 0, 0.04),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+
+    /* Magazine aliases → Blavania */
+    --mag-paper: var(--page);
+    --mag-paper-deep: var(--white);
+    --mag-paper-elevated: var(--white);
+    --mag-ink: var(--ink);
+    --mag-muted: var(--ink-soft);
+    --mag-accent: var(--teal);
+    --mag-accent-warm: var(--amber);
+    --mag-rule: var(--rule);
+    --mag-shadow: var(--shadow-md);
+
+    /* Legacy token aliases */
+    --bg-primary: var(--page);
+    --bg-secondary: var(--white);
+    --accent-primary: var(--teal);
+    --accent-secondary: var(--amber);
+    --accent-tertiary: var(--blue);
+    --text-primary: var(--ink);
+    --text-secondary: var(--ink-soft);
+    --glass-bg: var(--white);
+    --glass-border: var(--rule);
+    --card-shadow: var(--shadow-md);
+    --font-main: 'DM Sans', system-ui, sans-serif;
+    --font-heading: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --mag-serif: var(--font-heading);
 }
 
-/* ── Global Overrides ── */
+/* ── App shell ── */
 .stApp {
-    background-color: var(--bg-primary);
-    background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0);
-    background-size: 32px 32px;
-    color: var(--text-primary);
+    background-color: var(--page) !important;
+    background-image: none !important;
+    color: var(--ink) !important;
+    -webkit-font-smoothing: antialiased;
+}
+
+.block-container {
+    padding-top: 2rem;
+    max-width: 1120px;
 }
 
 /* ── Typography ── */
 h1, h2, h3 {
     font-family: var(--font-heading) !important;
-    font-weight: 800 !important;
+    font-weight: 700 !important;
+    color: var(--ink) !important;
     letter-spacing: -0.02em !important;
+    line-height: 1.1 !important;
 }
 
 h4, h5, h6 {
     font-family: var(--font-heading) !important;
-    font-weight: 600 !important;
-    color: var(--text-primary) !important;
+    font-weight: 700 !important;
+    color: var(--ink) !important;
 }
 
-p, span, div, li {
+p, span, div, li, label {
     font-family: var(--font-main);
-    color: var(--text-secondary);
+    color: var(--ink-soft);
 }
 
-/* ── Metrics (The Bloomberg Look) ── */
+/* ── Metrics ── */
 [data-testid="stMetricValue"] {
-    font-family: var(--font-mono) !important;
-    font-weight: 600 !important;
-    font-size: 2.2rem !important;
-    color: var(--accent-primary) !important;
-    letter-spacing: -0.05em !important;
+    font-family: var(--font-heading) !important;
+    font-weight: 700 !important;
+    font-size: 1.75rem !important;
+    color: var(--teal) !important;
+    letter-spacing: -0.02em !important;
+    line-height: 1 !important;
 }
 
 [data-testid="stMetricLabel"] {
-    font-family: var(--font-heading) !important;
+    font-family: var(--font-mono) !important;
     text-transform: uppercase !important;
-    font-size: 0.7rem !important;
+    font-size: 0.65rem !important;
     letter-spacing: 0.1em !important;
-    color: var(--text-secondary) !important;
+    color: var(--ink-light) !important;
+}
+
+[data-testid="stMetricDelta"] {
+    font-family: var(--font-mono) !important;
 }
 
 /* ── Sidebar ── */
 [data-testid="stSidebar"] {
-    background-color: #030307 !important;
-    border-right: 1px solid var(--glass-border) !important;
+    background-color: var(--white) !important;
+    border-right: 2px solid var(--rule) !important;
+    min-width: 16.5rem !important;
 }
 
-[data-testid="stSidebar"] h2 {
-    font-size: 1.2rem !important;
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] p {
+    color: var(--ink) !important;
 }
 
-/* ── Sidebar Navigation Overrides ── */
+.mag-sidebar-brand {
+    padding: 0.35rem 0 0.75rem 0;
+    margin-bottom: 0.5rem;
+    border-bottom: 2px solid var(--rule);
+}
+
+.mag-sidebar-brand .mag-kicker {
+    margin: 0 0 0.2rem 0;
+    font-size: 0.75rem !important;
+}
+
+.mag-sidebar-tagline {
+    margin: 0 0 0.5rem 0 !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft) !important;
+    line-height: 1.35 !important;
+}
+
+.mag-sidebar-status {
+    margin: 0 !important;
+    font-family: var(--font-mono) !important;
+    font-size: 0.68rem !important;
+    line-height: 1.45 !important;
+    color: var(--ink-mid) !important;
+    letter-spacing: 0.02em;
+}
+
+.mag-sidebar-status--empty {
+    color: var(--ink-light) !important;
+}
+
+.mag-sidebar-status-primary {
+    color: var(--teal);
+    font-weight: 500;
+}
+
+[data-testid="stSidebarContent"] {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: calc(100vh - 1rem);
+}
+
 [data-testid="stSidebarNav"] {
-    padding-top: 2rem !important;
+    flex: 1 1 auto;
 }
 
-[data-testid="stSidebarNav"] ul {
-    gap: 0.5rem !important;
+.mag-sidebar-secondary {
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 2px solid var(--rule);
+    flex-shrink: 0;
 }
 
-/* ── Sidebar Section Headers ── */
+.mag-empty-workspace {
+    padding: 1rem 0 0.5rem 0;
+    margin: 0 0 1rem 0;
+    border-top: 2px solid var(--rule);
+}
+
+[data-testid="stSidebarNav"] {
+    padding-top: 0.15rem !important;
+}
+
 [data-testid="stNavSectionHeader"] {
     visibility: visible !important;
-    font-family: var(--font-mono) !important;
-    font-size: 0.65rem !important;
-    font-weight: 800 !important;
-    color: var(--accent-primary) !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.08em !important;
-    padding: 0.5rem 0.75rem !important;
-    border-left: 3px solid var(--accent-primary) !important;
-    background: rgba(0, 242, 255, 0.05) !important;
-    border-radius: 0 4px 4px 0 !important;
     display: flex !important;
     align-items: center !important;
-    margin-top: 1.2rem !important;
-    margin-bottom: 0.5rem !important;
-}
-
-/* Ensure child text styling matches */
-[data-testid="stNavSectionHeader"] span {
-    color: var(--accent-primary) !important;
+    gap: 0 !important;
+    overflow: visible !important;
+    white-space: nowrap !important;
     font-family: var(--font-mono) !important;
-    font-size: 0.65rem !important;
-    font-weight: 800 !important;
+    font-size: 0.55rem !important;
+    font-weight: 600 !important;
+    color: var(--ink-light) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    padding: 0.35rem 0.75rem !important;
+    border-left: 2px solid var(--rule) !important;
+    background: transparent !important;
+    margin-top: 1.5rem !important;
+    margin-bottom: 0.15rem !important;
+    opacity: 0.9;
+    cursor: default !important;
 }
 
-/* Base link style */
+[data-testid="stNavSectionHeader"] span {
+    color: var(--ink-light) !important;
+    font-family: var(--font-mono) !important;
+}
+
+[data-testid="stNavSectionHeader"] svg,
+[data-testid="stSidebarNav"] [data-testid="stIconMaterial"],
+[data-testid="stSidebarNav"] span[data-testid="stIconMaterial"],
+[data-testid="stSidebarNav"] .material-icons,
+[data-testid="stSidebarNav"] button svg,
+[data-testid="stSidebarNav"] [class*="Chevron"],
+[data-testid="stSidebarNav"] [class*="chevron"] {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+[data-testid="stSidebarNav"] [data-testid="stSidebarNavSeparator"],
+[data-testid="stSidebarNav"] button[kind="secondary"],
+section[data-testid="stSidebarNav"] > div > div > button {
+    display: none !important;
+}
+
 [data-testid="stSidebarNav"] a {
-    color: #ffffff !important; /* White on Black as requested */
+    color: var(--ink-soft) !important;
     font-family: var(--font-main) !important;
-    font-weight: 500 !important;
+    font-weight: 400 !important;
     font-size: 0.95rem !important;
-    padding: 10px 16px !important;
-    transition: all 0.2s ease !important;
+    padding: 0.35rem 0.75rem !important;
+    margin: 0.04rem 0.35rem !important;
     background-color: transparent !important;
-    opacity: 0.85; /* Subtle distinction from active state */
-}
-
-/* Hover state */
-[data-testid="stSidebarNav"] a:hover {
-    color: #ffffff !important;
+    border-radius: 0 !important;
+    border-left: 2px solid transparent !important;
     opacity: 1;
-    background-color: rgba(255, 255, 255, 0.05) !important;
+    line-height: 1.25 !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: normal !important;
 }
 
-/* Active state */
-[data-testid="stSidebarNav"] [aria-current="page"] {
-    background-color: rgba(0, 242, 255, 0.1) !important;
-    border-left: 4px solid var(--accent-primary) !important;
-    color: var(--accent-primary) !important;
-    font-weight: 700 !important;
-}
-
-[data-testid="stSidebarNav"] [aria-current="page"] span {
-    color: var(--accent-primary) !important;
-}
-
-/* Base link text color (White on Black) */
 [data-testid="stSidebarNav"] a span {
-    color: #ffffff !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    line-height: 1.25 !important;
+    padding-right: 0.25rem !important;
 }
 
-/* ── Multiselect & Tags (Filter UI) ── */
+[data-testid="stSidebarNav"] a:hover {
+    color: var(--ink) !important;
+    background-color: var(--teal-light) !important;
+}
+
+[data-testid="stSidebarNav"] [aria-current="page"] {
+    background-color: var(--teal-light) !important;
+    border-left-color: var(--teal) !important;
+    color: var(--ink) !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stSidebarNav"] [aria-current="page"] span,
+[data-testid="stSidebarNav"] a span {
+    color: inherit !important;
+}
+
+/* Reference / Legacy sidebar expanders */
+[data-testid="stSidebar"] [data-testid="stExpander"] {
+    border: none !important;
+    background: transparent !important;
+    margin-bottom: 0.25rem !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    font-family: var(--font-mono) !important;
+    font-size: 0.6rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    color: var(--ink-light) !important;
+    background: transparent !important;
+    border: none !important;
+    border-left: 2px solid var(--rule) !important;
+    border-radius: 0 !important;
+    padding: 0.35rem 0.75rem !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {
+    background: var(--teal-light) !important;
+    color: var(--teal) !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    padding: 0.15rem 0 0.25rem 0.5rem !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stPageLink"] a {
+    font-size: 0.875rem !important;
+    padding: 0.3rem 0.5rem !important;
+    margin: 0.05rem 0 !important;
+    border-left: 2px solid transparent !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {
+    background-color: var(--teal-light) !important;
+    color: var(--ink) !important;
+}
+
+/* ── Inputs ── */
+[data-testid="stSidebar"] div[data-baseweb="select"],
+.stTextInput input,
+.stNumberInput input,
+.stTextArea textarea,
+.stSelectbox div[data-baseweb="select"] {
+    background: linear-gradient(to bottom, var(--white), var(--surface-end)) !important;
+    border: 2px solid var(--rule) !important;
+    border-radius: 0 !important;
+    color: var(--ink) !important;
+}
+
 .stMultiSelect [data-baseweb="tag"] {
-    background-color: #1e3a8a !important; /* Dark Blue */
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 4px !important;
+    background-color: var(--teal) !important;
+    border: none !important;
+    border-radius: 0 !important;
 }
 
 .stMultiSelect [data-baseweb="tag"] span {
-    color: #ffffff !important; /* White Font */
+    color: var(--white) !important;
     font-family: var(--font-mono) !important;
-    font-size: 0.8rem !important;
+    font-size: 0.75rem !important;
 }
 
-.stMultiSelect [data-baseweb="tag"] div:hover {
-    background-color: #2563eb !important; /* Slightly brighter blue on hover */
-}
-
-/* Ensure remove icon is visible */
-.stMultiSelect [data-baseweb="tag"] div[role="button"] svg {
-    fill: white !important;
-}
-
-/* Fix for the multi-select dropdown labels */
-[data-testid="stSidebar"] div[data-baseweb="select"] {
-    background-color: rgba(255,255,255,0.02) !important;
-    border: 1px solid var(--glass-border) !important;
-}
-
-/* ── Custom Component Classes ── */
+/* ── Cards & headers (legacy class names) ── */
 .techno-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    border-radius: 4px; /* More terminal-esque than rounder ones */
+    background: linear-gradient(to bottom, var(--white), var(--surface-end));
+    border: 2px solid var(--rule);
+    border-radius: var(--radius);
     padding: 1.5rem;
     margin-bottom: 1rem;
-    box-shadow: var(--card-shadow);
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    box-shadow: var(--shadow-md);
 }
 
 .techno-card:hover {
-    border-color: rgba(0, 242, 255, 0.3);
+    border-color: var(--ink-light);
 }
 
 .gradient-text {
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 800;
+    background: none !important;
+    -webkit-text-fill-color: var(--ink) !important;
+    color: var(--ink) !important;
+    font-family: var(--font-heading) !important;
+    font-weight: 700 !important;
 }
 
 .terminal-header {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--accent-secondary);
+    font-size: 0.65rem;
+    color: var(--teal);
     text-transform: uppercase;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.1em;
     margin-bottom: 0.5rem;
-    border-left: 2px solid var(--accent-secondary);
+    border-left: 2px solid var(--teal);
     padding-left: 10px;
 }
 
 /* ── Tabs ── */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
-    background-color: transparent !important;
-}
-
 .stTabs [data-baseweb="tab"] {
-    background-color: rgba(255,255,255,0.02) !important;
-    border: 1px solid var(--glass-border) !important;
-    border-radius: 4px 4px 0 0 !important;
-    padding: 8px 16px !important;
-    color: var(--text-secondary) !important;
+    background-color: transparent !important;
+    border: 2px solid var(--rule) !important;
+    border-radius: 0 !important;
+    color: var(--ink-soft) !important;
 }
 
 .stTabs [aria-selected="true"] {
-    background-color: rgba(0, 242, 255, 0.05) !important;
-    border-bottom: 2px solid var(--accent-primary) !important;
-    color: var(--accent-primary) !important;
+    background: linear-gradient(to bottom, var(--white), var(--surface-end)) !important;
+    border-bottom: 2px solid var(--teal) !important;
+    color: var(--ink) !important;
 }
 
 /* ── Expanders ── */
-.styled-expander {
-    border: 1px solid var(--glass-border) !important;
-    background: rgba(255,255,255,0.01) !important;
-    border-radius: 4px !important;
-}
-
-/* Data Override Expander Header Override */
 [data-testid="stExpander"] summary {
-    background-color: #202028 !important; /* Muted Dark instead of Bright Green, avoiding applying bright green to home page expanders */
-    color: #00f2ff !important; /* Cyan text */
-    border-radius: 4px 4px 0 0 !important;
-    font-weight: 700 !important;
+    background: linear-gradient(to bottom, var(--white), var(--surface-end)) !important;
+    color: var(--ink) !important;
+    border: 2px solid var(--rule) !important;
+    border-radius: 0 !important;
     font-family: var(--font-mono) !important;
-    padding: 0.5rem 1rem !important;
-    border: 1px solid var(--accent-primary) !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
 }
 
 [data-testid="stExpander"] summary:hover {
-    background-color: #2a2a35 !important;
+    background: var(--teal-light) !important;
 }
 
 [data-testid="stExpander"] summary svg {
-    fill: #00f2ff !important;
+    fill: var(--ink-soft) !important;
 }
 
-/* ── Global Button Styling ── */
+/* ── Buttons ── */
 .stButton > button {
-    background-color: #22c55e !important; /* Green */
-    color: #000000 !important; /* Black */
-    border: none !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
+    background: linear-gradient(to bottom, var(--teal), #084838) !important;
+    color: var(--white) !important;
+    border: 1px solid #063a2e !important;
+    font-family: var(--font-main) !important;
+    font-weight: 500 !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.02em !important;
+    border-radius: 0 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 .stButton > button:hover {
-    background-color: #16a34a !important; /* Darker green */
-    color: #000000 !important;
+    background: linear-gradient(to bottom, #128265, var(--teal)) !important;
+    border-color: #084838 !important;
+    color: var(--white) !important;
 }
 
 .stButton > button p {
-    color: #000000 !important;
-    font-weight: 700 !important;
+    color: var(--white) !important;
 }
 
-/* ── Plotly Container Fixes ── */
+/* ── Dataframes & alerts ── */
+[data-testid="stDataFrame"] {
+    border: 2px solid var(--rule);
+    border-radius: 0;
+}
+
+.stAlert {
+    background: linear-gradient(to bottom, var(--white), var(--surface-end)) !important;
+    color: var(--ink) !important;
+    border: 2px solid var(--rule) !important;
+    border-radius: 0 !important;
+}
+
+/* ── Plotly ── */
 .js-plotly-plot {
-    border: 1px solid var(--glass-border);
-    border-radius: 4px;
-    background: rgba(0,0,0,0.2);
+    border: 2px solid var(--rule);
+    border-radius: 0;
+    background: var(--white);
 }
 
-/* ── Hide Streamlit branding ── */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-[data-testid="stHeader"] {visibility: hidden;}
+/* ── Hide Streamlit chrome ── */
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+[data-testid="stHeader"] { visibility: hidden; }
+
+/* ── Magazine components ── */
+.mag-masthead {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--rule);
+}
+
+.mag-kicker {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin: 0 0 0.75rem 0;
+}
+
+.mag-title {
+    font-family: var(--font-heading) !important;
+    font-size: 2.75rem !important;
+    font-weight: 700 !important;
+    color: var(--ink) !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.02em !important;
+    margin: 0 0 0.5rem 0 !important;
+}
+
+.mag-deck {
+    font-family: var(--font-main);
+    font-size: 1.0625rem;
+    color: var(--ink-mid);
+    max-width: 42rem;
+    line-height: 1.55;
+    margin: 0;
+}
+
+.mag-section-kicker {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin: 2rem 0 0.75rem 0;
+    padding-top: 1rem;
+    border-top: 2px solid var(--rule);
+}
+
+.mag-rule {
+    border: none;
+    border-top: 2px solid var(--rule);
+    margin: 2rem 0;
+}
+
+.mag-decision-card {
+    background: linear-gradient(to bottom, var(--white), var(--surface-end));
+    border: 2px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow-md);
+}
+
+.mag-decision-card--compact {
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    box-shadow: none;
+}
+
+.mag-decision-card--compact .mag-card-cost {
+    font-size: 1.75rem;
+}
+
+.mag-card-title {
+    font-family: var(--font-heading) !important;
+    font-size: 1.125rem !important;
+    font-weight: 700 !important;
+    color: var(--ink) !important;
+    line-height: 1.3 !important;
+    margin: 0.25rem 0 !important;
+}
+
+.mag-card-meta {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--ink-soft);
+    margin: 0 0 0.75rem 0;
+}
+
+.mag-card-deck {
+    font-family: var(--font-main);
+    font-size: 0.9375rem;
+    color: var(--ink-mid);
+    max-width: 40rem;
+    line-height: 1.6;
+    margin: 0 0 1rem 0;
+}
+
+.mag-card-cost {
+    font-family: var(--font-heading);
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--teal);
+    margin: 0;
+    line-height: 1;
+}
+
+.mag-card-cost-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin: 0.25rem 0 0 0;
+}
+
+.mag-legacy-banner {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--rule);
+}
+
+.mag-notice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    align-items: baseline;
+    padding: 0.85rem 1rem;
+    margin: 0 0 1.25rem 0;
+    background: linear-gradient(to bottom, var(--white), var(--surface-end));
+    border: 2px solid var(--rule);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.mag-notice-kicker {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+    white-space: nowrap;
+}
+
+.mag-notice-body {
+    font-family: var(--font-main);
+    font-size: 0.9rem;
+    color: var(--ink-mid);
+    line-height: 1.45;
+    flex: 1 1 16rem;
+}
+
+.mag-evidence {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--ink-soft);
+    margin: 0.35rem 0 0.75rem 0;
+}

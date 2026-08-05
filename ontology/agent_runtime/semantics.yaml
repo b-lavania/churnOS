@@ -1,0 +1,83 @@
+vertical: agent_runtime
+ontology_version: agent_runtime_v1
+taxonomy_module: ontology.exception_taxonomy
+
+subject:
+  workspace_id: "Account container"
+  agent_id: "Runtime agent instance"
+  connector_id: "Tool or integration used in run"
+  capability_id: "Skill or tool policy under evaluation"
+
+decision.verdict:
+  healthy: "Runtime within policy"
+  leaking: "Runs start but do not complete trusted success"
+  destructive: "Trust incidents or harm signals"
+  uneconomic: "Cost per successful run exceeds willingness to pay"
+  needs_review: "Assist mode — confirm before auto-act"
+
+economics.primary_metric_label: cost_of_leaving_live_usd
+
+# Runtime vertical uses stricter trust multipliers and rollback on destructive.
+
+classification:
+  thresholds:
+    capability_dead:
+      max_run_count_exclusive: 4
+    activation_leak:
+      success_rate_prior_multiplier: 0.55
+    capability_harm:
+      harm_score_min: 0.06
+      check_harm_correlation: true
+    approval_fatigue:
+      dismiss_rate_prior_multiplier: 0.9
+    trust_break:
+      trust_rate_prior_multiplier: 1.2
+    run_cost_blowout:
+      run_cost_prior_multiplier: 1.8
+    loop_exhaustion:
+      use_profile_max_loops: true
+    quality_drift:
+      min_slope_per_week: 0.04
+    outcome_confirmation_gap:
+      max_confirm_rate: 0.5
+      min_success_rate: 0.45
+
+decision:
+  verdict_default: needs_review
+  verdict_rules:
+    - verdict: destructive
+      when_any_category: [capability_harm, trust_break, loop_exhaustion]
+    - verdict: uneconomic
+      when_any_category: [run_cost_blowout]
+    - verdict: leaking
+      when_any_category: [activation_leak, quality_drift, outcome_confirmation_gap]
+    - verdict: underpowered
+      when_exception_count_lt: 2
+    - verdict: needs_review
+      default: true
+
+  action_map:
+    healthy:
+      recommended_action: ship
+      requires_review: false
+      rationale: "Runtime within policy — safe to promote."
+    leaking:
+      recommended_action: revise
+      requires_review: false
+      rationale: "Completion or quality leak — revise prompt/tool policy before scale."
+    destructive:
+      recommended_action: rollback
+      requires_review: true
+      rationale: "Runtime harm/trust/loop failure — rollback to last known-good."
+    uneconomic:
+      recommended_action: throttle
+      requires_review: false
+      rationale: "Inference economics broken — throttle traffic or cache harder."
+    underpowered:
+      recommended_action: hold
+      requires_review: false
+      rationale: "Insufficient runtime exposure for auto-act."
+    needs_review:
+      recommended_action: hold
+      requires_review: true
+      rationale: "Assist mode — confirm before auto-act."

@@ -1,214 +1,310 @@
 """
-Unified product-analytics workspace: one seed, one event spine, experiment tables.
+Unified agentic workspace: synthetic warehouse + optional legacy tables.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import timedelta
 from typing import Any
 
-import numpy as np
 import pandas as pd
 
-from data.generator import (
-    SEED,
-    generate_all_data,
-    generate_funnel_events,
+from data.agentic_generator import DATA_VERSION, SEED, generate_agentic_warehouse
+from data.generator import generate_all_data, generate_funnel_events
+
+
+EMPTY_EVAL_RESULTS = pd.DataFrame(
+    columns=["capability_id", "capability_version", "eval_suite_id", "score", "evaluated_at"]
 )
+
+EMPTY_ACCOUNTS = pd.DataFrame(columns=["account_id", "tier", "pricing_model", "onboarding_completed", "created_at"])
+EMPTY_OUTCOMES = pd.DataFrame(
+    columns=[
+        "outcome_id", "account_id", "end_user_id", "agent_run_id",
+        "outcome_type", "success", "verified", "verified_by", "occurred_at", "days_since_signup",
+    ]
+)
+
+
+def build_connector_capability_graph(
+    connector_events: pd.DataFrame,
+    runs: pd.DataFrame,
+    seats: pd.DataFrame | None = None,
+) -> pd.DataFrame:
+    """Derived connector → capability dependency table (Gap 4)."""
+    cols = ["connector_id", "capability_id", "call_count", "fail_count", "blast_radius_seats"]
+    if connector_events.empty or runs.empty:
+        return pd.DataFrame(columns=cols)
+
+    merged = connector_events.merge(
+        runs[["run_id", "capability_id", "seat_id"]],
+        on="run_id",
+        how="inner",
+    )
+    if merged.empty:
+        return pd.DataFrame(columns=cols)
+
+    graph = (
+        merged.groupby(["connector_id", "capability_id"], as_index=False)
+        .agg(
+            call_count=("connector_event_id", "count"),
+            fail_count=("success", lambda s: int((~s.astype(bool)).sum())),
+            blast_radius_seats=("seat_id", "nunique"),
+        )
+    )
+    return graph
 
 
 @dataclass
 class Workspace:
-    """Container for all synthetic tables powering churnOS surfaces."""
+    """Container for agentic + legacy synthetic tables."""
 
     seed: int
-    model_config: dict[str, Any]
+    profile: dict[str, Any]
     built_at: pd.Timestamp
-    customers: pd.DataFrame
-    transactions: pd.DataFrame
+    # Agentic spine
+    workspaces: pd.DataFrame
+    seats: pd.DataFrame
+    agents: pd.DataFrame
+    capabilities: pd.DataFrame
+    capability_versions: pd.DataFrame
+    runs: pd.DataFrame
+    approvals: pd.DataFrame
+    connector_events: pd.DataFrame
     product_events: pd.DataFrame
-    funnel: pd.DataFrame
-    marketplace: pd.DataFrame
-    buyers: pd.DataFrame
-    marketing: pd.DataFrame
+    retention_marks: pd.DataFrame
     experiment_assignments: pd.DataFrame
     experiment_exposures: pd.DataFrame
     experiment_outcomes: pd.DataFrame
-    default_experiment_id: str = "EXP-WORKSPACE-001"
+    # Methodology measurement layer
+    accounts: pd.DataFrame = field(default_factory=lambda: EMPTY_ACCOUNTS.copy())
+    end_users: pd.DataFrame = field(default_factory=pd.DataFrame)
+    sessions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    agent_runs: pd.DataFrame = field(default_factory=pd.DataFrame)
+    spans: pd.DataFrame = field(default_factory=pd.DataFrame)
+    outcomes: pd.DataFrame = field(default_factory=lambda: EMPTY_OUTCOMES.copy())
+    subscriptions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    usage_events: pd.DataFrame = field(default_factory=pd.DataFrame)
+    # Agentic challenges (dummy-seeded)
+    catastrophic_events: pd.DataFrame = field(default_factory=pd.DataFrame)
+    routing_decisions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    spend_by_step: pd.DataFrame = field(default_factory=pd.DataFrame)
+    jevons_elasticity: pd.DataFrame = field(default_factory=pd.DataFrame)
+    feature_flag_assignments: pd.DataFrame = field(default_factory=pd.DataFrame)
+    retention_features: pd.DataFrame = field(default_factory=pd.DataFrame)
+    # Derived / governance
+    connector_capability_graph: pd.DataFrame = field(default_factory=lambda: pd.DataFrame())
+    eval_results: pd.DataFrame = field(default_factory=lambda: EMPTY_EVAL_RESULTS.copy())
+    # Legacy (for LEGACY nav pages)
+    customers: pd.DataFrame = field(default_factory=pd.DataFrame)
+    transactions: pd.DataFrame = field(default_factory=pd.DataFrame)
+    funnel: pd.DataFrame = field(default_factory=pd.DataFrame)
+    marketplace: pd.DataFrame = field(default_factory=pd.DataFrame)
+    buyers: pd.DataFrame = field(default_factory=pd.DataFrame)
+    marketing: pd.DataFrame = field(default_factory=pd.DataFrame)
+    default_experiment_id: str = "EXP-CAP-VERSION-001"
     meta: dict[str, Any] = field(default_factory=dict)
 
-
-def _assign_customers_to_experiment(
-    customers: pd.DataFrame,
-    experiment_id: str,
-    seed: int,
-    control_share: float = 0.5,
-) -> pd.DataFrame:
-    rng = np.random.default_rng(seed)
-    n = len(customers)
-    variants = rng.choice(
-        ["control", "variant"],
-        size=n,
-        p=[control_share, 1.0 - control_share],
-    )
-    signup = pd.to_datetime(customers["signup_date"])
-    offsets = rng.integers(0, 14, size=n)
-    assigned_at = signup + pd.to_timedelta(offsets, unit="D")
-
-    return pd.DataFrame(
-        {
-            "user_id": customers["customer_id"],
-            "experiment_id": experiment_id,
-            "variant": variants,
-            "assigned_at": assigned_at,
-        }
-    )
-
-
-def _tag_funnel_with_assignment(
-    funnel: pd.DataFrame,
-    assignments: pd.DataFrame,
-    seed: int,
-) -> pd.DataFrame:
-    """Map session-level funnel rows to experiment variants via synthetic user linkage."""
-
-    rng = np.random.default_rng(seed + 17)
-    users = assignments[["user_id", "variant", "experiment_id", "assigned_at"]].copy()
-    users = users.rename(columns={"assigned_at": "user_assigned_at"})
-
-    sessions = funnel["session_id"].unique()
-    session_users = pd.DataFrame(
-        {
-            "session_id": sessions,
-            "user_id": rng.choice(users["user_id"].values, size=len(sessions)),
-        }
-    )
-
-    tagged = funnel.merge(session_users, on="session_id", how="left")
-    tagged = tagged.merge(users, on="user_id", how="left")
-    tagged["session_ts"] = pd.to_datetime(tagged["timestamp"])
-    tagged["is_post_assignment"] = tagged["session_ts"] >= tagged["user_assigned_at"]
-    return tagged
-
-
-def _build_exposure_and_outcomes(
-    tagged_funnel: pd.DataFrame,
-    experiment_id: str,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    exposed = tagged_funnel[tagged_funnel["is_post_assignment"].fillna(False)].copy()
-
-    first_exp = (
-        exposed.groupby(["user_id", "variant"], as_index=False)["session_ts"]
-        .min()
-        .rename(columns={"session_ts": "first_exposure_ts"})
-    )
-    first_exp["experiment_id"] = experiment_id
-
-    purchase_sessions = exposed[exposed["funnel_step"] == "Purchase"]["session_id"].unique()
-
-    session_variant = exposed.groupby("session_id")["variant"].first()
-
-    outcomes_rows = []
-    for variant in ("control", "variant"):
-        v_sess = session_variant[session_variant == variant].index
-        visitors = len(v_sess)
-        conversions = len(set(v_sess) & set(purchase_sessions))
-        outcomes_rows.append(
-            {
-                "experiment_id": experiment_id,
-                "variant": variant,
-                "visitors": int(visitors),
-                "conversions": int(conversions),
-                "conversion_rate_pct": round(conversions / visitors * 100, 3) if visitors else 0.0,
-            }
-        )
-
-    outcomes = pd.DataFrame(outcomes_rows)
-    return first_exp, outcomes
+    @property
+    def model_config(self) -> dict[str, Any]:
+        return self.profile
 
 
 def build_workspace(
-    model_config: dict[str, Any] | None = None,
+    profile: dict[str, Any] | None = None,
     *,
     seed: int = SEED,
     n_sessions: int = 30_000,
-    experiment_id: str = "EXP-WORKSPACE-001",
+    price_runs: bool = True,
+    data_source: str = "synthetic",
+    otel_path: str | None = None,
 ) -> Workspace:
-    """
-    Build a coherent synthetic warehouse for all analytics pages.
+    """Build agentic warehouse from profile; attach legacy bundle for LEGACY pages."""
+    if profile is None:
+        from analytics.agentic_profile import get_preset
+        profile = get_preset("assistant_heavy")
 
-    Parameters
-    ----------
-    model_config : optional dict persisted from Business Model (stored for resync).
-    seed : RNG seed shared across generators.
-    n_sessions : funnel session volume (aligned with conversion page defaults).
-    """
-    bundle = generate_all_data(seed=seed)
+    agentic = generate_agentic_warehouse(profile, seed=seed)
+    runs = agentic["runs"]
+    if price_runs and not runs.empty:
+        from analytics.economics import calculate_run_cost
+        runs = calculate_run_cost(runs, profile)
+        agentic["runs"] = runs
+        if not agentic.get("agent_runs", pd.DataFrame()).empty:
+            agentic["agent_runs"] = runs.copy()
+            agentic["agent_runs"]["agent_run_id"] = runs["run_id"]
 
+    if data_source == "otel":
+        from data.ingestion import ingest_otel_into_agentic
+
+        agentic = ingest_otel_into_agentic(agentic, profile, seed=seed, otel_path=otel_path)
+
+    graph = build_connector_capability_graph(
+        agentic["connector_events"],
+        runs,
+    )
+
+    # Seed minimal eval scores for P3 scaffolding (two versions per capability)
+    eval_rows = []
+    for _, ver in agentic["capability_versions"].iterrows():
+        base = 0.78
+        # v2 slightly better unless random regression later
+        score = base + (0.04 if ver["version"] == "v2" else 0.0)
+        eval_rows.append(
+            {
+                "capability_id": ver["capability_id"],
+                "capability_version": ver["capability_version_id"],
+                "eval_suite_id": "golden_v1",
+                "score": round(score, 3),
+                "evaluated_at": ver["shipped_at"],
+            }
+        )
+    eval_results = pd.DataFrame(eval_rows) if eval_rows else EMPTY_EVAL_RESULTS.copy()
+
+    legacy = generate_all_data(seed=seed)
     funnel = generate_funnel_events(n_sessions=n_sessions, seed=seed)
 
-    customers = bundle["customers"]
-    assignments = _assign_customers_to_experiment(customers, experiment_id, seed)
-    tagged_funnel = _tag_funnel_with_assignment(funnel, assignments, seed)
-    exposures, outcomes = _build_exposure_and_outcomes(tagged_funnel, experiment_id)
+    challenge_meta = agentic.get("challenge_meta", {})
+    meta = {
+        "data_version": DATA_VERSION,
+        "n_sessions": n_sessions,
+        "data_source": data_source,
+        **challenge_meta,
+    }
 
     return Workspace(
         seed=int(seed),
-        model_config=dict(model_config or {}),
+        profile=dict(profile),
         built_at=pd.Timestamp.utcnow(),
-        customers=customers,
-        transactions=bundle["transactions"],
-        product_events=bundle["product_events"],
-        funnel=tagged_funnel,
-        marketplace=bundle["marketplace"],
-        buyers=bundle["buyers"],
-        marketing=bundle["marketing"],
-        experiment_assignments=assignments,
-        experiment_exposures=exposures,
-        experiment_outcomes=outcomes,
-        default_experiment_id=experiment_id,
-        meta={"n_sessions": n_sessions},
+        workspaces=agentic["workspaces"],
+        seats=agentic["seats"],
+        agents=agentic["agents"],
+        capabilities=agentic["capabilities"],
+        capability_versions=agentic["capability_versions"],
+        runs=runs,
+        approvals=agentic["approvals"],
+        connector_events=agentic["connector_events"],
+        product_events=agentic["product_events"],
+        retention_marks=agentic["retention_marks"],
+        experiment_assignments=agentic["experiment_assignments"],
+        experiment_exposures=agentic["experiment_exposures"],
+        experiment_outcomes=agentic["experiment_outcomes"],
+        accounts=agentic.get("accounts", EMPTY_ACCOUNTS.copy()),
+        end_users=agentic.get("end_users", pd.DataFrame()),
+        sessions=agentic.get("sessions", pd.DataFrame()),
+        agent_runs=agentic.get("agent_runs", pd.DataFrame()),
+        spans=agentic.get("spans", pd.DataFrame()),
+        outcomes=agentic.get("outcomes", EMPTY_OUTCOMES.copy()),
+        subscriptions=agentic.get("subscriptions", pd.DataFrame()),
+        usage_events=agentic.get("usage_events", pd.DataFrame()),
+        catastrophic_events=agentic.get("catastrophic_events", pd.DataFrame()),
+        routing_decisions=agentic.get("routing_decisions", pd.DataFrame()),
+        spend_by_step=agentic.get("spend_by_step", pd.DataFrame()),
+        jevons_elasticity=agentic.get("jevons_elasticity", pd.DataFrame()),
+        feature_flag_assignments=agentic.get("feature_flag_assignments", pd.DataFrame()),
+        retention_features=agentic.get("retention_features", pd.DataFrame()),
+        connector_capability_graph=graph,
+        eval_results=eval_results,
+        customers=legacy["customers"],
+        transactions=legacy["transactions"],
+        funnel=funnel,
+        marketplace=legacy["marketplace"],
+        buyers=legacy["buyers"],
+        marketing=legacy["marketing"],
+        meta=meta,
     )
 
 
 def workspace_to_dict(ws: Workspace) -> dict[str, Any]:
-    """Serialize workspace tables for Streamlit session_state (plain dict)."""
     return {
         "seed": ws.seed,
-        "model_config": ws.model_config,
+        "profile": ws.profile,
         "built_at": ws.built_at.isoformat(),
+        "workspaces": ws.workspaces,
+        "seats": ws.seats,
+        "agents": ws.agents,
+        "capabilities": ws.capabilities,
+        "capability_versions": ws.capability_versions,
+        "runs": ws.runs,
+        "approvals": ws.approvals,
+        "connector_events": ws.connector_events,
+        "product_events": ws.product_events,
+        "retention_marks": ws.retention_marks,
+        "experiment_assignments": ws.experiment_assignments,
+        "experiment_exposures": ws.experiment_exposures,
+        "experiment_outcomes": ws.experiment_outcomes,
+        "accounts": ws.accounts,
+        "end_users": ws.end_users,
+        "sessions": ws.sessions,
+        "agent_runs": ws.agent_runs,
+        "spans": ws.spans,
+        "outcomes": ws.outcomes,
+        "subscriptions": ws.subscriptions,
+        "usage_events": ws.usage_events,
+        "catastrophic_events": ws.catastrophic_events,
+        "routing_decisions": ws.routing_decisions,
+        "spend_by_step": ws.spend_by_step,
+        "jevons_elasticity": ws.jevons_elasticity,
+        "feature_flag_assignments": ws.feature_flag_assignments,
+        "retention_features": ws.retention_features,
+        "connector_capability_graph": ws.connector_capability_graph,
+        "eval_results": ws.eval_results,
         "customers": ws.customers,
         "transactions": ws.transactions,
-        "product_events": ws.product_events,
         "funnel": ws.funnel,
         "marketplace": ws.marketplace,
         "buyers": ws.buyers,
         "marketing": ws.marketing,
-        "experiment_assignments": ws.experiment_assignments,
-        "experiment_exposures": ws.experiment_exposures,
-        "experiment_outcomes": ws.experiment_outcomes,
         "default_experiment_id": ws.default_experiment_id,
         "meta": ws.meta,
     }
 
 
 def workspace_from_dict(data: dict[str, Any]) -> Workspace:
+    profile = data.get("profile") or data.get("model_config", {})
     return Workspace(
         seed=int(data["seed"]),
-        model_config=data.get("model_config", {}),
+        profile=profile,
         built_at=pd.Timestamp(data.get("built_at", pd.Timestamp.utcnow().isoformat())),
+        workspaces=data["workspaces"],
+        seats=data["seats"],
+        agents=data["agents"],
+        capabilities=data["capabilities"],
+        capability_versions=data["capability_versions"],
+        runs=data["runs"],
+        approvals=data["approvals"],
+        connector_events=data["connector_events"],
+        product_events=data["product_events"],
+        retention_marks=data["retention_marks"],
+        experiment_assignments=data["experiment_assignments"],
+        experiment_exposures=data["experiment_exposures"],
+        experiment_outcomes=data["experiment_outcomes"],
+        accounts=data.get("accounts", EMPTY_ACCOUNTS.copy()),
+        end_users=data.get("end_users", pd.DataFrame()),
+        sessions=data.get("sessions", pd.DataFrame()),
+        agent_runs=data.get("agent_runs", pd.DataFrame()),
+        spans=data.get("spans", pd.DataFrame()),
+        outcomes=data.get("outcomes", EMPTY_OUTCOMES.copy()),
+        subscriptions=data.get("subscriptions", pd.DataFrame()),
+        usage_events=data.get("usage_events", pd.DataFrame()),
+        catastrophic_events=data.get("catastrophic_events", pd.DataFrame()),
+        routing_decisions=data.get("routing_decisions", pd.DataFrame()),
+        spend_by_step=data.get("spend_by_step", pd.DataFrame()),
+        jevons_elasticity=data.get("jevons_elasticity", pd.DataFrame()),
+        feature_flag_assignments=data.get("feature_flag_assignments", pd.DataFrame()),
+        retention_features=data.get("retention_features", pd.DataFrame()),
+        connector_capability_graph=data.get(
+            "connector_capability_graph",
+            build_connector_capability_graph(data["connector_events"], data["runs"]),
+        ),
+        eval_results=data.get("eval_results", EMPTY_EVAL_RESULTS.copy()),
         customers=data["customers"],
         transactions=data["transactions"],
-        product_events=data["product_events"],
         funnel=data["funnel"],
         marketplace=data["marketplace"],
         buyers=data["buyers"],
         marketing=data["marketing"],
-        experiment_assignments=data["experiment_assignments"],
-        experiment_exposures=data["experiment_exposures"],
-        experiment_outcomes=data["experiment_outcomes"],
-        default_experiment_id=data.get("default_experiment_id", "EXP-WORKSPACE-001"),
+        default_experiment_id=data.get("default_experiment_id", "EXP-CAP-VERSION-001"),
         meta=data.get("meta", {}),
     )
 
@@ -225,3 +321,16 @@ def get_workspace_from_session(session_state: Any) -> Workspace | None:
 def sync_workspace_to_session(session_state: Any, ws: Workspace) -> None:
     session_state["workspace"] = workspace_to_dict(ws)
     session_state["workspace_seed"] = ws.seed
+    session_state["agentic_profile"] = ws.profile
+
+
+def ensure_growth_records(session_state: Any, ws: Workspace) -> list[dict]:
+    if "growth_records" not in session_state or not session_state["growth_records"]:
+        from analytics.decisions import emit_records
+        from ontology.store import append_record
+
+        records = emit_records(ws, ws.profile, include_accounts=True)
+        session_state["growth_records"] = records
+        for r in records[:3]:
+            append_record(r)
+    return session_state["growth_records"]

@@ -1,0 +1,95 @@
+vertical: capability_lifecycle
+ontology_version: capability_lifecycle_v1
+taxonomy_module: ontology.exception_taxonomy
+
+subject:
+  workspace_id: "Account / tenant container"
+  capability_id: "Shippable unit: template, skill, automation"
+  capability_version: "Version under experiment or rollout"
+  agent_id: "Parent agent definition"
+  cohort_id: "Seat signup cohort for retention context"
+
+decision.verdict:
+  healthy: "No ranked exceptions above threshold"
+  leaking: "Activation or habit exceptions present"
+  destructive: "Capability harm correlates with churn"
+  uneconomic: "Run cost or CAC/LTV breaks policy"
+  underpowered: "Signal exists but not decision-grade"
+  needs_review: "Low confidence; human must confirm"
+
+decision.recommended_action:
+  ship: "Promote capability / raise traffic"
+  hold: "Freeze rollout; gather evidence"
+  throttle: "Cap traffic or credit budget"
+  shadow: "Run offline without user-visible effects"
+  rollback: "Revert to last known-good version"
+  kill: "Remove from product surface"
+  experiment: "Force governed test before further ship"
+  revise: "Prompt/tool/policy change; re-enter eval"
+
+economics.primary_metric_label: cost_of_leaving_live_usd
+
+# --- Governing rules (sample values — edit without code changes) ---
+
+classification:
+  thresholds:
+    capability_dead:
+      max_run_count_exclusive: 5
+    activation_leak:
+      success_rate_prior_multiplier: 0.6
+    capability_harm:
+      harm_score_min: 0.08
+      check_harm_correlation: true
+    approval_fatigue:
+      dismiss_rate_prior_multiplier: 1.0
+    trust_break:
+      trust_rate_prior_multiplier: 1.5
+    run_cost_blowout:
+      run_cost_prior_multiplier: 2.0
+    loop_exhaustion:
+      use_profile_max_loops: true
+    quality_drift:
+      min_slope_per_week: 0.05
+    outcome_confirmation_gap:
+      max_confirm_rate: 0.55
+      min_success_rate: 0.5
+
+decision:
+  verdict_default: needs_review
+  verdict_rules:
+    - verdict: destructive
+      when_any_category: [capability_harm, trust_break]
+    - verdict: uneconomic
+      when_any_category: [run_cost_blowout, cac_ltv_contradiction]
+    - verdict: leaking
+      when_any_category: [activation_leak, habit_collapse]
+    - verdict: underpowered
+      when_exception_count_lt: 2
+    - verdict: needs_review
+      default: true
+
+  action_map:
+    healthy:
+      recommended_action: ship
+      requires_review: false
+      rationale: "Capability lifecycle healthy — promote or maintain traffic."
+    leaking:
+      recommended_action: experiment
+      requires_review: false
+      rationale: "Activation or habit leak — governed experiment before scale."
+    destructive:
+      recommended_action: throttle
+      requires_review: true
+      rationale: "Harm or trust signal — throttle capability until reviewed."
+    uneconomic:
+      recommended_action: hold
+      requires_review: false
+      rationale: "Run cost or CAC/LTV breaks policy — freeze rollout."
+    underpowered:
+      recommended_action: hold
+      requires_review: false
+      rationale: "Thin signal — gather more runs before deciding."
+    needs_review:
+      recommended_action: hold
+      requires_review: true
+      rationale: "Mixed lifecycle signals — human must confirm."
