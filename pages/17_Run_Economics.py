@@ -83,6 +83,36 @@ fig_cm = cm_nrr_teaching_chart(getattr(ws, "subscriptions", __import__("pandas")
 if fig_cm is not None:
     st.plotly_chart(fig_cm, use_container_width=True)
 
+from analytics.evidence import is_rigorous_mode
+from analytics.stochastic_economics import bootstrap_cm_nrr, conformal_cpso_band
+from analytics.queueing import hitl_queue_from_workspace
+from ui.evidence_chrome import render_posterior_ribbon
+
+if is_rigorous_mode(view_profile):
+    section_kicker("Stochastic margin honesty")
+    stoch = bootstrap_cm_nrr(ws)
+    cpso_band = conformal_cpso_band(ws)
+    s1, s2, s3 = st.columns(3)
+    s1.metric("CM-NRR (mean)", f"{stoch['cm_nrr_mean']:.1%}")
+    s2.metric("P(CM-NRR < 100%)", f"{stoch['p_cm_nrr_below_1']:.0%}")
+    s3.metric("CPSO 90% band", f"${cpso_band['cpso_ci90'][0]:.2f}–${cpso_band['cpso_ci90'][1]:.2f}")
+    st.caption(
+        f"Looks like {stoch['cm_nrr_mean']:.0%} NRR; "
+        f"{stoch['p_cm_nrr_below_1']:.0%} chance CM-NRR < 100%."
+    )
+    render_posterior_ribbon(stoch["cm_nrr_mean"], stoch["cm_nrr_ci90"], label="CM-NRR")
+
+    section_kicker("HITL queueing (Erlang-C)")
+    q = hitl_queue_from_workspace(ws, view_profile)
+    q1, q2, q3 = st.columns(3)
+    q1.metric("P(wait)", f"{q['p_wait']:.0%}")
+    q2.metric("Expected wait (hr)", f"{q['expected_wait_hr']:.1f}")
+    q3.metric("Utilization", f"{q['utilization']:.0%}")
+    st.caption(
+        f"At current HITL load (λ={q['arrival_rate']}/hr, c={q['reviewers']} reviewers), "
+        f"P(wait>SLA {q['sla_hours']}hr) ≈ {q['p_wait_exceeds_sla']:.0%}."
+    )
+
 section_kicker("Loop depth & waterfall")
 col_a, col_b = st.columns(2)
 with col_a:

@@ -5,9 +5,12 @@ from pathlib import Path
 import streamlit as st
 
 from analytics.agentic_profile import PRESETS, get_preset, list_presets
+from analytics.decisions import classify, emit_capability_records
 from analytics.metrics import resolve_metric
-from core.workspace import build_workspace, sync_workspace_to_session
+from core.workspace import build_workspace, get_workspace_from_session, sync_workspace_to_session
 from ui.explain import page_help
+from ui.instrumentation_checklist import render_instrumentation_checklist
+from ui.loop_chrome import render_loop_stepper
 from ui.magazine import load_magazine_css, masthead, section_kicker
 
 css_path = Path(__file__).parent.parent / "assets" / "style.css"
@@ -21,11 +24,11 @@ masthead(
     "Choose a product shape. This switches ontology semantics and synthetic warehouse priors.",
 )
 page_help("profile", show_notice=True)
+render_loop_stepper(st.session_state, highlight="profile")
 
 st.info(
     "**Required before any chart works:** pick a preset and click **Generate workspace**. "
-    "The first build takes about **30–90 seconds** — wait for the spinner to finish. "
-    "Session state clears on browser refresh — regenerate if DECISIONS pages look empty.",
+    "The first build takes about **30–90 seconds** — wait for the spinner to finish.",
     icon="ℹ️",
 )
 
@@ -48,13 +51,17 @@ st.write(
 
 seed = st.number_input("Workspace seed", min_value=1, max_value=99999, value=int(st.session_state.get("workspace_seed", 42)))
 data_source = st.selectbox("Data source", ["synthetic", "otel"], index=0)
+math_mode = st.selectbox(
+    "Math mode",
+    ["heuristic", "rigorous"],
+    index=0 if profile.get("priors", {}).get("math_mode", "heuristic") == "heuristic" else 1,
+    help="Rigorous: calibrated hazard, evidence blocks, survival-priced economics.",
+)
+profile.setdefault("priors", {})["math_mode"] = math_mode
 
 if st.button("Generate workspace", type="primary"):
     try:
-        with st.spinner(
-            "Building synthetic warehouse (typically 30–90 seconds). "
-            "Charts stay empty until this finishes — do not refresh."
-        ):
+        with st.spinner("Building synthetic warehouse (typically 30–90 seconds)…"):
             ws = build_workspace(
                 profile,
                 seed=int(seed),
@@ -63,27 +70,46 @@ if st.button("Generate workspace", type="primary"):
             )
         sync_workspace_to_session(st.session_state, ws)
         st.session_state["growth_records"] = []
+        st.session_state.pop("semantics_overlay", None)
         st.success(
             f"Workspace built — {len(ws.seats)} seats, {len(ws.capabilities)} capabilities, "
-            f"{len(getattr(ws, 'accounts', ws.workspaces))} accounts. "
-            "Open **Radar** or any DECISIONS page."
+            f"{len(getattr(ws, 'accounts', ws.workspaces))} accounts."
         )
     except Exception as exc:
         st.error(f"Workspace build failed: {exc}")
         st.exception(exc)
 
-ws = st.session_state.get("workspace")
-if ws is not None:
-    from core.workspace import get_workspace_from_session
-    workspace = get_workspace_from_session(st.session_state)
-    if workspace:
-        section_kicker("Warehouse summary")
-        c1, c2, c3, c4, c5 = st.columns(5)
-        c1.metric("Seats", len(workspace.seats))
-        c2.metric("Accounts", len(getattr(workspace, "accounts", workspace.workspaces)))
-        c3.metric("Outcomes", len(getattr(workspace, "outcomes", [])))
-        c4.metric("Runs", len(workspace.runs))
-        c5.metric("Data version", workspace.meta.get("data_version", "—"))
-        c6, c7 = st.columns(2)
-        c6.metric("Verified activation ≤14d", resolve_metric("activation_verified_14d", workspace)["display"])
-        c7.metric("Delegation ratio", resolve_metric("delegation_ratio", workspace)["display"])
+workspace = get_workspace_from_session(st.session_state)
+if workspace:
+    render_loop_stepper(st.session_state, highlight="warehouse")
+    section_kicker("Warehouse summary")
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Seats", len(workspace.seats))
+    c2.metric("Accounts", len(getattr(workspace, "accounts", workspace.workspaces)))
+    c3.metric("Outcomes", len(getattr(workspace, "outcomes", [])))
+    c4.metric("Runs", len(workspace.runs))
+    c5.metric("Capabilities", len(workspace.capabilities))
+
+    section_kicker("Warehouse peek")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.caption("Sample capabilities")
+        st.dataframe(workspace.capabilities.head(5), use_container_width=True, hide_index=True)
+    with col_b:
+        st.caption("Run success mix")
+        if not workspace.runs.empty and "success" in workspace.runs.columns:
+            st.metric("Success rate", f"{workspace.runs['success'].mean():.1%}")
+
+    section_kicker("Classify preview")
+    raw = classify(workspace, workspace.profile)
+    from collections import Counter
+    cat_counts = Counter(e["category"] for e in raw)
+    st.caption(f"**{len(raw)}** raw exceptions across capabilities before GDR emit.")
+    if cat_counts:
+        st.write(dict(cat_counts.most_common(8)))
+    preview_recs = emit_capability_records(workspace, workspace.profile)
+    st.caption(f"Would emit **{len(preview_recs)}** capability GDRs on Radar.")
+
+    render_instrumentation_checklist(workspace)
+
+    st.caption("Next: open **Radar** from the sidebar DECIDE group.")

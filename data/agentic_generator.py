@@ -51,6 +51,12 @@ def generate_agentic_warehouse(
     arpu = float(priors.get("seat_arpu_monthly", 59.0))
     churn_base = float(priors.get("monthly_churn_base", 0.06))
 
+    # --- Planted latents for identifiability lab ---
+    from data.ground_truth import GroundTruth, register
+
+    treatment_success_pp = float(priors.get("experiment_treatment_success_pp", 0.04))
+    treatment_cost_pct = float(priors.get("experiment_treatment_cost_pct", -0.05))
+
     start = pd.Timestamp("2024-01-01")
     end = pd.Timestamp("2025-12-31")
 
@@ -63,22 +69,29 @@ def generate_agentic_warehouse(
     )
 
     ws_ids = workspaces["workspace_id"].values
+    account_hazard_mult: dict[str, float] = {}
     seat_rows = []
     for i in range(n_seats):
         signup = start + pd.Timedelta(days=int(rng.integers(0, 600)))
         activated = rng.random() < activation_rate
-        churned = rng.random() < churn_base * (1.4 if not activated else 1.0)
+        ws_id = str(rng.choice(ws_ids))
+        if ws_id not in account_hazard_mult:
+            account_hazard_mult[ws_id] = float(rng.uniform(0.6, 1.8))
+        hazard_mult = account_hazard_mult[ws_id]
+        churn_prob = min(0.95, churn_base * hazard_mult * (1.4 if not activated else 1.0))
+        churned = rng.random() < churn_prob
         churn_date = signup + pd.Timedelta(days=int(rng.integers(30, 400))) if churned else pd.NaT
         seat_rows.append(
             {
                 "seat_id": f"SEAT-{i:05d}",
-                "workspace_id": rng.choice(ws_ids),
+                "workspace_id": ws_id,
                 "signup_date": signup,
                 "is_activated": activated,
                 "is_churned": churned,
                 "churn_date": churn_date,
                 "seat_arpu_monthly": arpu * rng.uniform(0.85, 1.15),
                 "weekly_delegation": rng.random() < habit_rate if activated else False,
+                "hazard_multiplier": hazard_mult,
             }
         )
     seats = pd.DataFrame(seat_rows)
@@ -120,6 +133,17 @@ def generate_agentic_warehouse(
     capabilities = pd.DataFrame(cap_rows)
     capability_versions = pd.DataFrame(ver_rows)
 
+    # Version quality: v2 may have planted regression on first cap
+    version_success_rates: dict[str, float] = {}
+    version_change_points: dict[str, str] = {}
+    if not capability_versions.empty:
+        first_cap = capability_versions["capability_id"].iloc[0]
+        for _, ver in capability_versions.iterrows():
+            base_sr = 0.82 if ver["version"] == "v1" else 0.74  # planted step down on v2
+            version_success_rates[ver["capability_version_id"]] = base_sr
+            if ver["capability_id"] == first_cap and ver["version"] == "v2":
+                version_change_points[ver["capability_version_id"]] = str(ver["shipped_at"])
+
     run_rows = []
     approval_rows = []
     connector_rows = []
@@ -135,7 +159,8 @@ def generate_agentic_warehouse(
                 capability_versions["capability_version_id"] == cap_ver, "capability_id"
             ].iloc[0]
             ts = seat["signup_date"] + pd.Timedelta(days=int(rng.integers(1, 200)))
-            success = rng.random() > conn_err * 0.8
+            base_sr = version_success_rates.get(cap_ver, 0.78)
+            success = rng.random() < base_sr * (1.0 - conn_err * 0.3)
             trust = rng.random() < trust_rate
             cost = run_cost * rng.uniform(0.5, 2.0)
             run_rows.append(
@@ -300,16 +325,33 @@ def generate_agentic_warehouse(
     cap_vers = capability_versions["capability_version_id"].unique()
     assign_rows = []
     for _, seat in seats.iterrows():
+        variant = rng.choice(["control", "variant"])
         assign_rows.append(
             {
                 "seat_id": seat["seat_id"],
                 "experiment_id": experiment_id,
                 "capability_version_id": rng.choice(cap_vers),
-                "variant": rng.choice(["control", "variant"]),
+                "variant": variant,
                 "assigned_at": seat["signup_date"] + timedelta(days=int(rng.integers(0, 14))),
             }
         )
     experiment_assignments = pd.DataFrame(assign_rows)
+
+    # Apply planted treatment effect to variant runs
+    if not runs.empty and treatment_success_pp != 0:
+        variant_seats = set(
+            experiment_assignments.loc[experiment_assignments["variant"] == "variant", "seat_id"]
+        )
+        mask = runs["seat_id"].isin(variant_seats)
+        for idx in runs.index[mask]:
+            if rng.random() < treatment_success_pp:
+                runs.at[idx, "success"] = True
+            elif rng.random() < abs(treatment_success_pp):
+                runs.at[idx, "success"] = False
+        if treatment_cost_pct != 0 and "run_cost_usd" in runs.columns:
+            runs.loc[mask, "run_cost_usd"] = (
+                runs.loc[mask, "run_cost_usd"] * (1.0 + treatment_cost_pct)
+            ).round(3)
 
     exp_out = []
     for variant in ("control", "variant"):
@@ -357,7 +399,30 @@ def generate_agentic_warehouse(
         "experiment_outcomes": experiment_outcomes,
         **methodology,
     }
-    return enrich_challenge_data(payload, profile, seed=seed)
+    enriched = enrich_challenge_data(payload, profile, seed=seed)
+
+    pop_churn = float(seats["is_churned"].mean()) if not seats.empty else churn_base
+    churn_reason_codes = {}
+    if not seats.empty and "churn_reason" in seats.columns:
+        churned = seats[seats["is_churned"] == True]  # noqa: E712
+        churn_reason_codes = dict(churned.groupby("account_id")["churn_reason"].first()) if "account_id" in churned.columns else {}
+    register(
+        GroundTruth(
+            seed=int(seed),
+            workspace_id="ALL",
+            monthly_churn_base=churn_base,
+            population_churn_rate=pop_churn,
+            account_hazard_multipliers=account_hazard_mult,
+            version_success_rates=version_success_rates,
+            version_change_points=version_change_points,
+            experiment_id=experiment_id,
+            experiment_treatment_effect_success=treatment_success_pp,
+            experiment_treatment_effect_cost_pct=treatment_cost_pct,
+            churn_reason_codes=churn_reason_codes,
+        )
+    )
+    enriched["ground_truth_seed"] = int(seed)
+    return enriched
 
 
 def _build_methodology_tables(

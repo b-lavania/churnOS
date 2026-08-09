@@ -1,19 +1,33 @@
 """
 Page 3: Conversion & Funnel
 =============================
-Funnel breakdown, A/B testing, and causal-model-connected conversion impact.
+Funnel breakdown, A/B testing, and workspace experiment analysis.
 """
 
-import streamlit as st
-import plotly.express as px
-import plotly.graph_objects as go
-import pandas as pd
 from pathlib import Path
 
-# ── Load CSS ──
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
+
 css_path = Path(__file__).parent.parent / "assets" / "style.css"
 if css_path.exists():
     st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
+
+from ui.explain import page_help
+from ui.legacy_banner import render_legacy_banner
+from ui.magazine import load_magazine_css, masthead
+from ui.workspace_banner import require_workspace
+
+load_magazine_css()
+render_legacy_banner()
+masthead(
+    "Learn",
+    "Experiments",
+    "Workspace funnel tests, agentic power design, and CUPED-adjusted results.",
+)
+page_help("experiments", show_card_glossary=True)
 
 PLOTLY_THEME = {
     "layout": {
@@ -26,22 +40,27 @@ PLOTLY_THEME = {
     }
 }
 
-st.markdown('<div class="terminal-header">EXPERIMENT // PRODUCT ANALYTICS HUB</div>', unsafe_allow_html=True)
-st.markdown('<h1 class="gradient-text">Experimentation Hub</h1>', unsafe_allow_html=True)
 
-with st.expander("Concept Playbook: How to use this page"):
-    st.markdown('''
-    **Overview:** This page provides causal insights into your metrics.
-    **How to use:** Adjust the inputs in the sidebar or main area to simulate different business scenarios. 
-    Pay attention to the outputs with tooltips for detailed definitions. All metrics are connected to the central causal model.
-    ''')
+def _workspace_econ(ws) -> dict[str, float]:
+    """Teaching defaults from workspace when Business Model is not configured."""
+    aov = 65.0
+    if not ws.transactions.empty and "order_value" in ws.transactions.columns:
+        aov = float(ws.transactions["order_value"].mean())
+    priors = ws.profile.get("priors", {})
+    gm = float(priors.get("gross_margin_pct", 0.60))
+    if gm > 1:
+        gm = gm / 100.0
+    margin = aov * gm
+    churn = float(priors.get("monthly_churn_base", 0.08))
+    return {
+        "aov": aov,
+        "gross_margin_pct": gm * 100.0,
+        "margin_per_active_monthly": margin,
+        "clv_24": margin * 12.0,
+        "monthly_churn_rate": churn,
+    }
 
 
-if "model" not in st.session_state:
-    st.warning("No model defined. Go to **Business Model** to configure your business first.")
-    st.stop()
-
-from ui.journey import require_workspace
 from analytics.product_metrics import conversion_lift_orders_margin, refund_exposure_rates
 from analytics.conversion import (
     funnel_summary, segment_conversion, ab_test_significance,
@@ -59,25 +78,41 @@ from analytics.experimentation import (
 from analytics.metrics import resolve_metric
 from core.workspace import build_workspace, sync_workspace_to_session
 
-ws = require_workspace("experimentation")
+ws = require_workspace(st.session_state, page_label="Experiments")
 if ws is None:
     st.stop()
 
-model = st.session_state["model"]
-s = st.session_state["model_summary"]
-config = st.session_state["model_config"]
+has_legacy_model = "model" in st.session_state and "model_summary" in st.session_state
+if has_legacy_model:
+    s = st.session_state["model_summary"]
+    config = st.session_state.get("model_config", {})
+else:
+    s = _workspace_econ(ws)
+    config = {"monthly_churn_rate": s["monthly_churn_rate"]}
 
 resync_cols = st.columns([1, 1, 4])
 with resync_cols[0]:
     new_seed = st.number_input("Workspace seed", 0, 99999, int(ws.seed), key="conv_ws_seed")
 with resync_cols[1]:
     if st.button("Resync workspace", type="primary", key="conv_resync"):
-        sync_workspace_to_session(
-            st.session_state,
-            build_workspace(config, seed=int(new_seed)),
-        )
+        if has_legacy_model:
+            sync_workspace_to_session(
+                st.session_state,
+                build_workspace(config, seed=int(new_seed)),
+            )
+        else:
+            sync_workspace_to_session(
+                st.session_state,
+                build_workspace(ws.profile, seed=int(new_seed), n_sessions=5_000),
+            )
         st.session_state["workspace_seed"] = int(new_seed)
         st.rerun()
+
+if not has_legacy_model:
+    st.caption(
+        "Using workspace teaching defaults for AOV/margin. "
+        "Configure **Business Model** (Legacy) for full causal-model read-through."
+    )
 
 funnel_df = ws.funnel
 summary = funnel_summary(funnel_df)
@@ -191,48 +226,80 @@ with tab_design:
         st.warning(w)
     st.caption(f"Assumes ~{plan['daily_traffic_assumed']:,} sessions/day from workspace funnel.")
 
-    st.markdown('<div class="terminal-header">CONVERSION RATE → REVENUE IMPACT</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<p style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 1rem;">'
-        'If you improve a funnel step, how does that impact total cohort revenue? '
-        'This connects your funnel optimization directly to the causal business model.'
-        '</p>',
-        unsafe_allow_html=True,
+    legacy_panels = st.expander(
+        "Legacy Business Model panels (LTV / ROI read-through)",
+        expanded=has_legacy_model,
     )
-
-    step_to_improve = st.selectbox("Funnel Step to Improve", ["Product View", "Add to Cart", "Checkout", "Purchase"], key="conv_step", help="Adjust this parameter to see its impact on the model.")
-    improvement_pct = st.slider("Improvement (%)", 1, 50, 10, step=1, key="conv_improve", help="Adjust this parameter to see its impact on the model.")
-
-    baseline_cvr = baseline_cvr_frac
-    step_data = summary[summary["step"] == step_to_improve]
-    if len(step_data) > 0:
-        step_rate = step_data["conversion_rate"].iloc[0] / 100.0
-        improved_rate = step_rate * (1 + improvement_pct / 100.0)
-        if step_rate > 0:
-            cvr_ratio = improved_rate / step_rate
-            new_cvr = baseline_cvr * cvr_ratio
-        else:
-            new_cvr = baseline_cvr
-
-        ltv_impact = conversion_to_ltv_impact(
-            baseline_cvr=baseline_cvr * 100,
-            improved_cvr=new_cvr * 100,
-            monthly_sessions=new_sess,
-            aov=s["aov"],
-            gross_margin_pct=s["gross_margin_pct"],
-            monthly_churn_rate=config.get("monthly_churn_rate", 0.08),
+    with legacy_panels:
+        st.markdown('<div class="terminal-header">CONVERSION RATE → REVENUE IMPACT</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<p style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 1rem;">'
+            'If you improve a funnel step, how does that impact total cohort revenue? '
+            'This connects your funnel optimization directly to the causal business model.'
+            '</p>',
+            unsafe_allow_html=True,
         )
 
-        additional_customers = int(new_sess * (new_cvr - baseline_cvr))
-        additional_monthly_rev = additional_customers * s["margin_per_active_monthly"]
+        step_to_improve = st.selectbox("Funnel Step to Improve", ["Product View", "Add to Cart", "Checkout", "Purchase"], key="conv_step", help="Adjust this parameter to see its impact on the model.")
+        improvement_pct = st.slider("Improvement (%)", 1, 50, 10, step=1, key="conv_improve", help="Adjust this parameter to see its impact on the model.")
 
-        imp_cols = st.columns(4)
-        imp_cols[0].metric("NEW CVR", f"{new_cvr * 100:.2f}%", f"+{(new_cvr - baseline_cvr) * 100:.2f}%")
-        imp_cols[1].metric("ADDITIONAL CUSTOMERS", f"{additional_customers:,}")
-        imp_cols[2].metric("MONTHLY MARGIN GAIN", f"${additional_monthly_rev:,.2f}")
-        imp_cols[3].metric("24mo INCREMENTAL CLV", f"${ltv_impact['incremental_ltv_24mo']:,.2f}")
+        baseline_cvr = baseline_cvr_frac
+        step_data = summary[summary["step"] == step_to_improve]
+        if len(step_data) > 0:
+            step_rate = step_data["conversion_rate"].iloc[0] / 100.0
+            improved_rate = step_rate * (1 + improvement_pct / 100.0)
+            if step_rate > 0:
+                cvr_ratio = improved_rate / step_rate
+                new_cvr = baseline_cvr * cvr_ratio
+            else:
+                new_cvr = baseline_cvr
 
-        st.caption(f"Each month, {ltv_impact['additional_customers_per_month']:.1f} additional customers enter the retention curve, generating ${ltv_impact['incremental_monthly_revenue']:,.2f}/mo in incremental margin.")
+            ltv_impact = conversion_to_ltv_impact(
+                baseline_cvr=baseline_cvr * 100,
+                improved_cvr=new_cvr * 100,
+                monthly_sessions=new_sess,
+                aov=s["aov"],
+                gross_margin_pct=s["gross_margin_pct"],
+                monthly_churn_rate=config.get("monthly_churn_rate", 0.08),
+            )
+
+            additional_customers = int(new_sess * (new_cvr - baseline_cvr))
+            additional_monthly_rev = additional_customers * s["margin_per_active_monthly"]
+
+            imp_cols = st.columns(4)
+            imp_cols[0].metric("NEW CVR", f"{new_cvr * 100:.2f}%", f"+{(new_cvr - baseline_cvr) * 100:.2f}%")
+            imp_cols[1].metric("ADDITIONAL CUSTOMERS", f"{additional_customers:,}")
+            imp_cols[2].metric("MONTHLY MARGIN GAIN", f"${additional_monthly_rev:,.2f}")
+            imp_cols[3].metric("24mo INCREMENTAL CLV", f"${ltv_impact['incremental_ltv_24mo']:,.2f}")
+
+            st.caption(f"Each month, {ltv_impact['additional_customers_per_month']:.1f} additional customers enter the retention curve, generating ${ltv_impact['incremental_monthly_revenue']:,.2f}/mo in incremental margin.")
+
+        st.markdown('<div class="terminal-header" style="margin-top: 2rem;">EXPERIMENT ROI CALCULATOR</div>', unsafe_allow_html=True)
+        st.caption("Is this test worth the opportunity cost of not deploying immediately?")
+        roi_col1, roi_col2 = st.columns(2)
+        with roi_col1:
+            exp_lift = st.number_input("EXPECTED LIFT (%)", 1.0, 100.0, 10.0, step=1.0, key="roi_lift")
+        with roi_col2:
+            exp_ss = st.number_input("SAMPLE SIZE PER VARIANT", 1000, 1000000, 5000, step=1000, key="roi_ss")
+        try:
+            roi_res = experiment_roi(
+                baseline_cvr=baseline_cvr_frac,
+                expected_lift_pct=exp_lift,
+                sample_size_per_variant=exp_ss,
+                daily_traffic=int(plan["daily_traffic_assumed"]),
+                aov=s["aov"],
+                gross_margin_pct=s["gross_margin_pct"],
+            )
+            roi_m1, roi_m2, roi_m3 = st.columns(3)
+            roi_m1.metric("MONTHLY REVENUE GAIN", f"${roi_res['expected_monthly_revenue_gain']:,.2f}")
+            roi_m2.metric("OPPORTUNITY COST", f"${roi_res['test_opportunity_cost']:,.2f}")
+            roi_m3.metric("NET ROI (12mo)", f"${roi_res['net_roi_12mo']:,.2f}")
+            if roi_res['net_roi_3mo'] > 0:
+                st.success(roi_res['recommendation'])
+            else:
+                st.warning(roi_res['recommendation'])
+        except Exception as e:
+            st.error(f"ROI calculation error: {e}")
 
     st.markdown('<div class="terminal-header">SAMPLE SIZE & DURATION ESTIMATOR</div>', unsafe_allow_html=True)
     c1, c2, c3, c4 = st.columns(4)
@@ -258,33 +325,6 @@ with tab_design:
     except Exception as e:
         st.error(f"Calculation error: {e}")
 
-    st.markdown('<div class="terminal-header" style="margin-top: 2rem;">EXPERIMENT ROI CALCULATOR</div>', unsafe_allow_html=True)
-    st.caption("Is this test worth the opportunity cost of not deploying immediately?")
-    roi_col1, roi_col2 = st.columns(2)
-    with roi_col1:
-        exp_lift = st.number_input("EXPECTED LIFT (%)", 1.0, 100.0, 10.0, step=1.0, key="roi_lift")
-    with roi_col2:
-        exp_ss = st.number_input("SAMPLE SIZE PER VARIANT", 1000, 1000000, 5000, step=1000, key="roi_ss")
-    try:
-        roi_res = experiment_roi(
-            baseline_cvr=base_cvr,
-            expected_lift_pct=exp_lift,
-            sample_size_per_variant=exp_ss,
-            daily_traffic=daily_traffic,
-            aov=s["aov"],
-            gross_margin_pct=s["gross_margin_pct"],
-        )
-        roi_m1, roi_m2, roi_m3 = st.columns(3)
-        roi_m1.metric("MONTHLY REVENUE GAIN", f"${roi_res['expected_monthly_revenue_gain']:,.2f}")
-        roi_m2.metric("OPPORTUNITY COST", f"${roi_res['test_opportunity_cost']:,.2f}")
-        roi_m3.metric("NET ROI (12mo)", f"${roi_res['net_roi_12mo']:,.2f}")
-        if roi_res['net_roi_3mo'] > 0:
-            st.success(roi_res['recommendation'])
-        else:
-            st.warning(roi_res['recommendation'])
-    except Exception as e:
-        st.error(f"ROI calculation error: {e}")
-        
     st.markdown('<div class="terminal-header" style="margin-top: 2rem;">STATISTICAL POWER & MDE ANALYZER</div>', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
@@ -309,6 +349,42 @@ with tab_design:
         except Exception as e:
             st.error(f"Error: {e}")
 
+    st.markdown('<div class="terminal-header" style="margin-top: 2rem;">AGENTIC EXPERIMENT DESIGN</div>', unsafe_allow_html=True)
+    st.caption("Cluster-aware power for run/seat/account units — links to Lab · Power.")
+    from analytics.experimentation import agentic_sample_size
+    from analytics.evidence import is_rigorous_mode
+    from ui.evidence_chrome import render_underpowered_callout
+
+    ag1, ag2, ag3, ag4 = st.columns(4)
+    with ag1:
+        ag_baseline = st.slider("Baseline success rate", 0.05, 0.95, 0.72, 0.01, key="ag_base")
+    with ag2:
+        ag_mde_pp = st.slider("MDE (pp)", 0.5, 15.0, 3.0, 0.5, key="ag_mde")
+    with ag3:
+        ag_unit = st.selectbox("Unit", ["run", "seat", "account"], key="ag_unit")
+    with ag4:
+        ag_icc = st.slider("ICC (cluster)", 0.0, 0.5, 0.05, 0.01, key="ag_icc")
+
+    ag_runs = st.number_input("Runs per unit", 1, 50, 5, key="ag_runs")
+    ag_plan = agentic_sample_size(
+        ag_baseline,
+        ag_mde_pp / 100.0,
+        unit=ag_unit,
+        icc=ag_icc,
+        runs_per_unit=int(ag_runs),
+    )
+    ap1, ap2, ap3 = st.columns(3)
+    n_arm = ag_plan.get("sample_size_per_arm_clustered", 0)
+    ap1.metric("Per-arm N", f"{n_arm:,}")
+    ap2.metric("Design effect", f"{ag_plan.get('design_effect', 1.0):.2f}")
+    ap3.metric("Total units", f"{n_arm * 2:,}")
+    for w in ag_plan.get("warnings", []):
+        st.warning(w)
+    render_underpowered_callout(n_arm, max(100, n_arm))
+    if is_rigorous_mode(ws.profile):
+        st.caption("Rigorous mode — prefer seat/account ICC when outcomes cluster by account.")
+    st.page_link("pages/31_Math_Lab_Power.py", label="Open Lab · Power", icon="🧪")
+
 with tab_results:
     analysis = analyze_workspace_experiment(ws)
     counts = analysis["counts"]
@@ -331,6 +407,59 @@ with tab_results:
         st.success(srm["message"])
     st.info(bayes["interpretation"])
     st.caption(analysis["notes"])
+
+    st.markdown('<div class="terminal-header">CUPED VARIANCE REDUCTION</div>', unsafe_allow_html=True)
+    from analytics.experimentation import cuped_adjust
+    from analytics.panels import account_week_panel
+    from analytics.evidence import is_rigorous_mode
+    from ui.evidence_chrome import render_claim_badge
+    import numpy as np
+
+    runs = ws.runs
+    assigns = ws.experiment_assignments
+    exp_id = ws.default_experiment_id
+    if not runs.empty and not assigns.empty and "variant" in assigns.columns:
+        sub = assigns[assigns["experiment_id"] == exp_id] if "experiment_id" in assigns.columns else assigns
+        ctrl_seats = set(sub.loc[sub["variant"] == "control", "seat_id"])
+        var_seats = set(sub.loc[sub["variant"] == "variant", "seat_id"])
+        ctrl_runs = runs[runs["seat_id"].isin(ctrl_seats)]
+        var_runs = runs[runs["seat_id"].isin(var_seats)]
+        if len(ctrl_runs) >= 2 and len(var_runs) >= 2:
+            panel = account_week_panel(ws)
+            pre_ctrl, pre_var = [], []
+            for seat_id, grp in ctrl_runs.groupby("seat_id"):
+                acc = ws.seats.loc[ws.seats["seat_id"] == seat_id]
+                acc_id = acc["account_id"].iloc[0] if "account_id" in acc.columns and len(acc) else seat_id
+                pw = panel[panel["account_id"] == acc_id]
+                pre_ctrl.append(float(pw["outcome_success_rate"].mean()) if not pw.empty else 0.5)
+            for seat_id, grp in var_runs.groupby("seat_id"):
+                acc = ws.seats.loc[ws.seats["seat_id"] == seat_id]
+                acc_id = acc["account_id"].iloc[0] if "account_id" in acc.columns and len(acc) else seat_id
+                pw = panel[panel["account_id"] == acc_id]
+                pre_var.append(float(pw["outcome_success_rate"].mean()) if not pw.empty else 0.5)
+            y_ctrl = ctrl_runs.groupby("seat_id")["success"].mean().values
+            y_var = var_runs.groupby("seat_id")["success"].mean().values
+            n = min(len(y_ctrl), len(pre_ctrl), len(y_var), len(pre_var))
+            if n >= 2:
+                cuped = cuped_adjust(
+                    np.array(y_ctrl[:n]),
+                    np.array(y_var[:n]),
+                    np.array(pre_ctrl[:n]),
+                    np.array(pre_var[:n]),
+                )
+                raw_lift = (float(y_var.mean()) - float(y_ctrl.mean())) * 100
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Raw lift (pp)", f"{raw_lift:+.2f}")
+                adj = cuped.get("adjusted_lift")
+                c2.metric("CUPED-adjusted lift (pp)", f"{adj * 100:+.2f}" if adj is not None else "—")
+                c3.metric("Variance reduction", f"{cuped.get('variance_reduction_pct', 0):.1f}%")
+    else:
+        st.caption("CUPED requires workspace runs with experiment assignments.")
+
+    if ws.default_experiment_id and srm.get("passed"):
+        render_claim_badge("causal")
+    elif is_rigorous_mode(ws.profile):
+        st.caption("Claim: associational — SRM failed or no experiment_id.")
 
     gr = analysis["guardrails"]
     g1, g2 = st.columns(2)

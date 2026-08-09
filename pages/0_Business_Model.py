@@ -121,6 +121,15 @@ with ret1:
         key="bm_monthly_churn",
         help="Average percentage of active customers lost each month.",
     )
+    from core.workspace import get_workspace_from_session
+    from analytics.causal_model import calibrate_churn_from_warehouse
+    from analytics.evidence import is_rigorous_mode
+
+    _ws = get_workspace_from_session(st.session_state)
+    if _ws and is_rigorous_mode(_ws.profile):
+        cal = calibrate_churn_from_warehouse(_ws, _ws.profile)
+        if cal.get("calibrated"):
+            st.caption(f"Calibrated from warehouse: {cal['monthly_churn_rate']:.1%}")
 with ret2:
     subscribe_pct = st.slider("Subscribe & Save (%)",
         0, 100,

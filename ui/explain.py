@@ -201,7 +201,8 @@ def decision_card_glossary(*, expanded: bool = False) -> None:
             st.markdown(f"**`{k}`** — {v}")
         st.caption(
             "`capability_harm` is associational unless an experiment is attached — "
-            "not automatic causal proof."
+            "not automatic causal proof. **`p_churn_30d`** is calibrated 30-day churn "
+            "probability (rigorous math_mode). **`uplift_pp`** is treatment effect when experiment_id present."
         )
 
 

@@ -1,90 +1,92 @@
-# ChurnOS Streamlit App Enhancement Plan
+# Implementation Plan: The Agentic Retention Data Model (Phase 1 & 2)
 
-This plan outlines how to move the ChurnOS Streamlit app forward by incorporating the crucial findings from `docs/agenticchallenges.md`. The goal is to evolve the app from a general analytics interface into a highly specialized "Agentic Decision OS" that directly tackles the unique monetization, retention, and observability challenges of AI agents.
+You are completely right to call me out. The previous implementation plan jumped straight to building a generic SaaS application (FastAPI + React), which directly contradicts the roadmap laid out in `docs/methodology.md`. 
+
+The methodology explicitly warns that "Dashboards don't prevent churn; interventions do" and that the productization decision (Phase 3) should only happen *after* the metrics generalize and interventions work for 2-3 qualifying design partners (friends). 
+
+The real gap is **the join**, and the real deliverable right now is the **Data Model and the Intervention Loop**. Here is the corrected implementation plan that strictly follows your documentation.
 
 ## User Review Required
-> [!IMPORTANT]
-> This plan focuses on enhancing the **Streamlit frontend** as requested. However, based on your previous goals of moving to a decoupled FastAPI backend with OTEL ingestion, please confirm if you want to build these new visualizations using the current synthetic data model first, or if we should start stubbing out the live API connections concurrently.
+
+> [!WARNING]
+> This plan abandons the premature "FastAPI/React" productization route and focuses entirely on executing Phase 1 and Phase 2 from `methodology.md`. We will build a **dbt project** to execute the critical joins and an **alerting engine** to drive interventions.
 
 ## Open Questions
-> [!WARNING]
-> 1. **Data Model Updates**: To power metrics like "Agent-to-Agent Coordination Overhead" and the "Cost Gantt Chart", we will need to extend the synthetic data generator (`core/`, `ontology/`). Should we update the synthetic generators as part of this plan, or focus strictly on the UI components with mock data first?
-> 2. **Agentic Health Dashboard**: Should the new "Agentic Health" composite view replace the current `Radar` tab as the primary landing page, or sit alongside it as a new executive summary?
 
-## Proposed Changes
-
-We will systematically update the existing pages to reflect the 6 core challenges and introduce a unified executive dashboard.
+1. **Warehouse Target:** For the initial dbt implementation (Phase 1), which data warehouse are we targeting? (e.g., Snowflake, BigQuery, Postgres, or duckdb for local testing?)
+2. **Alerting Destination:** For Phase 2 (The Intervention Loop), where should the alerts be sent for the weekly review cadences? (e.g., Slack webhooks, email, or a simple generated markdown report?)
 
 ---
 
-### Phase 1: The "Agentic Health" Master Dashboard
-Create a single pane of glass that combines the most critical signals across all dimensions, as recommended in the docs.
+## Proposed Changes: Aligning with the Methodology
 
-#### [MODIFY] `app.py`
-- Update the primary landing experience (currently `Radar`) to feature an "Agentic Health" composite score.
-- Color-code accounts (Red/Yellow/Green) based on a weighted combination of:
-  - Cost-per-successful-outcome
-  - TTFV (Time-to-first-value)
-  - Integration depth score
-  - Recent catastrophic events
-- Add a "Data Source" toggle in the sidebar to switch between `Synthetic (Local)` and `Live (OTEL/FastAPI)` (stubbed for future integration).
+We will pivot from maintaining a Streamlit simulator to building a portable dbt project that can be deployed onto a design partner's existing data warehouse to prove the intervention loop.
 
----
+### Phase 1: The Core Data Model (dbt Implementation)
+The data model is the product. We will implement the schemas and the four critical joins as portable `dbt` models.
 
-### Phase 2: Run Economics & Cost Visibility
-Address unpredictable costs and infrastructure blind spots.
+#### [NEW] `dbt_project/` (Root Directory)
+Initialize a standard dbt project to handle the transformation layer on the partner's warehouse.
 
-#### [MODIFY] `pages/17_Run_Economics.py`
-- **Jevons / Elasticity Chart**: Add a visualization showing Token Price vs. Total Token Volume to illustrate how cheaper tokens drive up overall consumption.
-- **Agent Run Timeline (Gantt)**: Add a session-level Gantt chart showing tool calls, model invocations, and cumulative $ burned to expose hidden loops.
-- **Unattributed Spend Gauge**: Add a metric showing the % of API cost that cannot be mapped to a specific agent or workflow (target <5%).
+#### [NEW] `dbt_project/models/staging/`
+Extract and normalize the raw exports from the three disjointed systems:
+- `stg_langfuse_traces.sql` (Extracts `span_id`, `trace_id`, `tokens`, `cost`)
+- `stg_stripe_billing.sql` (Extracts `subscription_id`, `mrr`, `usage_events`)
+- `stg_app_outcomes.sql` (Extracts deterministic `outcome_type`, `verified_by`)
 
----
+#### [NEW] `dbt_project/models/core/`
+Implement the entities defined in §3.2 of the methodology:
+- `dim_accounts.sql`, `dim_end_users.sql`, `dim_sessions.sql`
+- `fct_agent_runs.sql`, `fct_spans.sql`
+- `fct_outcomes.sql`, `fct_subscriptions.sql`
 
-### Phase 3: Activation & Habit (The "First Win")
-Address the phenomenon of activation failure disguised as churn.
-
-#### [MODIFY] `pages/15_Activation_Habit.py`
-- **Activation Funnel with Revenue**: Build a funnel showing Sign-up → First Paid Invoice → First *Verified* Successful Agent Outcome.
-- **TTFV Distribution**: Add a histogram of days from first payment to first successful outcome.
-- **"Paying but Dormant" Cohort**: Add a data table isolating users who are paying but haven't achieved a successful outcome in 14 days.
+#### [NEW] `dbt_project/models/marts/`
+Execute the "Critical Joins" (§3.3) and define the core metric aggregations (§4.2):
+- `mart_account_agentic_health.sql`: Joins AgentRuns -> Outcomes -> Subscriptions to compute:
+  - **Delegation Ratio**
+  - **Autonomy Ratio**
+  - **Cost per Successful Outcome (CPSO)**
+  - **Contribution-Margin NRR (CM-NRR)**
 
 ---
 
-### Phase 4: Connectors & Switching Costs
-Address the ease of ripping out wrapper apps.
+### Phase 2: The Intervention Loop (Alerting & Reporting)
+We will build a lightweight Python engine to run on top of the dbt marts, executing the alerting rules that actually prevent churn.
 
-#### [MODIFY] `pages/18_Connector_Blast_Radius.py`
-- **Integration Depth Score**: Add a visualization scoring accounts based on connected systems, shared data volume, and agent memory length.
-- **Context Decay Rate**: Add a metric showing how quickly churned users' context becomes useless (export rate vs retention).
+#### [NEW] `interventions/` (Directory)
+A module dedicated to surfacing actionable insights, rather than just dashboarding.
+
+#### [NEW] `interventions/rules.py`
+Implement the hardcoded alerting thresholds defined in Phase 2:
+- Delegation ratio drops > 15% WoW.
+- Autonomy ratio drops > 10% over 4 weeks.
+- Cost-per-outcome exceeds pricing margin.
+- Tourist Alert: Active account, but no verified outcome in 14 days.
+
+#### [NEW] `interventions/taxonomy_classifier.py`
+Implement the Churn Taxonomy (§4.3) to auto-tag accounts with reason codes (`tourist`, `value_failure`, `efficiency`, `displacement`, `price`) based on the dbt mart trends.
+
+#### [NEW] `interventions/weekly_report.py`
+A script that generates the "Weekly account health report" (a markdown or PDF document) for the 30-minute review cadence with design partners. 
 
 ---
 
-### Phase 5: Trust, Approval & Non-Deterministic Success
-Address catastrophic churn and opaque agent successes.
+### Sunsetting the Simulator
+To fully commit to this path, the synthetic components must be quarantined or removed.
 
-#### [MODIFY] `pages/16_Trust_Approval.py`
-- **Catastrophic Event Log**: Add a timeline of severe agent failures (data deletion, bad comms) mapped against account churn.
-- **Human Intervention Rate**: Add a time-series chart showing the % of runs requiring human takeover.
+#### [MODIFY] `data/agentic_generator.py`
+- Deprecate the synthetic data generator. It has served its purpose for the demo.
+- Replace with a `dbt seed` approach that loads a small, static set of mock CSVs into the warehouse just for local CI/CD testing of the dbt joins.
 
-#### [MODIFY] `pages/20_Outcome_Flywheel.py`
-- **Outcome Success vs. Complexity**: Add a chart plotting verified success rate against the number of agent steps/tool calls.
-- **Coordination Overhead**: Add a metric showing tokens spent on agent-to-agent chatter vs. actual goal progress.
+#### [MODIFY] `app.py` & `.streamlit/`
+- Freeze feature development on the Streamlit dashboard. 
+- It remains available purely as a "pitch deck" visualization tool for acquiring the Phase 0 design partners, but it is not the product architecture moving forward.
 
 ---
-
-### Phase 6: Feature Flag Experimentation
-Wire these metrics into the experimentation surface so every product decision is evaluated against cost, reliability, and retention.
-
-#### [MODIFY] `pages/3_Conversion.py` (or a new Experimentation page)
-- Integrate specific agentic flags (e.g., `max_retries_limit`, `guided_first_win_flow`, `agent_model_router_v2`) and show their direct impact on the new metrics (CPSO, TTFV, Human Intervention Rate).
 
 ## Verification Plan
 
-### Automated Tests
-- Run `pytest` to ensure no existing analytics logic is broken by adding the new metrics.
-- Ensure the Streamlit app boots without errors (`streamlit run app.py`).
-
-### Manual Verification
-- Navigate through each updated page in the Streamlit UI to verify the new charts render correctly with the synthetic data.
-- Verify that the new "Agentic Health" composite score dynamically updates when overriding decisions in the UI.
+### Validation Phase
+1. **Compile & Run dbt:** Execute `dbt build` against a local DuckDB or Postgres instance seeded with mock Langfuse and Stripe data.
+2. **Verify Critical Joins:** Ensure `mart_account_agentic_health.sql` correctly attributes token costs from a trace span all the way up to an account's MRR to calculate the `CM-NRR` metric.
+3. **Trigger Interventions:** Run `interventions/weekly_report.py` and verify it correctly flags an account as a `value_failure` if their outcome success drift drops while their cost-per-outcome spikes.

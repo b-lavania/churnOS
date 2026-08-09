@@ -1,0 +1,4 @@
+# Optional: Bayesian MMM on Attribution page (pages/10_Attribution_MMM.py)
+-r requirements.txt
+pymc>=5.10.0
+arviz>=0.17.0

@@ -26,6 +26,24 @@
       "properties": {
         "cost_usd": { "type": "number", "minimum": 0 }
       }
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "model_id": { "type": "string" },
+        "claim_type": { "type": "string", "enum": ["associational", "causal", "simulated"] },
+        "estimand": { "type": "string" },
+        "posterior": {
+          "type": "object",
+          "properties": {
+            "mean": { "type": "number" },
+            "ci95": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 }
+          }
+        },
+        "n": { "type": "integer", "minimum": 0 },
+        "experiment_id": { "type": ["string", "null"] },
+        "calibration": { "type": "object" }
+      }
     }
   }
 }

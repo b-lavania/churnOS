@@ -177,3 +177,96 @@ def sequential_testing_warning(active_experiment_count: int) -> str | None:
         f"{active_experiment_count} experiments marked active. "
         "Peeking and overlapping tests inflate false positives—see docs/methodology.md."
     )
+
+
+def agentic_sample_size(
+    baseline: float,
+    mde_absolute: float,
+    *,
+    unit: str = "run",
+    power: float = 0.80,
+    alpha: float = 0.05,
+    icc: float = 0.0,
+    runs_per_unit: int = 1,
+) -> dict[str, Any]:
+    """
+    Cluster-aware sample size for agentic experiments.
+
+    When unit is seat/account with ICC > 0, applies design effect DE = 1 + (m-1)*rho.
+    """
+    if baseline <= 0 or baseline >= 1 or mde_absolute <= 0:
+        raise ValueError("baseline must be in (0,1) and mde_absolute > 0")
+
+    mde_relative = mde_absolute / baseline
+    ss = calculate_sample_size(baseline, mde_relative, power=power, alpha=alpha)
+    n_per_arm = ss["sample_size_per_variant"]
+    de = 1.0 + max(0.0, icc) * max(1, runs_per_unit - 1)
+    clustered_n = int(np.ceil(n_per_arm * de))
+
+    web_comparison = calculate_sample_size(0.02, 0.05, power=power, alpha=alpha)
+
+    return {
+        "unit": unit,
+        "baseline": baseline,
+        "mde_absolute": mde_absolute,
+        "mde_relative": round(mde_relative, 4),
+        "sample_size_per_arm_naive": n_per_arm,
+        "sample_size_per_arm_clustered": clustered_n,
+        "design_effect": round(de, 3),
+        "icc": icc,
+        "runs_per_unit": runs_per_unit,
+        "web_cvr_analogy_n_per_arm": web_comparison["sample_size_per_variant"],
+        "message": (
+            f"At {baseline:.0%} baseline, detecting {mde_absolute:.1%}pp needs "
+            f"~{clustered_n} {unit}s/arm (ICC={icc})."
+        ),
+    }
+
+
+def cuped_adjust(
+    control_outcomes: np.ndarray,
+    variant_outcomes: np.ndarray,
+    control_covariate: np.ndarray,
+    variant_covariate: np.ndarray,
+) -> dict[str, Any]:
+    """CUPED variance reduction on pre-period covariate."""
+    if len(control_outcomes) < 2 or len(variant_outcomes) < 2:
+        return {"adjusted_lift": None, "variance_reduction_pct": 0.0}
+
+    pooled_x = np.concatenate([control_covariate, variant_covariate])
+    pooled_y = np.concatenate([control_outcomes, variant_outcomes])
+    if np.std(pooled_x) < 1e-9:
+        return {"adjusted_lift": None, "variance_reduction_pct": 0.0}
+
+    theta = float(np.cov(pooled_y, pooled_x)[0, 1] / np.var(pooled_x))
+    adj_c = control_outcomes - theta * (control_covariate - pooled_x.mean())
+    adj_v = variant_outcomes - theta * (variant_covariate - pooled_x.mean())
+    raw_lift = variant_outcomes.mean() - control_outcomes.mean()
+    adj_lift = adj_v.mean() - adj_c.mean()
+    raw_var = np.var(control_outcomes) / len(control_outcomes) + np.var(variant_outcomes) / len(variant_outcomes)
+    adj_var = np.var(adj_c) / len(adj_c) + np.var(adj_v) / len(adj_v)
+    vr = max(0.0, (1 - adj_var / raw_var) * 100) if raw_var > 0 else 0.0
+    return {
+        "raw_lift": round(float(raw_lift), 4),
+        "adjusted_lift": round(float(adj_lift), 4),
+        "variance_reduction_pct": round(vr, 1),
+        "theta": round(theta, 4),
+    }
+
+
+def benjamini_hochberg(p_values: list[float], alpha: float = 0.05) -> list[bool]:
+    """Return which hypotheses are significant under BH FDR control."""
+    m = len(p_values)
+    if m == 0:
+        return []
+    indexed = sorted(enumerate(p_values), key=lambda x: x[1])
+    significant = [False] * m
+    max_k = -1
+    for rank, (orig_i, p) in enumerate(indexed, start=1):
+        if p <= alpha * rank / m:
+            max_k = rank
+    if max_k >= 0:
+        for rank, (orig_i, _) in enumerate(indexed[:max_k], start=1):
+            significant[orig_i] = True
+    return significant
+

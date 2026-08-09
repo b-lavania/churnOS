@@ -60,3 +60,10 @@ def validate_record(record: dict[str, Any], vertical: str) -> list[str]:
     resolver = RefResolver.from_schema(schema, store=store)
     validator = jsonschema.Draft202012Validator(schema, resolver=resolver)
     return [e.message for e in validator.iter_errors(record)]
+
+
+if __name__ == "__main__":
+    from ontology.__main__ import main
+    import sys
+
+    sys.exit(main())

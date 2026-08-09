@@ -14,10 +14,13 @@ import pandas as pd
 
 from core.workspace import Workspace
 from ontology.decision_rules import (
+    build_rule_trace,
     get_classification_thresholds,
+    get_posterior_thresholds,
     load_rules_for_vertical,
     resolve_action,
     resolve_verdict,
+    resolve_verdict_from_posteriors,
 )
 from ontology.exception_taxonomy import get_category
 from ontology.validate import validate_record
@@ -146,12 +149,12 @@ def _append_account_exception(
     })
 
 
-def classify(workspace: Workspace, profile: dict[str, Any]) -> list[dict[str, Any]]:
+def classify(workspace: Workspace, profile: dict[str, Any], *, semantics_overlay: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Return raw exception candidates per capability using YAML thresholds."""
     from analytics.trend_engine import compute_trends
 
     vertical = profile.get("ontology_vertical", "capability_lifecycle")
-    semantics = load_rules_for_vertical(vertical)
+    semantics = load_rules_for_vertical(vertical, overlay=semantics_overlay)
     thresh = get_classification_thresholds(semantics, profile)
     priors = thresh.get("_priors", {})
     arpu = float(priors.get("seat_arpu_monthly", 50))
@@ -207,6 +210,25 @@ def classify(workspace: Workspace, profile: dict[str, Any]) -> list[dict[str, An
         harm_min = float(harm.get("harm_score_min", 0.08))
         check_corr = bool(harm.get("check_harm_correlation", True))
         if cap["harm_score"] > harm_min or (check_corr and cap.get("harm_correlation", False)):
+            harm_extra: dict[str, Any] = {}
+            from analytics.evidence import is_rigorous_mode, pack_evidence
+            from analytics.causal_uplift import estimate_uplift
+
+            if is_rigorous_mode(profile):
+                uplift = estimate_uplift(workspace)
+                ct = uplift.get("claim_type", "associational")
+                harm_extra["evidence"] = pack_evidence(
+                    model_id=uplift.get("model_id", "uplift_tlearner_v0"),
+                    claim_type=ct,
+                    estimand="uplift_success_pp",
+                    posterior_mean=uplift.get("uplift_pp") or cap["harm_score"],
+                    ci95=[
+                        max(-1, (uplift.get("uplift_pp") or cap["harm_score"]) - 0.05),
+                        min(1, (uplift.get("uplift_pp") or cap["harm_score"]) + 0.05),
+                    ],
+                    n=uplift.get("n_control", 0) + uplift.get("n_variant", 0),
+                    experiment_id=uplift.get("experiment_id"),
+                )
             _append_exception(
                 exceptions,
                 base=base,
@@ -216,6 +238,7 @@ def classify(workspace: Workspace, profile: dict[str, Any]) -> list[dict[str, An
                 rank=1,
                 impact_cost=cap["churn_rate"] * cap["run_count"] * arpu * 6,
                 capability_id=cap_id,
+                extra=harm_extra or None,
             )
 
         fatigue_mult = float(fatigue.get("dismiss_rate_prior_multiplier", 1.0))
@@ -549,10 +572,11 @@ def _emit_subject_records(
     entity_type: str,
     group_key: str,
     validate: bool,
+    semantics_overlay: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     vertical = profile.get("ontology_vertical", "capability_lifecycle")
     ontology_version = profile.get("ontology_version", f"{vertical}_v1")
-    semantics = load_rules_for_vertical(vertical)
+    semantics = load_rules_for_vertical(vertical, overlay=semantics_overlay)
     ws_id = workspace.workspaces["workspace_id"].iloc[0] if len(workspace.workspaces) else "WS-0000"
 
     by_subject: dict[str, list[dict]] = {}
@@ -572,6 +596,31 @@ def _emit_subject_records(
         economics = price_exceptions(ranked, profile)
         verdict = resolve_verdict(ranked, semantics)
         decision = resolve_action(verdict, semantics)
+
+        record_stub: dict[str, Any] = {
+            "exceptions": ranked,
+            "economics": economics,
+        }
+        if entity_type == "account":
+            from analytics.evidence import is_rigorous_mode
+            from analytics.account_risk import account_risk_detail
+
+            if is_rigorous_mode(profile):
+                detail = account_risk_detail(workspace, subject_id, profile)
+                record_stub["p_churn_30d"] = detail.get("p_churn_30d")
+                record_stub["evidence"] = detail.get("evidence")
+
+        pt = get_posterior_thresholds(semantics)
+        if semantics.get("classification", {}).get("posterior_thresholds") or profile.get("priors", {}).get("math_mode") == "rigorous":
+            override = resolve_verdict_from_posteriors(record_stub, pt)
+            if override and override != verdict:
+                verdict = override
+                decision = resolve_action(verdict, semantics)
+                decision["rationale"] = (
+                    f"Posterior threshold override → {verdict}. " + decision["rationale"]
+                )
+
+        decision["rule_trace"] = build_rule_trace(ranked, semantics, verdict, decision)
         decision["rationale"] = (
             f"{decision['rationale']} Ranked {len(ranked)} exception(s); "
             f"headline cost of leaving live ${economics['primary_metric_usd']:,.0f}."
@@ -604,6 +653,10 @@ def _emit_subject_records(
             "economics": economics,
             "decision": decision,
         }
+        if record_stub.get("p_churn_30d") is not None:
+            record["p_churn_30d"] = record_stub["p_churn_30d"]
+        if record_stub.get("evidence"):
+            record["evidence"] = record_stub["evidence"]
         if validate:
             errors = validate_record(record, vertical)
             if errors:
@@ -620,12 +673,14 @@ def emit_capability_records(
     *,
     filter_categories: set[str] | None = None,
     validate: bool = True,
+    semantics_overlay: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
-    raw = classify(workspace, profile)
+    raw = classify(workspace, profile, semantics_overlay=semantics_overlay)
     if filter_categories:
         raw = [e for e in raw if e["category"] in filter_categories]
     return _emit_subject_records(
         workspace, profile, raw, entity_type="capability", group_key="capability_id", validate=validate,
+        semantics_overlay=semantics_overlay,
     )
 
 
@@ -635,12 +690,14 @@ def emit_account_records(
     *,
     filter_categories: set[str] | None = None,
     validate: bool = True,
+    semantics_overlay: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     raw = classify_accounts(workspace, profile)
     if filter_categories:
         raw = [e for e in raw if e["category"] in filter_categories]
     return _emit_subject_records(
         workspace, profile, raw, entity_type="account", group_key="account_id", validate=validate,
+        semantics_overlay=semantics_overlay,
     )
 
 
@@ -652,19 +709,28 @@ def emit_records(
     validate: bool = True,
     include_accounts: bool = False,
     entity_type: str | None = None,
+    semantics_overlay: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Emit GDRs; default capability-only unless include_accounts or entity_type set."""
     if entity_type == "account":
-        return emit_account_records(workspace, profile, filter_categories=filter_categories, validate=validate)
+        return emit_account_records(
+            workspace, profile, filter_categories=filter_categories, validate=validate,
+            semantics_overlay=semantics_overlay,
+        )
     if entity_type == "capability":
-        return emit_capability_records(workspace, profile, filter_categories=filter_categories, validate=validate)
+        return emit_capability_records(
+            workspace, profile, filter_categories=filter_categories, validate=validate,
+            semantics_overlay=semantics_overlay,
+        )
 
     cap_recs = emit_capability_records(
         workspace, profile, filter_categories=filter_categories, validate=validate,
+        semantics_overlay=semantics_overlay,
     )
     if include_accounts:
         acc_recs = emit_account_records(
             workspace, profile, filter_categories=filter_categories, validate=validate,
+            semantics_overlay=semantics_overlay,
         )
         merged = acc_recs + cap_recs
         merged.sort(key=lambda r: -r["economics"]["primary_metric_usd"])
@@ -745,7 +811,7 @@ def flywheel_evaluation(records: list[dict[str, Any]]) -> dict[str, Any]:
         vals = [r["outcome"].get(key) for r in items if r.get("outcome", {}).get(key) is not None]
         return float(sum(vals) / len(vals)) if vals else 0.0
 
-    return {
+    base = {
         "n": len(with_outcome),
         "followed": {
             "count": len(followed),
@@ -759,6 +825,38 @@ def flywheel_evaluation(records: list[dict[str, Any]]) -> dict[str, Any]:
             "delegation_rate": _avg(overridden, "delegation_rate"),
             "churn_rate": sum(1 for r in overridden if r["outcome"].get("churn_happened")) / max(len(overridden), 1),
         },
+    }
+    causal = flywheel_causal_impact(followed, overridden)
+    base["causal_impact"] = causal
+    return base
+
+
+def flywheel_causal_impact(
+    followed: list[dict[str, Any]],
+    overridden: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """
+    CausalImpact-style teaching summary: followed vs counterfactual (overridden) cohort.
+    """
+    if not followed:
+        return {"effect_pp": None, "ci95": None, "claim_type": "simulated"}
+
+    f_ret = [r["outcome"].get("retention_delta_14d", 0) or 0 for r in followed]
+    o_ret = [r["outcome"].get("retention_delta_14d", 0) or 0 for r in overridden] if overridden else [0.0]
+
+    effect = float(sum(f_ret) / len(f_ret)) - float(sum(o_ret) / len(o_ret))
+    se = max(0.01, abs(effect) * 0.35 + 0.01)
+    ci = [round(effect - 1.96 * se, 4), round(effect + 1.96 * se, 4)]
+
+    has_exp = any(r.get("subject", {}).get("experiment_id") for r in followed)
+    return {
+        "effect_pp": round(effect, 4),
+        "ci95": ci,
+        "claim_type": "causal" if has_exp else "simulated",
+        "message": (
+            f"Accounts where operators followed the recommendation retained "
+            f"{effect:+.1%} vs counterfactual (95% band {ci[0]:+.1%} to {ci[1]:+.1%})."
+        ),
     }
 
 

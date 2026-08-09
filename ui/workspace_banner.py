@@ -7,6 +7,7 @@ from typing import Any
 import streamlit as st
 
 from core.workspace import Workspace, get_workspace_from_session
+from ui.loop_chrome import render_loop_stepper
 
 PROFILE_PAGE = "pages/00_Agentic_Product_Profile.py"
 PROFILE_CTA_LABEL = "Open Product Profile → Generate workspace"
@@ -63,12 +64,13 @@ def render_sidebar_brand_and_status(session_state: Any) -> None:
             f"""
             <div class="mag-sidebar-brand">
                 <p class="mag-kicker">churnOS</p>
-                <p class="mag-sidebar-tagline">Profile → Generate → Radar</p>
+                <p class="mag-sidebar-tagline">Decision-grade analytics loop</p>
                 {status_html}
             </div>
             """,
             unsafe_allow_html=True,
         )
+        render_loop_stepper(session_state)
 
         if ws is None:
             st.page_link(PROFILE_PAGE, label="→ Product Profile", icon="⚙️")

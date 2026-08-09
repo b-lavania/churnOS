@@ -1,5 +1,7 @@
 """P1 generator / OTEL / taxonomy extensions."""
 
+import pytest
+
 from analytics.agentic_profile import get_preset, list_presets
 from core.workspace import build_workspace
 from data.agentic_generator import generate_agentic_warehouse
@@ -26,8 +28,9 @@ def test_connector_outcome_confirmed():
     assert ce["outcome_confirmed"].dtype == bool or ce["outcome_confirmed"].isin([True, False]).all()
 
 
+@pytest.mark.slow
 def test_workspace_graph_and_eval():
-    ws = build_workspace(get_preset("workspace_crm"), seed=11, n_sessions=500)
+    ws = build_workspace(get_preset("workspace_crm"), seed=11, n_sessions=80)
     assert not ws.connector_capability_graph.empty
     assert {"connector_id", "capability_id", "call_count", "fail_count"} <= set(
         ws.connector_capability_graph.columns

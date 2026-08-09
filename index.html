@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>churnOS: Ship, throttle, or kill agent accounts &amp; capabilities</title>
+  <title>churnOS: Decision-grade analytics for agentic systems</title>
   <meta name="description"
-    content="For agentic product teams. See which accounts and capabilities to ship, throttle, or kill, ranked by cost of leaving them live. Try the live demo.">
+    content="Ontology-driven decision records for agentic product teams. Rank accounts and capabilities to ship, throttle, or kill. Clone the repo and run locally.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -34,6 +34,9 @@
       --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.02), 0 10px 15px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9);
       --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.04), 0 20px 48px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 1);
       --radius: 0px;
+      --section-gap: 48px;
+      --section-pad: 32px;
+      --block-gap: 16px;
     }
 
     *,
@@ -57,7 +60,7 @@
       background: var(--page);
       max-width: 1120px;
       margin: 0 auto;
-      padding: 80px 40px 120px;
+      padding: 48px 32px 64px;
       -webkit-font-smoothing: antialiased;
     }
 
@@ -108,7 +111,7 @@
 
     h2 {
       font-size: 32px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
 
     .kicker {
@@ -142,67 +145,18 @@
       font-size: 17px;
       line-height: 1.55;
       max-width: 760px;
-      margin-bottom: 28px;
-    }
-
-    .section-closer {
-      color: var(--ink-mid);
-      font-size: 17px;
-      font-style: italic;
-      margin-top: 28px;
-      max-width: 680px;
+      margin-bottom: 16px;
     }
 
     header {
-      margin-bottom: 64px;
-      position: relative;
+      margin-bottom: 40px;
     }
 
-    .hero-layout {
-      display: grid;
-      grid-template-columns: 1fr 300px;
-      gap: 64px;
-      align-items: start;
-    }
-
-    .contact-card {
-      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
-      border: 2px solid var(--rule);
-      border-radius: var(--radius);
-      padding: 18px 20px;
-      box-shadow: var(--shadow-lg);
-      position: sticky;
-      top: 40px;
-    }
-
-    .contact-name {
-      font-family: var(--sans);
-      font-size: 21px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      line-height: 1.15;
-    }
-
-    .contact-seeking {
-      font-size: 12px;
-      color: var(--ink-soft);
-      margin-bottom: 10px;
-      line-height: 1.45;
-    }
-
-    .contact-card .btn-group {
-      margin-top: 14px;
-      gap: 8px;
-    }
-
-    .contact-card .btn {
-      padding: 9px 12px;
-      font-size: 14px;
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 12px;
+    .hero-cta {
+      display: inline-block;
+      margin-top: 20px;
+      text-decoration: none;
+      flex: none;
     }
 
     .btn {
@@ -243,14 +197,20 @@
     }
 
     .who-section {
-      margin-bottom: 80px;
-      padding-bottom: 64px;
+      margin-bottom: var(--section-gap);
+      padding-bottom: var(--section-pad);
       border-bottom: 2px solid var(--rule);
     }
 
     .what-if-section {
-      margin-bottom: 80px;
-      padding-bottom: 64px;
+      margin-bottom: var(--section-gap);
+      padding-bottom: var(--section-pad);
+      border-bottom: 2px solid var(--rule);
+    }
+
+    .features-section {
+      margin-bottom: var(--section-gap);
+      padding-bottom: var(--section-pad);
       border-bottom: 2px solid var(--rule);
     }
 
@@ -265,15 +225,14 @@
     .persona-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      margin-bottom: 8px;
+      gap: var(--block-gap);
     }
 
     .persona-card {
       background: linear-gradient(to bottom, #ffffff, #fcfcfb);
       border: 2px solid var(--rule);
       border-radius: var(--radius);
-      padding: 28px;
+      padding: 20px;
       box-shadow: var(--shadow-md);
     }
 
@@ -294,8 +253,10 @@
     .narrative {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 80px;
-      margin-bottom: 80px;
+      gap: 40px;
+      margin-bottom: var(--section-gap);
+      padding-bottom: var(--section-pad);
+      border-bottom: 2px solid var(--rule);
     }
 
     .narrative h2 {
@@ -311,112 +272,42 @@
       margin-bottom: 16px;
     }
 
-    .systems {
-      margin-bottom: 80px;
-    }
-
-    .demo-path {
-      margin-bottom: 80px;
-      padding-bottom: 64px;
+    .ontology-section {
+      margin-bottom: var(--section-gap);
+      padding-bottom: var(--section-pad);
       border-bottom: 2px solid var(--rule);
     }
 
-    .demo-path h2 {
-      margin-bottom: 12px;
-    }
-
-    .systems-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 32px;
-    }
-
-    .sys-card {
+    .ontology-card {
       background: linear-gradient(to bottom, #ffffff, #fcfcfb);
       border: 2px solid var(--rule);
-      border-radius: var(--radius);
-      padding: 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      padding: 32px 36px;
       box-shadow: var(--shadow-md);
+      margin-top: 24px;
     }
 
-    .sys-tag {
-      font-family: var(--mono);
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .sys-teal .sys-tag {
-      color: var(--teal);
-    }
-
-    .sys-amber .sys-tag {
-      color: var(--amber);
-    }
-
-    .sys-blue .sys-tag {
-      color: var(--blue);
-    }
-
-    .sys-title {
-      font-weight: 700;
-      font-size: 18px;
-      line-height: 1.3;
-    }
-
-    .sys-desc {
-      font-size: 15px;
-      color: var(--ink-mid);
-      line-height: 1.6;
-    }
-
-    .how-i-work {
-      margin-bottom: 64px;
-    }
-
-    .how-i-work h2 {
-      margin-bottom: 28px;
-    }
-
-    .work-principles {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-    }
-
-    .principle {
-      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
-      border: 2px solid var(--rule);
-      border-radius: var(--radius);
-      padding: 28px;
-      box-shadow: var(--shadow-md);
-    }
-
-    .principle-num {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--ink-light);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-      display: block;
-    }
-
-    .principle-title {
-      font-weight: 700;
-      font-size: 16px;
+    .ontology-punch {
+      font-size: 22px;
+      font-weight: 600;
       color: var(--ink);
-      margin-bottom: 8px;
-      line-height: 1.3;
+      line-height: 1.35;
+      margin-bottom: 16px;
+      max-width: 720px;
     }
 
-    .principle-desc {
-      font-size: 14px;
+    .ontology-detail {
+      font-size: 16px;
       color: var(--ink-mid);
-      line-height: 1.6;
+      line-height: 1.55;
+      max-width: 680px;
+    }
+
+    .ontology-detail code {
+      font-family: var(--mono);
+      font-size: 14px;
+      background: var(--page);
+      padding: 2px 6px;
+      border: 1px solid var(--rule);
     }
 
     .honesty-chip {
@@ -447,23 +338,18 @@
       flex: 1 1 16rem;
     }
 
-    .close-section .honesty-chip {
-      margin-top: 16px;
-      margin-bottom: 0;
-      max-width: 560px;
-    }
 
     .table-container {
       background: linear-gradient(to bottom, #ffffff, #fcfcfb);
       border: 2px solid var(--rule);
       border-radius: var(--radius);
-      padding: 40px;
-      margin-bottom: 64px;
+      padding: 28px 32px;
+      margin-bottom: var(--section-gap);
       box-shadow: var(--shadow-md);
     }
 
     .table-container .section-intro {
-      margin-bottom: 32px;
+      margin-bottom: 16px;
     }
 
     .outcome-table {
@@ -502,50 +388,6 @@
       font-weight: 700;
     }
 
-    .close-section {
-      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
-      border: 2px solid var(--rule);
-      border-radius: var(--radius);
-      padding: 32px 40px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 32px;
-      box-shadow: var(--shadow-lg);
-    }
-
-    .close-section h2 {
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-
-    .close-section h2 em {
-      font-style: italic;
-      font-weight: 300;
-      color: var(--teal);
-    }
-
-    .close-section p {
-      color: var(--ink-mid);
-      font-size: 16px;
-      margin-bottom: 8px;
-      max-width: 560px;
-    }
-
-    .close-section .install-hint {
-      font-family: var(--mono);
-      font-size: 13px;
-      color: var(--ink-light);
-      margin-bottom: 0;
-    }
-
-    .cta-group {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-
     .btn-cta {
       display: inline-block;
       background: linear-gradient(to bottom, var(--teal), #084838);
@@ -581,36 +423,101 @@
       color: var(--ink);
     }
 
-    footer {
-      margin-top: 48px;
-      padding-top: 64px;
-      border-top: 1px solid var(--rule);
+    .footer-contact {
+      margin-top: 32px;
+      padding: 28px 32px;
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .footer-contact-name {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 4px;
+      line-height: 1.2;
+    }
+
+    .footer-contact-role {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 16px;
+    }
+
+    .footer-contact-desc {
+      font-size: 16px;
+      color: var(--ink-mid);
+      line-height: 1.55;
+      max-width: 640px;
+      margin-bottom: 20px;
+    }
+
+    .footer-contact-links {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
     }
 
-    .footer-left {
-      max-width: 500px;
-    }
-
-    .footer-tag {
-      font-family: var(--sans);
-      font-style: italic;
-      font-size: 20px;
-      color: var(--ink-soft);
-    }
-
-    .footer-right {
-      font-size: 14px;
+    .install-hint {
+      font-family: var(--mono);
+      font-size: 13px;
       color: var(--ink-light);
-      text-align: right;
+      background: var(--page);
+      padding: 10px 12px;
+      border: 1px solid var(--rule);
+      display: inline-block;
+      margin-bottom: 0;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--block-gap);
+    }
+
+    .feature-col {
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .feature-kicker {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .feature-list {
+      list-style: none;
+      font-size: 14px;
+      color: var(--ink-mid);
+      line-height: 1.55;
+    }
+
+    .feature-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .feature-list li:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
     }
 
     /* Radar preview */
     .radar-section {
-      margin-bottom: 80px;
-      padding-bottom: 64px;
+      margin-bottom: var(--section-gap);
+      padding-bottom: var(--section-pad);
       border-bottom: 2px solid var(--rule);
     }
 
@@ -618,12 +525,12 @@
       background: linear-gradient(to bottom, #ffffff, #fcfcfb);
       border: 2px solid var(--rule);
       box-shadow: var(--shadow-lg);
-      padding: 28px 32px 32px;
-      margin-top: 28px;
+      padding: 20px 24px;
+      margin-top: 16px;
     }
 
     .radar-masthead {
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       padding-bottom: 16px;
       border-bottom: 1px solid var(--rule);
     }
@@ -651,40 +558,52 @@
       line-height: 1.45;
     }
 
-    .radar-preview .honesty-chip {
-      margin-top: 20px;
-      margin-bottom: 0;
+    .meta-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
     }
 
-    .health-row {
-      display: grid;
-      grid-template-columns: 140px 1fr;
-      gap: 32px;
+    .meta-chip {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      padding: 5px 10px;
+      background: var(--page);
+      border: 1px solid var(--rule);
+      color: var(--ink-mid);
+    }
+
+    .health-row-compact {
+      display: flex;
       align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 24px;
+      gap: 20px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
       border-bottom: 1px solid var(--rule);
     }
 
     .health-gauge-wrap {
       text-align: center;
+      flex-shrink: 0;
     }
 
     .health-gauge {
       --gauge-value: 62;
-      width: 120px;
-      height: 120px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
       background: conic-gradient(var(--amber) calc(var(--gauge-value) * 3.6deg), var(--rule) 0);
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 8px;
+      margin: 0 auto 4px;
     }
 
     .health-gauge-inner {
-      width: 92px;
-      height: 92px;
+      width: 56px;
+      height: 56px;
       background: var(--white);
       border-radius: 50%;
       display: flex;
@@ -695,7 +614,7 @@
     }
 
     .health-gauge-score {
-      font-size: 28px;
+      font-size: 18px;
       font-weight: 700;
       color: var(--ink);
       line-height: 1;
@@ -703,33 +622,34 @@
 
     .health-gauge-band {
       font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 0.08em;
+      font-size: 8px;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       color: var(--amber);
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     .health-gauge-label {
       font-family: var(--mono);
-      font-size: 11px;
-      color: var(--ink-soft);
-      letter-spacing: 0.05em;
+      font-size: 10px;
+      color: var(--ink-light);
+      letter-spacing: 0.04em;
     }
 
-    .metric-strip {
+    .exec-strip {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 16px;
+      flex: 1;
     }
 
-    .metric-cell {
+    .exec-cell {
       padding: 12px 14px;
       background: var(--page);
       border: 1px solid var(--rule);
     }
 
-    .metric-cell-label {
+    .exec-cell-label {
       font-family: var(--mono);
       font-size: 11px;
       letter-spacing: 0.06em;
@@ -738,11 +658,17 @@
       margin-bottom: 6px;
     }
 
-    .metric-cell-value {
+    .exec-cell-value {
       font-size: 18px;
       font-weight: 700;
       color: var(--ink);
       line-height: 1.2;
+    }
+
+    .exec-cell-delta {
+      font-size: 13px;
+      color: var(--amber);
+      margin-top: 2px;
     }
 
     .tab-radar input[type="radio"] {
@@ -789,6 +715,50 @@
     #tab-accounts:checked ~ .panel-accounts,
     #tab-caps:checked ~ .panel-caps {
       display: block;
+    }
+
+    .panel-heading {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 12px;
+    }
+
+    .risk-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+
+    .risk-table th {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 2px solid var(--ink);
+      background: var(--page);
+    }
+
+    .risk-table td {
+      padding: 10px;
+      border-bottom: 1px solid var(--rule);
+      color: var(--ink-mid);
+    }
+
+    .risk-table td:first-child {
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .risk-table .risk-high {
+      color: var(--amber);
+      font-weight: 600;
     }
 
     .tornado-chart {
@@ -928,6 +898,26 @@
       color: var(--ink-mid);
     }
 
+    .rule-trace {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-soft);
+      padding: 10px 12px;
+      background: var(--white);
+      border: 1px solid var(--rule);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .rule-trace code {
+      font-size: 11px;
+      color: var(--teal);
+    }
+
+    .rule-trace strong {
+      color: var(--ink);
+    }
+
     .decision-card .action {
       padding-top: 16px;
       border-top: 1px solid var(--rule);
@@ -940,115 +930,79 @@
       color: var(--teal);
     }
 
-    .verdict-legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px 24px;
+    .radar-preview .honesty-chip {
       margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid var(--rule);
-      font-size: 13px;
-      color: var(--ink-mid);
-      line-height: 1.45;
+      margin-bottom: 0;
     }
 
-    .verdict-legend-title {
+    .work-principles {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--block-gap);
+    }
+
+    .principle {
+      background: linear-gradient(to bottom, #ffffff, #fcfcfb);
+      border: 2px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .principle-num {
       font-family: var(--mono);
       font-size: 11px;
+      color: var(--ink-light);
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: var(--ink-light);
-      width: 100%;
-      margin-bottom: 4px;
+      margin-bottom: 12px;
+      display: block;
     }
 
-    .verdict-legend span strong {
-      font-weight: 600;
+    .principle-title {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--ink);
+      margin-bottom: 8px;
+      line-height: 1.3;
     }
 
-    .verdict-legend .verdict--leaking,
-    .verdict-legend .verdict--destructive,
-    .verdict-legend .verdict--healthy {
-      font-weight: 600;
-    }
-
-    .preview-cta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 16px 24px;
-      margin-top: 28px;
-    }
-
-    .preview-cta .btn-cta {
-      flex-shrink: 0;
-    }
-
-    .preview-cta-link {
-      font-size: 15px;
-    }
-
-    .narrative-pointer {
-      font-size: 15px;
-      color: var(--ink-soft);
-      font-style: italic;
-      margin-top: 16px;
-      padding: 16px 20px;
-      background: var(--teal-light);
-      border-left: 3px solid var(--teal);
-      line-height: 1.5;
+    .principle-desc {
+      font-size: 14px;
+      color: var(--ink-mid);
+      line-height: 1.6;
     }
 
     @media (max-width: 960px) {
       body {
-        padding: 40px 24px;
-      }
-
-      .hero-layout {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-
-      .contact-card {
-        position: static;
-        width: 100%;
+        padding: 32px 20px;
       }
 
       .persona-grid,
       .narrative,
-      .systems-grid,
-      .work-principles {
+      .work-principles,
+      .feature-grid {
         grid-template-columns: 1fr;
-        gap: 32px;
+        gap: var(--block-gap);
       }
 
       h1 {
         font-size: 44px;
       }
 
-      .close-section {
-        padding: 28px 24px;
+      .footer-contact-links {
         flex-direction: column;
         align-items: flex-start;
       }
 
-      footer {
+      .health-row-compact {
         flex-direction: column;
         align-items: flex-start;
-        gap: 24px;
       }
 
-      .footer-right {
-        text-align: left;
-      }
-
-      .health-row {
+      .exec-strip {
         grid-template-columns: 1fr;
-        gap: 20px;
-      }
-
-      .metric-strip {
-        grid-template-columns: repeat(2, 1fr);
+        width: 100%;
       }
 
       .tab-radar-nav {
@@ -1065,9 +1019,13 @@
         gap: 8px;
       }
 
-      .preview-cta {
-        flex-direction: column;
-        align-items: flex-start;
+      .risk-table {
+        font-size: 12px;
+      }
+
+      .risk-table th,
+      .risk-table td {
+        padding: 8px 6px;
       }
     }
   </style>
@@ -1078,36 +1036,23 @@
 
   <main id="main">
     <header>
-      <div class="hero-layout">
-        <div class="hero-main">
-          <span class="kicker">For agentic product teams</span>
-          <h1>churn<em>OS</em></h1>
-          <p class="subhead">See which <strong>accounts</strong> and <strong>capabilities</strong> to ship, throttle, or
-            kill, ranked by what it costs to leave them live.</p>
-          <p class="subhead-secondary">Built for teams shipping assistants, workspace agents, and ops automations, not
-            another success-rate dashboard.</p>
-        </div>
-        <div class="contact-card">
-          <div class="contact-name">Try it now</div>
-          <div class="contact-seeking">
-            Open-source demo toolkit, no install required. Pick a product shape, generate sample data, and Radar fills
-            with both account and capability decisions in under a minute.
-          </div>
-          <div class="btn-group">
-            <a href="https://churnos.xblavania.workers.dev/profile" class="btn btn-primary" target="_blank"
-              rel="noopener">Live demo</a>
-            <a href="https://github.com/b-lavania/churnOS" class="btn btn-secondary" target="_blank"
-              rel="noopener">GitHub</a>
-          </div>
-        </div>
-      </div>
+      <span class="kicker">Decision-grade analytics · Ontology as IP</span>
+      <h1>churn<em>OS</em></h1>
+      <p class="subhead">A governed judgment layer for agentic products, which <strong>accounts</strong> and
+        <strong>capabilities</strong> to ship, throttle, or kill, priced by cost of leaving live.</p>
+      <p class="subhead-secondary">Built for teams shipping assistants, workspace agents, and ops automations. Not
+        another success-rate dashboard, auditable <code style="font-family: var(--mono); font-size: 15px;">GrowthDecisionRecord</code>s
+        with YAML-governed policy.</p>
+      <a href="https://github.com/b-lavania/churnOS" class="btn btn-primary hero-cta" target="_blank"
+        rel="noopener">View on GitHub</a>
     </header>
 
     <section class="radar-section" id="preview">
       <span class="kicker">Weekly meeting, rendered</span>
       <h2>What your agent review could look like</h2>
-      <p class="section-intro">Each row is a decision: what's wrong, what it may cost to leave live, and what to do.
-        Numbers come from the synthetic workspace (teaching data, not production telemetry).</p>
+      <p class="section-intro">Each row is a <code style="font-family: var(--mono); font-size: 15px;">GrowthDecisionRecord</code>:
+        what's wrong, what it may cost to leave live, and what to do, with policy provenance from
+        <code style="font-family: var(--mono); font-size: 15px;">semantics.yaml</code>.</p>
 
       <div class="radar-preview" aria-label="Static preview of the Radar screen">
         <div class="radar-masthead">
@@ -1116,32 +1061,38 @@
           <div class="radar-masthead-deck">Ranked decisions priced by cost of leaving live.</div>
         </div>
 
-        <div class="health-row">
-          <div class="health-gauge-wrap">
-            <div class="health-gauge" style="--gauge-value: 62" aria-hidden="true">
+        <div class="meta-chips" aria-hidden="true">
+          <span class="meta-chip">assistant_heavy</span>
+          <span class="meta-chip">capability_lifecycle</span>
+          <span class="meta-chip">v0.1</span>
+          <span class="meta-chip">seed 42</span>
+          <span class="meta-chip">8 acct GDRs</span>
+          <span class="meta-chip">12 cap GDRs</span>
+        </div>
+
+        <div class="health-row-compact">
+          <div class="health-gauge-wrap" aria-hidden="true">
+            <div class="health-gauge" style="--gauge-value: 62">
               <div class="health-gauge-inner">
                 <span class="health-gauge-score">62</span>
                 <span class="health-gauge-band">Yellow</span>
               </div>
             </div>
-            <div class="health-gauge-label">Agentic Health</div>
+            <div class="health-gauge-label">Agentic health</div>
           </div>
-          <div class="metric-strip">
-            <div class="metric-cell">
-              <div class="metric-cell-label">Health score</div>
-              <div class="metric-cell-value">62 (yellow)</div>
+          <div class="exec-strip" aria-hidden="true">
+            <div class="exec-cell">
+              <div class="exec-cell-label">Active accounts</div>
+              <div class="exec-cell-value">24</div>
             </div>
-            <div class="metric-cell">
-              <div class="metric-cell-label">CPSO</div>
-              <div class="metric-cell-value">$0.42</div>
+            <div class="exec-cell">
+              <div class="exec-cell-label">At-risk accounts</div>
+              <div class="exec-cell-value">8</div>
+              <div class="exec-cell-delta">33% of base</div>
             </div>
-            <div class="metric-cell">
-              <div class="metric-cell-label">TTFV</div>
-              <div class="metric-cell-value">4.2d</div>
-            </div>
-            <div class="metric-cell">
-              <div class="metric-cell-label">Unattributed</div>
-              <div class="metric-cell-value">18%</div>
+            <div class="exec-cell">
+              <div class="exec-cell-label">CPSO trend</div>
+              <div class="exec-cell-value">$0.42</div>
             </div>
           </div>
         </div>
@@ -1150,39 +1101,58 @@
           <input type="radio" name="radar-tab" id="tab-accounts" checked>
           <input type="radio" name="radar-tab" id="tab-caps">
           <div class="tab-radar-nav">
-            <label for="tab-accounts">Accounts at risk</label>
+            <label for="tab-accounts">Weekly account health</label>
             <label for="tab-caps">Capabilities to act on</label>
           </div>
 
           <div class="tab-radar-panel panel-accounts">
-            <div class="tornado-chart" aria-hidden="true">
-              <div class="tornado-row">
-                <span class="tornado-label">ACC · acme_west</span>
-                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 100%"></div></div>
-                <span class="tornado-cost">$84,200</span>
-              </div>
-              <div class="tornado-row">
-                <span class="tornado-label">ACC · globex_ops</span>
-                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 73%"></div></div>
-                <span class="tornado-cost">$61,500</span>
-              </div>
-              <div class="tornado-row">
-                <span class="tornado-label">ACC · initech_ai</span>
-                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 53%"></div></div>
-                <span class="tornado-cost">$44,800</span>
-              </div>
-              <div class="tornado-row">
-                <span class="tornado-label">ACC · umbra_corp</span>
-                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 37%"></div></div>
-                <span class="tornado-cost">$31,200</span>
-              </div>
-              <div class="tornado-row">
-                <span class="tornado-label">ACC · wayne_labs</span>
-                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 22%"></div></div>
-                <span class="tornado-cost">$18,900</span>
-              </div>
-              <div class="tornado-axis-label">Cost of leaving live (USD)</div>
-            </div>
+            <div class="panel-heading">At-risk account list</div>
+            <table class="risk-table" aria-hidden="true">
+              <thead>
+                <tr>
+                  <th>Account</th>
+                  <th>Tier</th>
+                  <th>Risk</th>
+                  <th>Primary signal</th>
+                  <th>Recommended</th>
+                  <th>Cost live</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>acme_west</td>
+                  <td>enterprise</td>
+                  <td class="risk-high">0.84</td>
+                  <td>habit_collapse</td>
+                  <td>throttle</td>
+                  <td>$84,200</td>
+                </tr>
+                <tr>
+                  <td>globex_ops</td>
+                  <td>growth</td>
+                  <td class="risk-high">0.71</td>
+                  <td>activation_leak</td>
+                  <td>throttle</td>
+                  <td>$61,500</td>
+                </tr>
+                <tr>
+                  <td>initech_ai</td>
+                  <td>growth</td>
+                  <td class="risk-high">0.58</td>
+                  <td>approval_fatigue</td>
+                  <td>hold</td>
+                  <td>$44,800</td>
+                </tr>
+                <tr>
+                  <td>umbra_corp</td>
+                  <td>starter</td>
+                  <td>0.42</td>
+                  <td>run_cost_blowout</td>
+                  <td>throttle</td>
+                  <td>$31,200</td>
+                </tr>
+              </tbody>
+            </table>
             <article class="decision-card" aria-hidden="true">
               <div class="verdict verdict--leaking">Account · Leaking</div>
               <div class="cap">acme_west</div>
@@ -1197,7 +1167,9 @@
                 <span class="chip">habit_collapse 31%</span>
                 <span class="chip">approval_fatigue 17%</span>
               </div>
-              <div class="action">Recommended: <strong>Throttle</strong>: Cap % traffic, rate, or tool budget.</div>
+              <div class="rule-trace">Policy: <code>leaking → throttle</code> → <strong>throttle</strong> · rule
+                when_any_category: activation_leak, habit_collapse</div>
+              <div class="action">Recommended: <strong>Throttle</strong>: cap traffic, rate, or tool budget.</div>
             </article>
           </div>
 
@@ -1223,11 +1195,6 @@
                 <div class="tornado-bar-track"><div class="tornado-bar" style="width: 40%"></div></div>
                 <span class="tornado-cost">$19,400</span>
               </div>
-              <div class="tornado-row">
-                <span class="tornado-label">CAP · slack_digest</span>
-                <div class="tornado-bar-track"><div class="tornado-bar" style="width: 27%"></div></div>
-                <span class="tornado-cost">$12,800</span>
-              </div>
               <div class="tornado-axis-label">Cost of leaving live (USD)</div>
             </div>
             <article class="decision-card" aria-hidden="true">
@@ -1243,30 +1210,53 @@
                 <span class="chip">activation_leak 58%</span>
                 <span class="chip">approval_fatigue 42%</span>
               </div>
-              <div class="action">Recommended: <strong>Throttle</strong>: Cap % traffic, rate, or tool budget.</div>
+              <div class="rule-trace">Policy: <code>leaking → throttle</code> → <strong>throttle</strong> · rule
+                when_any_category: activation_leak</div>
+              <div class="action">Recommended: <strong>Throttle</strong>: cap traffic, rate, or tool budget.</div>
             </article>
           </div>
         </div>
 
-        <div class="verdict-legend" aria-hidden="true">
-          <span class="verdict-legend-title">What the labels mean</span>
-          <span><strong class="verdict--leaking">Leaking</strong>: activation/habit unfinished</span>
-          <span><strong class="verdict--destructive">Destructive</strong>: correlates with churn; throttle or rollback</span>
-          <span><strong style="color: var(--amber)">Uneconomic</strong>: margin-negative even if UX looks fine</span>
-          <span><strong class="verdict--healthy">Healthy</strong>: safe to keep shipping</span>
-        </div>
-
         <div class="honesty-chip">
           <span class="honesty-chip-kicker">Synthetic demo</span>
-          <span class="honesty-chip-body">Teaching warehouse and authored priors, not production telemetry.</span>
+          <span class="honesty-chip-body">Static preview; clone the repo to run it (teaching warehouse and authored priors,
+            not production telemetry).</span>
         </div>
       </div>
+    </section>
 
-      <div class="preview-cta">
-        <a href="https://churnos.xblavania.workers.dev/profile" class="btn-cta" target="_blank" rel="noopener">Open live
-          demo →</a>
-        <a href="https://churnos.xblavania.workers.dev/radar" class="preview-cta-link" target="_blank" rel="noopener">Already
-          generated? Jump to Radar →</a>
+    <section class="features-section">
+      <span class="kicker">What is in the repo</span>
+      <h2>START → DECIDE → LEARN</h2>
+      <p class="section-intro">Synthetic teaching warehouse, not production telemetry. Clone and run locally.</p>
+      <div class="feature-grid">
+        <div class="feature-col">
+          <span class="feature-kicker">START</span>
+          <ul class="feature-list">
+            <li>Product Profile presets (assistant-heavy, CRM workspace, ops mission)</li>
+            <li>Synthetic warehouse generator (seats, runs, approvals, connectors)</li>
+            <li>Reproducible seeds for demos and tests</li>
+            <li>Profile switches ontology vertical and synthetic priors</li>
+          </ul>
+        </div>
+        <div class="feature-col">
+          <span class="feature-kicker">DECIDE</span>
+          <ul class="feature-list">
+            <li>Capability Risk Radar (account + capability decisions, health score, tornado)</li>
+            <li>Activation &amp; Habit, Trust &amp; Approval, Run Economics, Connector Blast Radius</li>
+            <li>Version Compare for agent version regressions</li>
+            <li>Override decisions with audit trail and JSONL persistence</li>
+          </ul>
+        </div>
+        <div class="feature-col">
+          <span class="feature-kicker">LEARN</span>
+          <ul class="feature-list">
+            <li>Experiments and Agentic Flags (CPSO, TTFV, HITL under synthetic treatments)</li>
+            <li>Outcome Flywheel (retention write-back on the same record)</li>
+            <li>Semantics Console, Taxonomy Browser, Record Inspector</li>
+            <li>Legacy analytics archive (retention, unit economics, CRO, marketplace)</li>
+          </ul>
+        </div>
       </div>
     </section>
 
@@ -1290,41 +1280,33 @@
             capabilities are uneconomic per seat.</p>
         </div>
       </div>
-      <p class="section-closer">If your weekly review is a dashboard of run metrics, this is the missing decision
-        layer.</p>
     </section>
 
     <section class="what-if-section">
       <span class="kicker">What if</span>
       <h2>What if your weekly agent review looked like this?</h2>
-      <p class="section-intro">SaaS playbooks track seats and clicks. Agentic products fail on <strong>verified
-          outcomes</strong>, <strong>cost per successful outcome</strong>, and <strong>trust after multi-step
-          runs</strong>, not another trace explorer or success-rate dashboard.</p>
+      <p class="section-intro">Agentic products fail on verified outcomes, cost per successful outcome, and trust after
+        multi-step runs, not another trace explorer.</p>
       <div class="work-principles">
         <div class="principle">
           <span class="principle-num">What if</span>
           <div class="principle-title">Paying looked healthy, but nobody got a first win?</div>
           <p class="principle-desc">Revenue metrics stay green while accounts never hit a verified agent outcome. The
-            “AI churn wave” is often <strong>activation failure</strong> (time-to-first-value and paying-but-dormant
-            accounts), not classic feature adoption.</p>
+            “AI churn wave” is often <strong>activation failure</strong>, not classic feature adoption.</p>
         </div>
         <div class="principle">
           <span class="principle-num">What if</span>
           <div class="principle-title">One intent burned a dozen metered steps?</div>
-          <p class="principle-desc">Agents plan, call tools, retry, and verify; a single query becomes a cost explosion.
-            <strong>CPSO</strong> and retry amplification show when “success” is margin-negative, especially for power
-            users under flat pricing.</p>
+          <p class="principle-desc"><strong>CPSO</strong> and retry amplification show when “success” is margin-negative,
+            especially for power users under flat pricing.</p>
         </div>
         <div class="principle">
           <span class="principle-num">What if</span>
           <div class="principle-title">The agent “worked” until humans took over?</div>
           <p class="principle-desc">Rising human-in-the-loop, dismissals, and scary side effects erase trust faster than
-            usage dashboards admit. Progressive review and audit matter more than DAU.</p>
+            usage dashboards admit.</p>
         </div>
       </div>
-      <p class="section-closer">Open <strong>Product Profile</strong> → generate → <strong>Radar</strong> ranks accounts
-        and capabilities to ship, throttle, or kill. Then explore <strong>Agentic Flags</strong> to see how CPSO and TTFV
-        move under synthetic treatments.</p>
     </section>
 
     <div class="narrative">
@@ -1332,118 +1314,34 @@
         <h2>The problem</h2>
         <p>You ship agent capabilities from traces and run logs, but traces don't tell you which ones to kill. Success
           rates hide retention harm until seats churn.</p>
-        <p>Long reasoning loops turn a "successful" run into uneconomic margin. Humans start dismissing agent proposals
-          or flagging scary outputs: approval fatigue you can't quantify.</p>
-        <p>One fragile connector takes down dependent jobs, and you don't know the blast radius until support tickets
-          spike.</p>
-        <p>And when you throttle a capability, nothing writes back to retention. You never learn if the call helped.
-        </p>
+        <p>When you throttle a capability, nothing writes back to retention. You never learn if the call helped.</p>
       </div>
       <div>
         <h2>The solution</h2>
-        <p>churnOS gives you a weekly decision list: configure your product shape, generate demo data, and review a
-          ranked home screen: accounts at risk and capabilities to act on, each with a recommended action and estimated
-          dollar impact if you leave them live.</p>
-        <p>Override recommendations when you disagree. Write back retention impact to close the loop, even in demo
-          mode, you see how decisions connect to churn.</p>
-        <p class="narrative-pointer">See the interactive-style preview above: accounts and capabilities ranked side by
-          side.</p>
+        <p>churnOS emits auditable <code style="font-family: var(--mono); font-size: 15px;">GrowthDecisionRecord</code>s:
+          ranked accounts and capabilities with dollar impact, YAML-governed verdicts, and an outcome flywheel that closes
+          the loop.</p>
+        <p>Override when you disagree. Write back retention impact; even in synthetic mode, you see how decisions
+          connect to churn.</p>
       </div>
     </div>
 
-    <section class="systems">
-      <span class="kicker">Decision lenses</span>
-      <h2>What the ranking is built on</h2>
-      <p class="section-intro">The home screen ranks accounts and capabilities by estimated impact. These are the four
-        lenses behind every recommendation: habit, trust, economics, and connector risk.</p>
-      <div class="systems-grid">
-        <div class="sys-card sys-teal">
-          <span class="sys-tag">Activation</span>
-          <div class="sys-title">First trusted run &amp; habit</div>
-          <p class="sys-desc">Did seats get a successful run they trust, and keep using it weekly? Capabilities that
-            never activate or lose delegation habit surface here first.</p>
-        </div>
-        <div class="sys-card sys-amber">
-          <span class="sys-tag">Trust</span>
-          <div class="sys-title">Approvals &amp; trust incidents</div>
-          <p class="sys-desc">Are humans dismissing proposals or flagging scary runs? High dismiss rates and trust
-            incidents mean the agent is losing the room, even when runs technically succeed.</p>
-        </div>
-        <div class="sys-card sys-teal">
-          <span class="sys-tag">Economics</span>
-          <div class="sys-title">Cost per run vs seat value</div>
-          <p class="sys-desc">Is a "successful" capability still uneconomic after loop costs? Compare what each run
-            costs against what a seat is worth (subscription or usage-based).</p>
-        </div>
-        <div class="sys-card sys-blue">
-          <span class="sys-tag">Connectors</span>
-          <div class="sys-title">Blast radius</div>
-          <p class="sys-desc">If one integration fails (Gmail, HubSpot, an MCP tool). How many capabilities and seats
-            break? Fragile connectors rank higher because the fallout is wider.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="demo-path">
-      <span class="kicker">Demo path</span>
-      <h2>START → DECIDE → LEARN</h2>
-      <p class="section-intro">The live app follows one loop. Radar stays empty until you generate a workspace, which is
-        intentional, not a broken screen.</p>
-      <div class="work-principles">
-        <div class="principle">
-          <span class="principle-num">START</span>
-          <div class="principle-title">Product Profile</div>
-          <p class="principle-desc">Pick assistant-heavy, CRM workspace, or ops mission. Generate the synthetic warehouse:
-            seats, capabilities, runs, approvals, connectors.</p>
-        </div>
-        <div class="principle">
-          <span class="principle-num">DECIDE</span>
-          <div class="principle-title">Radar &amp; decision surfaces</div>
-          <p class="principle-desc">Radar ranks <strong>accounts at risk</strong> and <strong>capabilities to act
-              on</strong>: health score, tornado chart, and expandable decision cards. Filter by activation, trust,
-            economics, or connectors.</p>
-        </div>
-        <div class="principle">
-          <span class="principle-num">LEARN</span>
-          <div class="principle-title">Experiments &amp; flywheel</div>
-          <p class="principle-desc">Run governed tests, then write retention Δ and churn labels back onto the decision
-            record; see whether your override helped.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="how-i-work">
-      <span class="kicker">How it works</span>
-      <h2>Three steps to your first decision</h2>
-      <div class="work-principles">
-        <div class="principle">
-          <span class="principle-num">01</span>
-          <div class="principle-title">Profile → Generate</div>
-          <p class="principle-desc">Open Product Profile, pick a preset, and generate your workspace. One click fills the
-            synthetic warehouse that powers every decision screen.</p>
-        </div>
-        <div class="principle">
-          <span class="principle-num">02</span>
-          <div class="principle-title">Radar → Review</div>
-          <p class="principle-desc">Switch between account and capability tabs. Each card shows dollar impact, evidence
-            chips, and a recommended action; override any card when you disagree.</p>
-        </div>
-        <div class="principle">
-          <span class="principle-num">03</span>
-          <div class="principle-title">Override → Flywheel</div>
-          <p class="principle-desc">Disagree with a recommendation? Override and leave a reason. Outcome Flywheel writes
-            retention impact back so you can compare followed vs overridden calls.</p>
-        </div>
-      </div>
-      <div class="honesty-chip">
-        <span class="honesty-chip-kicker">Synthetic demo</span>
-        <span class="honesty-chip-body">Teaching warehouse and authored priors, not production telemetry. Use this to
-          learn the decision loop, not to certify live forecasts.</span>
+    <section class="ontology-section">
+      <span class="kicker">Ontology as IP</span>
+      <h2>Machine-readable policy, not hardcoded heuristics</h2>
+      <div class="ontology-card">
+        <p class="ontology-punch">Taxonomy → semantics → schema → record. Change verdict rules in YAML; the Radar
+          reclassifies without a code deploy.</p>
+        <p class="ontology-detail">The <code>ontology/</code> package defines exception categories, vertical-specific
+          <code>semantics.yaml</code> action maps, and JSON Schema contracts for
+          <code>GrowthDecisionRecord</code>. Explore it on
+          <a href="https://github.com/b-lavania/churnOS/tree/main/ontology" target="_blank" rel="noopener">GitHub →
+            ontology/</a>.</p>
       </div>
     </section>
 
     <section class="table-container">
-      <h2>What changes for builders</h2>
+      <h2>Before → After</h2>
       <p class="section-intro">The shift isn't more dashboards; it's a weekly decision ritual with dollar impact and
         an audit trail.</p>
       <table class="outcome-table">
@@ -1466,9 +1364,9 @@
             <td class="td-after">Dollar impact per capability</td>
           </tr>
           <tr>
-            <td class="td-metric">Economics</td>
-            <td class="td-before">Aggregate token spend</td>
-            <td class="td-after">Cost per successful run vs revenue per seat</td>
+            <td class="td-metric">Policy</td>
+            <td class="td-before">Hardcoded Python heuristics</td>
+            <td class="td-after">YAML-governed verdicts &amp; actions</td>
           </tr>
           <tr>
             <td class="td-metric">Audit trail</td>
@@ -1477,48 +1375,30 @@
           </tr>
           <tr>
             <td class="td-metric">Account risk</td>
-            <td class="td-before">CSM spreadsheets &amp; gut feel</td>
+            <td class="td-before">CSM spreadsheets and gut feel</td>
             <td class="td-after">Ranked account decisions with $ impact</td>
           </tr>
           <tr>
             <td class="td-metric">Retention loop</td>
             <td class="td-before">Decisions never revisit churn</td>
-            <td class="td-after">Write-back shows whether the call helped (demo)</td>
+            <td class="td-after">Outcome flywheel writes back (demo)</td>
           </tr>
         </tbody>
       </table>
     </section>
 
-    <section class="close-section" id="start">
-      <div>
-        <h2>Try it in <em>60 seconds</em></h2>
-        <p>Open the demo at <strong>Product Profile</strong>, pick a preset, and generate your workspace. Then open
-          <strong>Radar</strong> for ranked account and capability decisions: health score, tornado, and expandable
-          cards in one view.</p>
-        <p class="install-hint">Or run locally: pip install -r requirements.txt && streamlit run app.py</p>
-        <div class="honesty-chip">
-          <span class="honesty-chip-kicker">Synthetic demo</span>
-          <span class="honesty-chip-body">Teaching numbers, not production telemetry.</span>
-        </div>
+    <footer class="footer-contact">
+      <div class="footer-contact-name">Bob Lavania</div>
+      <div class="footer-contact-role">Product &amp; AI Engineering</div>
+      <p class="footer-contact-desc">churnOS is an open-source portfolio project: a governed decision OS for agentic
+        products.</p>
+      <div class="footer-contact-links">
+        <a href="https://github.com/b-lavania/churnOS" class="btn-cta" target="_blank" rel="noopener">View on GitHub
+          →</a>
+        <a href="https://blavania.netlify.app/" class="btn-cta-secondary" target="_blank" rel="noopener">Portfolio</a>
+        <a href="https://linkedin.com/in/blavania" class="btn-cta-secondary" target="_blank" rel="noopener">LinkedIn</a>
       </div>
-      <div class="cta-group">
-        <a href="https://churnos.xblavania.workers.dev/profile" class="btn-cta" target="_blank" rel="noopener">Open live
-          demo →</a>
-        <a href="https://churnos.xblavania.workers.dev/radar" class="btn-cta-secondary" target="_blank"
-          rel="noopener">Jump to Radar →</a>
-        <a href="https://github.com/b-lavania/churnOS" class="btn-cta-secondary" target="_blank" rel="noopener">View on
-          GitHub</a>
-      </div>
-    </section>
-
-    <footer>
-      <div class="footer-left">
-        <p class="footer-tag">Turn weekly agent chaos into ranked account and capability decisions, with dollar impact.</p>
-      </div>
-      <div class="footer-right">
-        <a href="https://linkedin.com/in/blavania" target="_blank" rel="noopener">LinkedIn</a> ·
-        <a href="https://github.com/b-lavania" target="_blank" rel="noopener">github.com/b-lavania</a>
-      </div>
+      <p class="install-hint">pip install -r requirements.txt &amp;&amp; streamlit run app.py</p>
     </footer>
   </main>
 </body>

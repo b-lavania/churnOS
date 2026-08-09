@@ -126,5 +126,91 @@ def resolve_action(verdict: str, semantics: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def load_rules_for_vertical(vertical: str) -> dict[str, Any]:
-    return load_semantics(vertical)
+def load_rules_for_vertical(vertical: str, overlay: dict[str, Any] | None = None) -> dict[str, Any]:
+    return load_semantics(vertical, overlay=overlay)
+
+
+def find_matched_verdict_rule(
+    exceptions: list[dict[str, Any]],
+    semantics: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Return the first verdict rule that would match (for provenance)."""
+    if not exceptions:
+        return {"verdict": "healthy", "when_no_exceptions": True}
+
+    cats = {e["category"] for e in exceptions}
+    rules = semantics.get("decision", {}).get("verdict_rules", _default_verdict_rules())
+    for rule in rules:
+        if rule.get("when_no_exceptions"):
+            continue
+        when_any = rule.get("when_any_category")
+        if when_any and cats.intersection(when_any):
+            return rule
+        when_all = rule.get("when_all_categories")
+        if when_all and set(when_all).issubset(cats):
+            return rule
+        exc_lt = rule.get("when_exception_count_lt")
+        if exc_lt is not None and len(exceptions) < exc_lt:
+            return rule
+        if rule.get("default"):
+            return rule
+    return None
+
+
+def build_rule_trace(
+    exceptions: list[dict[str, Any]],
+    semantics: dict[str, Any],
+    verdict: str,
+    decision: dict[str, Any],
+) -> dict[str, Any]:
+    """Human- and agent-readable provenance for a GDR decision."""
+    matched = find_matched_verdict_rule(exceptions, semantics)
+    action_map = semantics.get("decision", {}).get("action_map", {})
+    action_spec = action_map.get(verdict, {})
+    thresh = semantics.get("classification", {}).get("thresholds", {})
+    return {
+        "vertical": semantics.get("vertical"),
+        "verdict": verdict,
+        "matched_verdict_rule": matched,
+        "action_map_key": verdict,
+        "action_spec": {
+            "recommended_action": action_spec.get("recommended_action"),
+            "requires_review": action_spec.get("requires_review"),
+        },
+        "exception_categories": [e.get("category") for e in exceptions],
+        "threshold_keys_used": list(thresh.keys())[:8],
+        "rationale": decision.get("rationale", ""),
+    }
+
+
+def get_posterior_thresholds(semantics: dict[str, Any]) -> dict[str, float]:
+    """Posterior policy thresholds from semantics overlay."""
+    pt = semantics.get("classification", {}).get("posterior_thresholds", {})
+    return {
+        "p_churn_30d_min": float(pt.get("p_churn_30d_min", 0.5)),
+        "p_uplift_churn_min": float(pt.get("p_uplift_churn_min", 0.8)),
+    }
+
+
+def resolve_verdict_from_posteriors(
+    record: dict[str, Any],
+    thresholds: dict[str, float],
+) -> str | None:
+    """
+    Override verdict when rigorous posterior thresholds are breached.
+    Returns new verdict or None to keep YAML verdict.
+    """
+    p_churn = record.get("p_churn_30d")
+    if p_churn is not None and p_churn >= thresholds.get("p_churn_30d_min", 0.5):
+        return "destructive"
+
+    for exc in record.get("exceptions", []):
+        ev = exc.get("evidence") or {}
+        if ev.get("claim_type") != "causal":
+            continue
+        est = ev.get("estimand", "")
+        if "uplift" in est:
+            mean = (ev.get("posterior") or {}).get("mean", 0)
+            if mean >= thresholds.get("p_uplift_churn_min", 0.8):
+                return "destructive"
+    return None

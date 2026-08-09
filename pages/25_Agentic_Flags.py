@@ -2,8 +2,10 @@
 
 from pathlib import Path
 
+import pandas as pd
 import streamlit as st
 
+from analytics.flag_segments import flag_segment_table
 from analytics.metrics import resolve_metric
 from data.challenge_seed import FEATURE_FLAGS
 from ui.explain import page_help
@@ -35,6 +37,28 @@ if fig is not None:
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.caption("Regenerate workspace to seed feature-flag assignments.")
+
+section_kicker(f"Segment scan — {flag}")
+seg_rows = flag_segment_table(ws, flag)
+if seg_rows:
+    df = pd.DataFrame(seg_rows)
+    display = df.copy()
+    display["significant"] = display["fdr_significant"].map({True: "✓ FDR", False: "—"})
+    st.dataframe(
+        display[["segment", "lift_pp", "p_value", "significant", "n_control", "n_treatment"]],
+        use_container_width=True,
+        hide_index=True,
+    )
+    st.caption("Unadjusted winners are segment theatre — only FDR-significant segments are highlighted.")
+    for _, row in df.iterrows():
+        if not row["fdr_significant"] and row["lift_pp"] > 2:
+            st.markdown(
+                f'<p style="color:#64748b;">{row["segment"]}: raw lift {row["lift_pp"]:+.1f}pp '
+                f"(p={row['p_value']:.3f}) — not significant after BH-FDR</p>",
+                unsafe_allow_html=True,
+            )
+else:
+    st.caption("Insufficient segment data for FDR table — regenerate workspace.")
 
 section_kicker("All flags")
 for f in FEATURE_FLAGS:

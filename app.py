@@ -6,11 +6,15 @@ Navigation: START → DECIDE → LEARN (+ Reference / Legacy expanders).
 import streamlit as st
 from pathlib import Path
 
+from analytics.account_risk import enrich_account_records
+from analytics.decisions import emit_account_records, emit_capability_records
+from analytics.evidence import apply_evsi_review_gate
+from analytics.pareto import rank_capability_records
 from core.workspace import get_workspace_from_session
 from ui.decision_card import render_decision_card
-from ui.explain import how_it_works, measurement_honesty
+from ui.explain import measurement_honesty, page_help
 from ui.magazine import load_magazine_css, masthead, section_kicker
-from ui.viz import agentic_health_composite, portfolio_tornado
+from ui.weekly_report import render_meta_chips, render_weekly_account_report
 from ui.workspace_banner import (
     empty_workspace_panel,
     render_sidebar_brand_and_status,
@@ -23,47 +27,41 @@ css_path = Path(__file__).parent / "assets" / "style.css"
 if css_path.exists():
     st.markdown(f"<style>{css_path.read_text()}</style>", unsafe_allow_html=True)
 
-def capability_risk_radar():
-    from ui.explain import page_help
 
+def capability_risk_radar():
     load_magazine_css()
     masthead(
         "Capability Risk Radar",
         "What to ship, throttle, or kill",
         "Ranked GrowthDecisionRecords priced by cost of leaving live.",
     )
-    page_help("radar", show_card_glossary=True)
-    how_it_works(expanded=False)
-    measurement_honesty()
 
     ws = get_workspace_from_session(st.session_state)
     if ws is None:
         empty_workspace_panel(page_label="Radar")
-        st.caption("New here? The loop is Profile → Generate → Radar.")
+        page_help("radar", show_card_glossary=False)
         return
 
-    from analytics.decisions import emit_account_records, emit_capability_records
-    from analytics.metrics import resolve_metric
-
-    section_kicker("Agentic Health")
-    health_fig = agentic_health_composite(ws)
-    if health_fig is not None:
-        st.plotly_chart(health_fig, use_container_width=True)
-    h1, h2, h3, h4 = st.columns(4)
-    h1.metric("Health score", resolve_metric("agentic_health_score", ws)["display"])
-    h2.metric("CPSO", resolve_metric("cost_per_successful_outcome", ws)["display"])
-    h3.metric("TTFV", resolve_metric("time_to_first_value", ws)["display"])
-    h4.metric("Unattributed spend", resolve_metric("unattributed_spend_percentage", ws)["display"])
-
-    acc_records = emit_account_records(ws, ws.profile)
-    cap_records = emit_capability_records(ws, ws.profile)
+    overlay = st.session_state.get("semantics_overlay")
+    acc_records = enrich_account_records(
+        emit_account_records(ws, ws.profile, semantics_overlay=overlay),
+        ws,
+    )
+    cap_records = emit_capability_records(ws, ws.profile, semantics_overlay=overlay)
+    rank_mode = ws.profile.get("priors", {}).get("radar_rank_mode", "cost")
+    cap_records = rank_capability_records(cap_records, ws, mode=rank_mode)
+    acc_records = [apply_evsi_review_gate(r, ws.profile) for r in acc_records]
+    cap_records = [apply_evsi_review_gate(r, ws.profile) for r in cap_records]
     st.session_state["growth_records"] = acc_records + cap_records
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Account GDRs", len(acc_records))
-    c2.metric("Capability GDRs", len(cap_records))
-    c3.metric("Seats", len(ws.seats))
-    c4.metric("Profile", ws.profile.get("preset_id", "—"))
+    render_meta_chips(ws, n_acc=len(acc_records), n_cap=len(cap_records))
+
+    delegation_alerts = sum(
+        1 for r in acc_records
+        if any(e.get("category") in ("habit_collapse", "tourist", "efficiency") for e in r.get("exceptions", []))
+    )
+    if delegation_alerts:
+        st.warning(f"{delegation_alerts} account(s) tripped delegation / habit signals this week.")
 
     def _apply_override(rec, action, reason):
         from analytics.decisions import apply_override
@@ -79,16 +77,31 @@ def capability_risk_radar():
             records[idx] = updated
             st.session_state["growth_records"] = records
         append_record(updated)
+        st.session_state["pending_flywheel_ids"] = st.session_state.get("pending_flywheel_ids", []) + [rec["record_id"]]
 
-    tab_accounts, tab_caps = st.tabs(["Accounts at risk", "Capabilities to act on"])
+    tab_accounts, tab_caps = st.tabs(["Weekly account health", "Capabilities to act on"])
 
     with tab_accounts:
-        fig = portfolio_tornado(acc_records)
-        if fig is not None:
-            st.plotly_chart(fig, use_container_width=True)
-        st.caption(f"Top {min(8, len(acc_records))} of {len(acc_records)} account decisions — expand a row to act.")
-        if not acc_records:
-            st.info("No account GDRs for this seed — try regenerating or another preset.")
+        render_weekly_account_report(ws, acc_records)
+        with st.expander("Health charts & reference", expanded=False):
+            from analytics.metrics import resolve_metric
+            from ui.viz import agentic_health_composite, portfolio_tornado
+
+            page_help("radar", show_card_glossary=True)
+            measurement_honesty()
+            health_fig = agentic_health_composite(ws)
+            if health_fig is not None:
+                st.plotly_chart(health_fig, use_container_width=True)
+            h1, h2, h3, h4 = st.columns(4)
+            h1.metric("Health score", resolve_metric("agentic_health_score", ws)["display"])
+            h2.metric("CPSO", resolve_metric("cost_per_successful_outcome", ws)["display"])
+            h3.metric("TTFV", resolve_metric("time_to_first_value", ws)["display"])
+            h4.metric("Unattributed spend", resolve_metric("unattributed_spend_percentage", ws)["display"])
+            fig = portfolio_tornado(acc_records)
+            if fig is not None:
+                st.plotly_chart(fig, use_container_width=True)
+
+        section_kicker("Act on accounts")
         for i, rec in enumerate(acc_records[:8]):
             render_decision_card(
                 rec,
@@ -98,13 +111,20 @@ def capability_risk_radar():
             )
 
     with tab_caps:
+        fig = None
+        from ui.viz import portfolio_tornado
         fig = portfolio_tornado(cap_records)
         if fig is not None:
             st.plotly_chart(fig, use_container_width=True)
-        st.caption(f"Top {min(8, len(cap_records))} of {len(cap_records)} capability decisions — expand a row to act.")
+        st.caption(f"Top {min(8, len(cap_records))} capability decisions.")
+        rank_mode = ws.profile.get("priors", {}).get("radar_rank_mode", "cost")
+        if rank_mode == "pareto":
+            st.caption("Pareto mode — dominated capabilities ranked lower.")
         if not cap_records:
             st.info("No capability GDRs for this seed.")
         for i, rec in enumerate(cap_records[:8]):
+            if rec.get("pareto_caption"):
+                st.caption(rec["pareto_caption"])
             render_decision_card(
                 rec,
                 key_prefix=f"radar_cap_{i}",
@@ -152,11 +172,15 @@ nav_structure = {
         st.Page("pages/16_Trust_Approval.py", title="Trust & Approval", url_path="trust"),
         st.Page("pages/17_Run_Economics.py", title="Run Economics", url_path="run_economics"),
         st.Page("pages/18_Connector_Blast_Radius.py", title="Connectors", url_path="connectors"),
+        st.Page("pages/26_Agent_Version_Compare.py", title="Version Compare", url_path="version_compare"),
     ],
     "LEARN": [
         st.Page("pages/3_Conversion.py", title="Experiments", url_path="experiments"),
         st.Page("pages/25_Agentic_Flags.py", title="Agentic Flags", url_path="agentic_flags"),
         st.Page("pages/20_Outcome_Flywheel.py", title="Outcome Flywheel", url_path="flywheel"),
+        st.Page("pages/30_Math_Lab_Binomial.py", title="Lab · Binomial", url_path="math_binomial"),
+        st.Page("pages/31_Math_Lab_Power.py", title="Lab · Power", url_path="math_power"),
+        st.Page("pages/32_Math_Lab_CLV.py", title="Lab · CLV", url_path="math_clv"),
         *_REFERENCE_PAGES,
         *_LEGACY_PAGES,
     ],

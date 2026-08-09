@@ -2,29 +2,122 @@
 
 _Portfolio-ready **simulated decision OS** for agentic software companies (Lindy-class assistants, Dench-class workspaces, Invice-class ops agents)._
 
-Configure an **Agentic Product Profile**, generate a synthetic agentic warehouse, and explore ranked **GrowthDecisionRecords** — which capabilities to ship, throttle, or kill — priced by **cost of leaving live**, with retention and churn outcome write-back.
+---
 
-> **Evolution:** churnOS began as a causal growth & operations intelligence simulator (B2C / SaaS / marketplace / ecomm). The agentic rebuild reframes the product around **ontology as IP** and **decision-grade analytics** for continuously shipping agentic systems. Prior modules are preserved under **LEGACY** nav for reference — nothing was deleted.
+## What this repo is
+
+churnOS is a **working model of how an agentic product company should decide** which capabilities (skills, automations, agent tools) to ship, throttle, rollback, or kill — priced by the cost of leaving them live, with outcomes written back so the loop can improve.
+
+It is **not** another metrics dashboard. Dashboards show *what happened*. churnOS emits an auditable **GrowthDecisionRecord** — a shared object for humans, agents, and partners — that answers *what to do next*.
+
+Configure an **Agentic Product Profile**, generate a synthetic agentic warehouse, and explore ranked decisions on the **Capability Risk Radar**.
+
+> **Evolution:** churnOS began as a causal growth & operations intelligence simulator (B2C / SaaS / marketplace / ecomm). The agentic rebuild reframes the product around **ontology as IP**. Prior modules live under **LEGACY** nav — nothing was deleted.
 
 ---
 
-## Portfolio story & intent
+## Why it exists
 
-Growth leaders face the same fracture: spreadsheets hold partial truths — CAC in one workbook, churn in another, experiment readouts stranded across tooling — while dashboards show *what happened* but rarely *what to do next*.
+Growth and product operators shipping agentic systems face a specific fracture:
 
-**Agentic churnOS** closes that gap with a single calibrated simulator where:
+- Spreadsheets and BI tools hold partial truths — CAC here, churn there, experiment readouts stranded elsewhere.
+- Capabilities ship continuously (prompts, tools, connectors, workflows) while **weekly decisions die in dashboards**: which lever to pull, what a cohort’s churn is costing, which capabilities harm retention.
+- Agents that should self-improve need a **stable product language** — not ad-hoc chart labels — or the loop never closes.
 
-- **Ontology** (taxonomy → semantics → JSON Schema) defines a stable, auditable object — the `GrowthDecisionRecord` — that partners, agents, and dashboards can share.
-- **Capability Risk Radar** ranks weekly decisions that usually die in a dashboard: which growth lever to pull, what a cohort's churn is costing, and which product capabilities are negatively correlated with retention.
-- **Outcome flywheel** writes retention Δ and churn labels back to records, closing the loop for self-improving agentic workflows.
+**Ontology as IP** is the answer this repo demonstrates:
 
-Synthetic generators keep every screen reproducible offline. Hypothesis-backed tests safeguard core numerical contracts. See [`docs/honesty.md`](docs/honesty.md) for synthetic / associational limits.
+| Layer | Artifact | Job |
+| --- | --- | --- |
+| **Taxonomy** | `ontology/exception_taxonomy.py` | Named exceptions, owners, playbook hints |
+| **Semantics** | `ontology/*/semantics.yaml` | Gloss **and** governing rules (thresholds → verdict → action) |
+| **Schema** | `ontology/shared/*.schema.json` | Contract for `GrowthDecisionRecord` |
+| **Rules engine** | `ontology/decision_rules.py` | Reads YAML at emit time — policy without code changes |
+
+Same pattern as project-theta’s decision-record recipe, adapted for **capability shipping in agentic systems** — not B2C churn dashboards.
+
+Synthetic generators keep every screen reproducible offline. Hypothesis-backed tests safeguard numerical contracts. See [`docs/honesty.md`](docs/honesty.md) for synthetic / associational limits.
 
 Perfect for recruiters evaluating **analytics + product sense + engineering hygiene** — and for teams prototyping how agentic products should govern capability shipping at scale.
 
-Canonical documentation lives **here**. [`pages/6_README.py`](pages/6_README.py) renders this file verbatim — edit `README.md` only.
+Canonical docs live **here**. [`pages/6_README.py`](pages/6_README.py) renders this file — edit `README.md` only.
 
 Further reading: **[Methodology](docs/methodology.md)** · **[Honesty & limits](docs/honesty.md)** · **[Ontology package](ontology/README.md)**
+
+---
+
+## How it works (one sentence)
+
+Pick a product profile → generate synthetic agent runs → classify exceptions using YAML thresholds → map to a verdict and action from semantics → emit a **GrowthDecisionRecord** → rank it on the Radar → write retention / churn outcomes back.
+
+```text
+Profile (ontology switch)
+   → Warehouse (seats · capabilities · runs · approvals · connectors)
+   → Classify (exceptions from thresholds)
+   → YAML rules (verdict → recommended action)     ← edit policy here
+   → GrowthDecisionRecord
+   → Capability Risk Radar (Decision Cards)
+   → Outcome Flywheel ──(write-back)──→ same record
+```
+
+### Weekly decision loop
+
+1. **Profile** — Pick a preset (`assistant_heavy`, `workspace_crm`, `ops_mission`, …). That choice switches the ontology vertical and synthetic priors.
+2. **Generate** — Build the agentic warehouse from those priors.
+3. **Radar** — Rank capabilities by `cost_of_leaving_live_usd`.
+4. **Decide** — Review exceptions and recommended action; override if needed.
+5. **Close loop** — Outcome Flywheel writes `retention_delta_*` and `churn_happened` onto the same record.
+
+### Why YAML matters
+
+Verdicts and recommended actions are **not hardcoded in Python**. The profile’s vertical loads `semantics.yaml`; that file governs policy. Same exception signal, different product context → different action:
+
+| Exception | Vertical (profile) | Verdict | Recommended action |
+| --- | --- | --- | --- |
+| `capability_harm` | `agent_runtime` (`assistant_heavy`) | destructive | **rollback** |
+| `capability_harm` | `capability_lifecycle` (`workspace_crm`) | destructive | **throttle** |
+
+Edit sample values in YAML → regenerate workspace → Radar cards update. No code change required.
+
+What you tune in `semantics.yaml`:
+
+- **`classification.thresholds`** — when does `classify()` fire? (e.g. `harm_score_min: 0.08`)
+- **`decision.verdict_rules`** — first match wins (categories → verdict)
+- **`decision.action_map`** — verdict → `recommended_action` + `requires_review`
+
+### GrowthDecisionRecord (the stable object)
+
+| Field | Job |
+| --- | --- |
+| `exceptions[]` | What broke (category + cost + owner + playbook) |
+| `economics` | `cost_of_leaving_live_usd` (primary metric) |
+| `decision.verdict` | `healthy` · `leaking` · `destructive` · … |
+| `decision.recommended_action` / `final_action` | `ship` · `throttle` · `rollback` · `kill` · … (+ human override) |
+| `outcome` | Retention Δ + churn write-back |
+
+Schemas: [`ontology/shared/`](ontology/shared/). Validate:
+
+```bash
+python3 -m ontology --examples
+```
+
+### Ontology verticals
+
+| Vertical | Role |
+| --- | --- |
+| `capability_lifecycle` | Ship / throttle / kill capabilities |
+| `agent_runtime` | Runtime trust, loops, cost (stricter; destructive → rollback) |
+| `orchestration` | Multi-agent handoffs (sample rules) |
+| `eval_governance` | Eval gate / regression (sample rules) |
+
+First two are day-1 active (profiles switch between them). See [`ontology/README.md`](ontology/README.md).
+
+### What it measures (and what it doesn’t)
+
+**Yes — a model of what should be measured:** seat activation, weekly delegation habit, trust incidents, approval fatigue, cost per successful run, connector blast radius, capability-level harm associations and economic pricing.
+
+**Not yet — live instrumentation:** numbers are **synthetic** until real run/approval/connector events plug into the same warehouse schema. `capability_harm` is **associational** unless an `experiment_id` is on the record. Outcome write-backs are portfolio demos, not production causal attribution.
+
+See [`docs/honesty.md`](docs/honesty.md).
 
 ---
 
@@ -35,12 +128,13 @@ Further reading: **[Methodology](docs/methodology.md)** · **[Honesty & limits](
 | Area | What churnOS showcases |
 | --- | --- |
 | **Ontology IP** | Taxonomy → semantics → JSON Schema → `GrowthDecisionRecord` |
+| **YAML-governed policy** | Verdicts & actions from `semantics.yaml` via `decision_rules.py` |
 | **Capability Risk Radar** | Ranked decisions with magazine-style Decision Cards |
 | **Agentic warehouse** | Seats, capabilities, runs, approvals, connectors |
 | **Decision surfaces** | Activation, trust, run economics, connector blast radius |
 | **Outcome flywheel** | Retention Δ + churn labels on records (JSONL store) |
-| **Profile presets** | `assistant_heavy`, `workspace_crm`, `ops_mission` ontology switches |
-| **In-app explainers** | `ui/explain.py` — how it works, measurement honesty, field glossary |
+| **Profile presets** | `assistant_heavy`, `workspace_crm`, `ops_mission`, … |
+| **In-app explainers** | `ui/explain.py` — how it works, measurement honesty, glossary |
 
 ### Legacy simulator (reference)
 
@@ -69,87 +163,30 @@ Aligned with sidebar groups in [`app.py`](app.py):
 
 ---
 
-## How it works
-
-```text
-Agentic Product Profile (ontology switch + priors)
-        ↓
-data/agentic_generator.py → Workspace (seats, capabilities, runs, approvals, connectors)
-        ↓
-analytics/decisions.py → classify exceptions → rank → price → emit GrowthDecisionRecord
-        ↓
-Capability Risk Radar (Decision Cards) + ontology/store.py (JSONL persistence)
-        ↓
-Outcome Flywheel → write retention_delta + churn_happened back to records
-```
-
-### Weekly decision loop
-
-1. **Profile** — Pick a preset (`assistant_heavy`, `workspace_crm`, `ops_mission`) on **Agentic Product Profile**.
-2. **Generate** — Build a synthetic agentic warehouse from profile priors.
-3. **Radar** — Home screen ranks capabilities by `cost_of_leaving_live_usd`.
-4. **Decide** — Review exceptions, recommended action (`ship` / `throttle` / `kill`), override if needed.
-5. **Close loop** — Outcome Flywheel writes post-decision metrics to the same record.
-
-### GrowthDecisionRecord (the stable object)
-
-Inspired by project-theta's `DecisionRecord` pattern, adapted for agentic product management:
-
-| Field | Purpose |
-| --- | --- |
-| `exceptions[]` | Classified problems (`activation_leak`, `capability_harm`, `run_cost_blowout`, …) |
-| `economics.primary_metric_usd` | Primary economic metric — cost of leaving live (label in `primary_metric_label`) |
-| `decision.verdict` | `healthy` · `leaking` · `destructive` · … (from YAML rules) |
-| `decision.recommended_action` / `final_action` | `ship` · `throttle` · `kill` · … (+ operator override) |
-| `outcome` | `retention_delta_*`, `churn_happened` — written back after action |
-
-**Governing decisions from data:** verdicts, recommended actions, and classification thresholds live in
-[`ontology/*/semantics.yaml`](ontology/) — edit sample values, regenerate workspace, Radar updates.
-See [`ontology/README.md`](ontology/README.md). Example: `agent_runtime` maps `destructive` → `rollback`;
-`capability_lifecycle` maps the same verdict → `throttle`.
-
-Schemas live in [`ontology/shared/`](ontology/shared/). Validate examples:
-
-```bash
-python3 -m ontology.validate --examples
-```
-
-### What it measures (and what it doesn't)
-
-**Yes — a model of what should be measured:**
-
-- Seat activation rate, weekly delegation habit
-- Trust incident rate, approval fatigue
-- Cost per successful run, connector blast radius
-- Capability-level harm associations and economic pricing
-
-**Not yet — live instrumentation:**
-
-- Numbers are **synthetic** until you connect real run/approval/connector events.
-- `capability_harm` is **associational** unless an `experiment_id` is present on the record.
-- Outcome write-backs are portfolio demonstrations, not production causal attribution.
-
-See in-app **Measurement honesty** expander on the Radar, or [`docs/honesty.md`](docs/honesty.md).
-
----
-
 ## Getting started
+
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for private-collaborator setup, fast vs full tests, and the 5-minute agentic path.
 
 ```bash
 cd churnOS
 python3 -m venv .venv && source .venv/bin/activate
 pip install --upgrade pip
-pip install -r requirements.txt          # aligns with [.python-version](.python-version)
+pip install -r requirements.txt          # core app (Profile → Radar)
+pip install -r requirements-dev.txt      # pytest + hypothesis
 streamlit run app.py                     # browse http://localhost:8501
-pytest tests/ --hypothesis-profile=dev    # mirrors CI pacing
+pytest tests/ -m "not slow" --hypothesis-profile=dev   # fast test path
 ```
 
-1. Open **Agentic Product Profile** → pick preset → **Generate workspace**
-2. Home **Capability Risk Radar** shows ranked records
-3. Drill into **DECISIONS** surfaces or override on Record Inspector / Radar
+Optional MMM (Attribution page): `pip install -r requirements-mmm.txt`
+
+1. Open **Product Profile** → pick preset → **Generate workspace**
+2. **Capability Risk Radar** shows ranked records
+3. Drill into DECIDE surfaces or override on Record Inspector / Radar
 4. **Outcome Flywheel** — write synthetic outcomes back to close the loop
 
-> PyMC-heavy attribution (LEGACY) stays interactive via explicit **Run Bayesian Sampler** — keep local seeds stable when recording demos.
+**Policy playground:** change `agent_runtime` destructive action from `rollback` to `shadow` in [`ontology/agent_runtime/semantics.yaml`](ontology/agent_runtime/semantics.yaml), regenerate with `assistant_heavy`, watch Radar cards update.
+
+> PyMC-heavy attribution (LEGACY) needs `pip install -r requirements-mmm.txt` — then use **Run Bayesian Sampler** on the Attribution page. Keep local seeds stable when recording demos.
 
 Continuous integration: [.github/workflows/ci.yml](.github/workflows/ci.yml) (includes ontology example validation).
 
@@ -162,10 +199,11 @@ churnOS/
 ├── app.py                               # Capability Risk Radar home + grouped navigation
 ├── core/
 │   └── workspace.py                     # Unified warehouse (agentic + legacy tables)
-├── ontology/                            # Decision-grade IP (taxonomy, semantics, schemas)
-│   ├── exception_taxonomy.py
+├── ontology/                            # Decision-grade IP
+│   ├── exception_taxonomy.py            # Taxonomy
+│   ├── decision_rules.py                # YAML → verdict / action
 │   ├── semantics.py · validate.py · store.py
-│   ├── shared/*.schema.json
+│   ├── shared/*.schema.json             # GrowthDecisionRecord contract
 │   └── */semantics.yaml                 # capability_lifecycle, agent_runtime, …
 ├── analytics/
 │   ├── agentic_profile.py               # Profile presets (ontology switch)
@@ -188,7 +226,7 @@ churnOS/
 │   ├── 00_Agentic_Product_Profile.py
 │   ├── 15_Activation_Habit.py … 23_Record_Inspector.py   # Agentic surfaces
 │   └── 0_Business_Model.py … 14_Conversion_Forecast.py   # LEGACY reference
-├── docs/methodology.md
+├── docs/methodology.md · honesty.md
 ├── assets/style.css                     # Sepia editorial light theme
 └── tests/                               # Unit + integration + ontology validation
 ```
@@ -229,7 +267,7 @@ product_events.csv
 | --- | --- |
 | App shell | Streamlit · Plotly |
 | Core analytics | pandas · NumPy · SciPy · scikit-learn · lifelines |
-| Ontology | jsonschema |
+| Ontology | jsonschema · PyYAML |
 | Attribution lane (LEGACY) | pymc · arviz |
 | Quality | pytest · Hypothesis |
 
@@ -237,4 +275,4 @@ product_events.csv
 
 ## License
 
-Distributed under **MIT** — see [`LICENSE`](LICENSE).
+Copyright (c) 2026 churnOS. All rights reserved. Not licensed for redistribution.

@@ -27,7 +27,7 @@ settings.register_profile(
     "dev",
     max_examples=50,  # Faster feedback during development
     verbosity=Verbosity.normal,
-    deadline=None,
+    deadline=5000,  # 5s per Hypothesis example (dev/CI)
 )
 
 # Load the default profile

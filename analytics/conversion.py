@@ -175,6 +175,29 @@ class CROMetrics:
 # CRO Analytics Enhancement Functions
 # ============================================================================
 
+def _sample_size_per_variant_raw(
+    baseline_cvr: float,
+    mde_relative: float,
+    power: float,
+    alpha: float,
+) -> float:
+    """Core two-proportion sample size (no input validation). Returns inf if invalid."""
+    if mde_relative <= 0:
+        return float("inf")
+    target_cvr = baseline_cvr * (1 + mde_relative)
+    if target_cvr > 1.0:
+        return float("inf")
+    p1 = baseline_cvr
+    p2 = target_cvr
+    if abs(p2 - p1) < 1e-15:
+        return float("inf")
+    z_alpha_2 = stats.norm.ppf(1 - alpha / 2)
+    z_beta = stats.norm.ppf(power)
+    numerator = (z_alpha_2 + z_beta) ** 2 * (p1 * (1 - p1) + p2 * (1 - p2))
+    denominator = (p2 - p1) ** 2
+    return float(numerator / denominator)
+
+
 def calculate_sample_size(
     baseline_cvr: float,
     mde: float,
@@ -468,47 +491,34 @@ def calculate_mde(
     if errors:
         raise ValueError("; ".join(errors))
     
-    # Get z-scores for alpha (two-tailed) and beta (power)
-    z_alpha_2 = stats.norm.ppf(1 - alpha / 2)
-    z_beta = stats.norm.ppf(power)
-    
-    # Solve for MDE using the two-proportion z-test formula
-    # n = (Z_α/2 + Z_β)² × [p₁(1-p₁) + p₂(1-p₂)] / (p₂ - p₁)²
-    # Rearranged to solve for (p₂ - p₁):
-    # (p₂ - p₁) = (Z_α/2 + Z_β) × √([p₁(1-p₁) + p₂(1-p₂)] / n)
-    
-    # Since p₂ depends on MDE, we need to solve iteratively
     p1 = baseline_cvr
-    
-    # Use Newton-Raphson method to solve for the absolute MDE
-    # Start with an initial estimate assuming p₂ ≈ p₁ (small effect)
-    se_initial = np.sqrt(2 * p1 * (1 - p1) / sample_size_per_variant)
-    mde_absolute = (z_alpha_2 + z_beta) * se_initial
-    
-    # Refine with Newton-Raphson iterations
-    for _ in range(10):  # Usually converges in 2-3 iterations
-        p2 = p1 + mde_absolute
-        
-        # Clamp p2 to valid range [0, 1]
-        p2 = np.clip(p2, 0, 1)
-        
-        # Calculate standard error with current p2
-        se = np.sqrt((p1 * (1 - p1) + p2 * (1 - p2)) / sample_size_per_variant)
-        
-        # Calculate new MDE estimate
-        mde_absolute_new = (z_alpha_2 + z_beta) * se
-        
-        # Check for convergence
-        if abs(mde_absolute_new - mde_absolute) < 1e-10:
+    max_relative = max(1e-9, (1.0 - p1) / p1) if p1 < 1.0 else 1e-9
+    lo, hi = 1e-12, max_relative
+
+    for _ in range(80):
+        mid = (lo + hi) / 2
+        n_needed = _sample_size_per_variant_raw(p1, mid, power, alpha)
+        if n_needed > sample_size_per_variant + 1e-6:
+            lo = mid
+        else:
+            hi = mid
+
+    mde_relative = hi
+    # Pick the largest MDE that maps to the same discrete sample size (stable round-trip).
+    for refine in np.linspace(hi, max_relative, 48):
+        try:
+            if (
+                calculate_sample_size(p1, refine, power=power, alpha=alpha)[
+                    "sample_size_per_variant"
+                ]
+                == sample_size_per_variant
+            ):
+                mde_relative = refine
+        except ValueError:
             break
-        
-        mde_absolute = mde_absolute_new
-    
-    # Ensure target CVR doesn't exceed 100%
+
+    mde_absolute = p1 * mde_relative
     target_cvr = min(p1 + mde_absolute, 1.0)
-    
-    # Calculate relative MDE
-    mde_relative = (target_cvr - p1) / p1 if p1 > 0 else 0
     
     # Generate e-commerce note if baseline is in typical range
     ecommerce_note = None
@@ -940,35 +950,21 @@ def validate_test_reliability(
     recommendations = []
     
     # ============================================================================
-    # Check 1: Minimum conversions per variant (>= 350)
+    # Check 1: Minimum sample size (conversions per variant >= 350)
     # ============================================================================
-    min_conversions_threshold = 350
-    conversions_passed = min_conversions >= min_conversions_threshold
-    checks["minimum_conversions_per_variant"] = conversions_passed
+    min_sample_threshold = 350
+    sample_size_passed = min_conversions >= min_sample_threshold
+    checks["minimum_sample_size"] = sample_size_passed
 
-    if not conversions_passed:
+    if not sample_size_passed:
         warnings.append(
-            f"⚠️ Low conversions per variant: minimum is {min_conversions}, "
-            f"below recommended {min_conversions_threshold}."
+            f"⚠️ Small Sample Size Warning: Minimum conversions per variant is {min_conversions}, "
+            f"which is below the recommended threshold of {min_sample_threshold}. "
+            f"Small samples produce unreliable estimates and wide confidence intervals."
         )
         recommendations.append(
-            f"Target at least {min_conversions_threshold} conversions per variant "
-            f"(currently {control_conversions_n} control / {variant_conversions_n} variant)."
-        )
-
-    # Check 1b: Minimum visitors per variant (>= 350)
-    min_visitors_threshold = 350
-    visitors_passed = min_visitors >= min_visitors_threshold
-    checks["minimum_visitors_per_variant"] = visitors_passed
-
-    if not visitors_passed:
-        warnings.append(
-            f"⚠️ Low visitors per variant: minimum is {min_visitors}, "
-            f"below recommended {min_visitors_threshold}."
-        )
-        recommendations.append(
-            f"Target at least {min_visitors_threshold} visitors per variant "
-            f"(currently {control_visitors_n} control / {variant_visitors_n} variant)."
+            f"Increase sample size to at least {min_sample_threshold} conversions per variant. "
+            f"Currently: {control_conversions_n} control / {variant_conversions_n} variant."
         )
     
     # ============================================================================
@@ -1069,12 +1065,11 @@ def validate_test_reliability(
     # - Significance: 10%
     
     score = 0
-    score += 15 if conversions_passed else 0
-    score += 15 if visitors_passed else 0
-    score += 25 if duration_passed else 0         # Duration: 25%
-    score += 20 if business_cycles_passed else 0  # Business cycles: 20%
-    score += 15 if twyman_passed else 0           # Twyman's Law: 15%
-    score += 10 if significance_passed else 0     # Significance: 10%
+    score += 30 if sample_size_passed else 0
+    score += 25 if duration_passed else 0
+    score += 20 if business_cycles_passed else 0
+    score += 15 if twyman_passed else 0
+    score += 10 if significance_passed else 0
     
     reliability_score = score
     
@@ -1090,9 +1085,6 @@ def validate_test_reliability(
         recommendations.append(
             f"Address the following failed checks to improve reliability: {', '.join(failed_checks)}."
         )
-    
-    # Backward-compatible alias used in older tests/UI
-    checks["minimum_sample_size"] = conversions_passed
 
     return {
         'is_reliable': is_reliable,

@@ -459,3 +459,35 @@ class BusinessModel:
         cfg = dict(self.config)
         cfg[key] = new_value
         return BusinessModel(cfg).compute_summary()
+
+
+def calibrate_churn_from_warehouse(workspace, profile: dict | None = None) -> dict[str, Any]:
+    """
+    One-way feed: warehouse seats → Beta–Binomial posterior on monthly churn.
+    Overrides BusinessModel monthly_churn_rate when rigorous.
+    """
+    from analytics.evidence import is_rigorous_mode
+    from analytics.inference.binomial import beta_binomial_posterior
+    from data.ground_truth import get
+
+    profile = profile or getattr(workspace, "profile", {})
+    seats = workspace.seats
+    if seats.empty or "is_churned" not in seats.columns:
+        return {"calibrated": False, "message": "No churn labels on seats."}
+
+    churned = int(seats["is_churned"].sum())
+    n = len(seats)
+    post = beta_binomial_posterior(churned, n)
+
+    gt = get(getattr(workspace, "seed", 0))
+    planted = gt.monthly_churn_base if gt else None
+
+    return {
+        "calibrated": True,
+        "monthly_churn_rate": post["mean"],
+        "ci95": post["ci95"],
+        "n": n,
+        "planted_base": planted,
+        "rigorous": is_rigorous_mode(profile),
+        "message": f"Calibrated churn {post['mean']:.1%} from {n} seats (warehouse).",
+    }

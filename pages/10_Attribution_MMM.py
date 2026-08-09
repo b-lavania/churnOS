@@ -7,7 +7,7 @@ from pathlib import Path
 
 from core.workspace import get_workspace_from_session
 from data.generator import generate_all_data
-from analytics.attribution import build_and_sample_mmm, extract_roas_posteriors
+from analytics.attribution import build_and_sample_mmm, extract_roas_posteriors, posterior_predictive_check
 
 st.set_page_config(page_title="Attribution MMM", layout="wide")
 
@@ -39,6 +39,8 @@ col1, col2 = st.columns([1, 2])
 
 with col1:
     st.subheader("Model Configuration")
+    adstock_decay = st.slider("Adstock decay", 0.0, 0.95, 0.5, 0.05)
+    use_seasonality = st.checkbox("Weekly seasonality (2 harmonics)", value=True)
     st.write("Run the PyMC NUTS sampler to estimate causal ROAS.")
     run_model = st.button("Run Bayesian Sampler", type="primary")
     
@@ -49,15 +51,19 @@ with col1:
 
 # Cache the heavy PyMC execution
 @st.cache_data(show_spinner=False)
-def get_model_trace(_df):
-    trace, model = build_and_sample_mmm(_df)
-    roas_posteriors = extract_roas_posteriors(trace, _df)
-    return roas_posteriors
+def get_model_trace(_df, _adstock, _seasonality):
+    trace, model = build_and_sample_mmm(
+        _df, adstock_decay=_adstock, use_seasonality=_seasonality,
+    )
+    roas_posteriors = extract_roas_posteriors(trace, _df, adstock_decay=_adstock)
+    ppc = posterior_predictive_check(trace, _df, adstock_decay=_adstock, use_seasonality=_seasonality)
+    return roas_posteriors, ppc
 
 if run_model or "roas_posteriors" in st.session_state:
     with st.spinner("Sampling from posterior... (This may take a minute)"):
-        roas_posteriors = get_model_trace(df)
+        roas_posteriors, ppc = get_model_trace(df, adstock_decay, use_seasonality)
         st.session_state["roas_posteriors"] = roas_posteriors
+        st.session_state["mmm_ppc"] = ppc
         
     with col2:
         st.subheader("Posterior ROAS Distributions (95% HDI)")
@@ -85,6 +91,20 @@ if run_model or "roas_posteriors" in st.session_state:
             showlegend=False
         )
         st.plotly_chart(fig, use_container_width=True)
+
+        ppc = st.session_state.get("mmm_ppc", ppc)
+        if ppc:
+            st.subheader("Posterior predictive check (holdout 4 weeks)")
+            fig_ppc = go.Figure()
+            fig_ppc.add_trace(go.Scatter(y=ppc["observed"], name="Observed", mode="lines+markers"))
+            fig_ppc.add_trace(go.Scatter(y=ppc["predicted"], name="Posterior predictive", mode="lines+markers"))
+            fig_ppc.update_layout(
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="#94a3b8"),
+            )
+            st.plotly_chart(fig_ppc, use_container_width=True)
+            st.caption(f"Train RMSE: {ppc.get('train_rmse', 0):,.0f}")
         
     st.markdown("---")
     st.subheader("Budget Optimization Simulator")

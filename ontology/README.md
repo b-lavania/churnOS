@@ -51,5 +51,5 @@ regenerate the workspace, and Radar cards update.
 ## Validate examples
 
 ```bash
-python3 -m ontology.validate --examples
+python3 -m ontology --examples
 ```

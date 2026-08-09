@@ -1,6 +1,6 @@
-# CRO Analytics Enhancement - Test Suite
+# churnOS Test Suite
 
-This directory contains the test suite for the CRO Analytics Enhancement feature.
+This directory contains the test suite for churnOS (agentic decision analytics + legacy simulator modules).
 
 ## Directory Structure
 
@@ -159,6 +159,6 @@ def test_property_description(param):
 
 ## References
 
-- Design Document: `.kiro/specs/cro-analytics-enhancement/design.md`
-- Requirements Document: `.kiro/specs/cro-analytics-enhancement/requirements.md`
-- Tasks Document: `.kiro/specs/cro-analytics-enhancement/tasks.md`
+- Methodology: [`docs/methodology.md`](../docs/methodology.md)
+- Honesty & limits: [`docs/honesty.md`](../docs/honesty.md)
+- Ontology package: [`ontology/README.md`](../ontology/README.md)
