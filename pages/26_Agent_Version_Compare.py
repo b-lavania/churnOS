@@ -58,16 +58,30 @@ with st.expander("Evidence vs peeking (sequential test)", expanded=False):
             60,
         )
 
-with st.expander("Traffic allocation (Thompson sampling — teaching)", expanded=False):
+with st.expander("Traffic allocation (YAML bandit policy)", expanded=False):
     from analytics.bandits import thompson_allocation
 
     caps = ws.capabilities["capability_id"].tolist() if not ws.capabilities.empty else []
+    overlay = st.session_state.get("semantics_overlay")
     if caps:
         cap_pick = st.selectbox("Capability", caps, key="bandit_cap")
-        alloc = thompson_allocation(ws, cap_pick)
+        alloc = thompson_allocation(ws, cap_pick, semantics_overlay=overlay)
         if alloc.get("recommended_traffic"):
             st.write(alloc["recommended_traffic"])
             st.caption(alloc.get("message", ""))
+        if alloc.get("policy"):
+            st.json(alloc["policy"])
+        regret = alloc.get("regret") or {}
+        if regret.get("cumulative_regret"):
+            import pandas as pd
+
+            st.line_chart(
+                pd.DataFrame({
+                    "round": regret.get("rounds", []),
+                    "cumulative_regret": regret.get("cumulative_regret", []),
+                }).set_index("round")
+            )
+            st.caption("Teaching regret vs known optimal arm (synthetic simulation).")
 
 section_kicker("Emit capability GDR from recommendation")
 overlay = st.session_state.get("semantics_overlay")

@@ -41,7 +41,7 @@ Perfect for recruiters evaluating **analytics + product sense + engineering hygi
 
 Canonical docs live **here**. [`pages/6_README.py`](pages/6_README.py) renders this file — edit `README.md` only.
 
-Further reading: **[Methodology](docs/methodology.md)** · **[Honesty & limits](docs/honesty.md)** · **[Ontology package](ontology/README.md)**
+Further reading: **[Methodology](docs/methodology.md)** · **[Honesty & limits](docs/honesty.md)** · **[Ontology package](ontology/README.md)** · **[Interview showcase plan](docs/interview_showcase_plan.md)**
 
 ---
 
@@ -166,6 +166,8 @@ Aligned with sidebar groups in [`app.py`](app.py):
 ## Getting started
 
 See **[CONTRIBUTING.md](CONTRIBUTING.md)** for private-collaborator setup, fast vs full tests, and the 5-minute agentic path.
+
+**Interview / hiring:** [`docs/interview_kit.md`](docs/interview_kit.md) · [`docs/genai_for_math.md`](docs/genai_for_math.md)
 
 ```bash
 cd churnOS

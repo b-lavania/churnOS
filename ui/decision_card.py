@@ -105,6 +105,11 @@ def render_decision_card(
                         st.caption(exc.get("category", ""))
                         render_evidence_block(exc["evidence"])
 
+        attrs = record.get("attributions") or []
+        if entity_type == "account" and attrs:
+            top = ", ".join(f"{a['feature']} ({a['importance']:.3f})" for a in attrs[:3])
+            st.caption(f"Top hazard drivers (permutation): {top}")
+
         if entity_type == "account" and record.get("p_churn_30d") is not None:
             ci = record.get("p_churn_ci95") or [0, 1]
             cost_ci = record.get("cost_ci95_usd") or [cost, cost]

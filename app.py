@@ -8,7 +8,8 @@ from pathlib import Path
 
 from analytics.account_risk import enrich_account_records
 from analytics.decisions import emit_account_records, emit_capability_records
-from analytics.evidence import apply_evsi_review_gate
+from analytics.evidence import apply_evsi_review_gate, is_rigorous_mode
+from analytics.knapsack import hitl_review_slots, select_interventions_gdr
 from analytics.pareto import rank_capability_records
 from core.workspace import get_workspace_from_session
 from ui.decision_card import render_decision_card
@@ -55,6 +56,16 @@ def capability_risk_radar():
     st.session_state["growth_records"] = acc_records + cap_records
 
     render_meta_chips(ws, n_acc=len(acc_records), n_cap=len(cap_records))
+
+    if is_rigorous_mode(ws.profile):
+        slots = hitl_review_slots(ws, ws.profile)
+        knapsack = select_interventions_gdr(acc_records, slots)
+        if knapsack.get("selected"):
+            st.info(
+                f"**This week under HITL capacity ({slots} slots):** "
+                f"review {len(knapsack['selected'])} account(s) — "
+                f"expected savings ~${knapsack['total_savings_usd']:,.0f}."
+            )
 
     delegation_alerts = sum(
         1 for r in acc_records
@@ -181,6 +192,8 @@ nav_structure = {
         st.Page("pages/30_Math_Lab_Binomial.py", title="Lab · Binomial", url_path="math_binomial"),
         st.Page("pages/31_Math_Lab_Power.py", title="Lab · Power", url_path="math_power"),
         st.Page("pages/32_Math_Lab_CLV.py", title="Lab · CLV", url_path="math_clv"),
+        st.Page("pages/33_Math_Lab_Decision_Curves.py", title="Lab · Decision Curves", url_path="math_decision_curves"),
+        st.Page("pages/34_Math_Lab_Calibration.py", title="Lab · Calibration", url_path="math_calibration"),
         *_REFERENCE_PAGES,
         *_LEGACY_PAGES,
     ],

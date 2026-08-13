@@ -4,6 +4,23 @@
 
 ---
 
+## Clone & run (first time)
+
+```bash
+git clone https://github.com/b-lavania/churn-analysis.git churnOS
+cd churnOS
+python3 -m venv .venv && source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt -r requirements-dev.txt
+streamlit run app.py
+```
+
+Then: **Product Profile** → pick `assistant_heavy` → **Generate workspace** → open **Radar**.
+
+> Remote repo is still named `churn-analysis` on GitHub; the product name is **churnOS**.
+
+---
+
 ## Setup
 
 Requires Python **3.12** (see [`.python-version`](.python-version)).
@@ -74,13 +91,7 @@ All warehouse data is **synthetic** unless you plug in real telemetry. Read [`do
 
 Follow [`docs/math/README.md`](docs/math/README.md): pure function → tests → Math Lab → DECIDE/LEARN hook.
 
-Teaching modules wired in UI but **without dedicated tests yet** (PRs welcome):
-
-- `analytics/bandits.py`
-- `analytics/queueing.py`
-- `analytics/pareto.py`
-- `analytics/stochastic_economics.py`
-- `analytics/flag_segments.py`
+Tier 1 interview math modules have dedicated tests under `tests/unit/`.
 
 ---
 

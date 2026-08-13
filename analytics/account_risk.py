@@ -8,6 +8,7 @@ import pandas as pd
 
 from analytics.evidence import is_rigorous_mode, pack_evidence
 from analytics.survival import predict_churn_30d, survival_priced_cost
+from analytics.stochastic_economics import conformal_churn_risk_band, conformal_cost_of_leaving_band
 from core.workspace import Workspace
 
 WEIGHTS = {
@@ -114,22 +115,28 @@ def account_risk_detail(
     if is_rigorous_mode(profile):
         pred = predict_churn_30d(workspace, account_id, profile)
         cost = survival_priced_cost(workspace, account_id)
+        risk_band = conformal_churn_risk_band(workspace, account_id, profile=profile)
+        cost_band = conformal_cost_of_leaving_band(workspace, account_id, profile=profile)
+        ci = risk_band.get("ci90", pred["ci95"])
+        cost_ci = cost_band.get("ci90_usd", cost["ci95_usd"])
         evidence = pack_evidence(
             model_id=pred["model_id"],
             claim_type="simulated",
             estimand="p_churn_30d",
             posterior_mean=pred["p_churn_30d"],
-            ci95=pred["ci95"],
+            ci95=ci,
             n=pred["n_runs"],
         )
         return {
             "risk_score": pred["p_churn_30d"],
             "p_churn_30d": pred["p_churn_30d"],
-            "ci95": pred["ci95"],
+            "ci95": ci,
             "baseline_p": pred["baseline_p"],
-            "cost_mean_usd": cost["mean_usd"],
-            "cost_ci95_usd": cost["ci95_usd"],
+            "cost_mean_usd": cost_band.get("point_usd", cost["mean_usd"]),
+            "cost_ci95_usd": cost_ci,
             "evidence": evidence,
+            "attributions": pred.get("attributions", []),
+            "calibration": pred.get("calibration"),
             "mode": "rigorous",
         }
     score = account_risk_score_heuristic(workspace, account_id)
@@ -161,6 +168,7 @@ def enrich_account_records(
             updated["p_churn_30d"] = detail["p_churn_30d"]
             updated["p_churn_ci95"] = detail.get("ci95")
             updated["cost_ci95_usd"] = detail.get("cost_ci95_usd")
+            updated["attributions"] = detail.get("attributions", [])
         if detail.get("evidence"):
             updated["evidence"] = detail["evidence"]
             econ = dict(updated.get("economics") or {})

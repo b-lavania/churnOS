@@ -113,6 +113,20 @@ if is_rigorous_mode(view_profile):
         f"P(wait>SLA {q['sla_hours']}hr) ≈ {q['p_wait_exceeds_sla']:.0%}."
     )
 
+    from analytics.knapsack import hitl_review_slots, select_interventions_gdr
+
+    slots = hitl_review_slots(ws, view_profile)
+    acc_recs = emit_account_records(ws, view_profile)
+    knapsack = select_interventions_gdr(acc_recs, slots)
+    if knapsack.get("selected"):
+        st.caption(
+            f"Intervention knapsack: {len(knapsack['selected'])}/{slots} review slots — "
+            f"expected savings ${knapsack['total_savings_usd']:,.0f}."
+        )
+        for rec in knapsack["selected"][:3]:
+            subj = rec.get("subject", {})
+            st.write(f"- `{subj.get('account_id', '—')}` · ${rec.get('economics', {}).get('primary_metric_usd', 0):,.0f}")
+
 section_kicker("Loop depth & waterfall")
 col_a, col_b = st.columns(2)
 with col_a:

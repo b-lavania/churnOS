@@ -1,5 +1,7 @@
 # Math dojo contributor guide
 
+**Active build plan:** [`../interview_showcase_plan.md`](../interview_showcase_plan.md) — hiring showcase math tranche (Tier 1–3 checklist).
+
 Every rigorous method in churnOS ships as:
 
 1. **Pure function** in `analytics/` (no Streamlit)
@@ -22,14 +24,22 @@ Every rigorous method in churnOS ships as:
 | Module | Estimand | UI surface |
 | --- | --- | --- |
 | `analytics/inference/binomial.py` | churn rate posterior | Math Lab Binomial |
-| `analytics/survival.py` | P(churn_30d), cost bands | Weekly Report, Decision Card |
+| `analytics/survival.py` | P(churn_30d), fitted hazard, calibration, attributions | Radar, Decision Card, Lab · Calibration |
+| `analytics/stochastic_economics.py` | CM-NRR bootstrap, conformal CPSO/risk/$ bands | Run Economics, Radar |
+| `analytics/decision_curves.py` | net-benefit vs threshold | Lab · Decision Curves |
+| `analytics/knapsack.py` | intervention selection under HITL capacity | Radar, Run Economics |
+| `analytics/bandits.py` | YAML Thompson traffic + regret | Version Compare |
 | `analytics/experimentation.py` | clustered sample size, CUPED, FDR | Math Lab Power |
 | `analytics/agent_version_compare.py` | SPRT version decision | Version Compare |
 | `analytics/causal_uplift.py` | uplift_pp | capability_harm evidence |
 | `analytics/clv_probabilistic.py` | BG/NBD CLV (legacy) | Math Lab CLV |
-
-Teaching UI hooks without dedicated tests yet: `bandits`, `queueing`, `pareto`, `stochastic_economics`, `flag_segments` — follow the contract above when adding coverage.
+| `analytics/queueing.py` | Erlang-C HITL wait | Run Economics |
+| `analytics/pareto.py` | success×cost×trust frontier | Radar (pareto mode) |
 
 ## Acceptance per PR
 
 Analytics + tests + at least one DECIDE/LEARN surface + estimand gloss in `ui/explain.py`.
+
+## Portfolio
+
+See [`../genai_for_math.md`](../genai_for_math.md) for the Moovez ↔ churnOS split and [`../interview_kit.md`](../interview_kit.md) for the 5-minute demo.
