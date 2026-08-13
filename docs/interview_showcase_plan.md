@@ -69,12 +69,12 @@ Every item ships as: pure `analytics/` function → unit + **ground-truth recove
 
 ### Tier 1 — must ship for interviews
 
-- [ ] **Fitted hazard + calibration** (`math-fit-calibrate`) — panel MLE on [`analytics/survival.py`](../analytics/survival.py); reliability diagram, Brier/ECE, isotonic/Platt; tests against [`data/ground_truth.py`](../data/ground_truth.py).
-- [ ] **Conformal risk and $ bands** (`math-conformal-cost`) — extend [`analytics/stochastic_economics.py`](../analytics/stochastic_economics.py); CI ribbons on Radar / Decision Card.
-- [ ] **Decision-curve / net-benefit** (`math-decision-curves`) — threshold grid; operating point from `semantics.yaml`.
-- [ ] **Intervention knapsack** (`math-intervention-knapsack`) — ILP under HITL capacity from [`analytics/queueing.py`](../analytics/queueing.py) + Pareto from [`analytics/pareto.py`](../analytics/pareto.py).
-- [ ] **YAML bandit traffic + regret** (`math-bandit-yaml`) — policy from semantics; teaching regret on Version Compare.
-- [ ] **SHAP / permutation attributions** (`math-shap-hazard`) — local on Decision Card; global in Math Lab.
+- [x] **Fitted hazard + calibration** (`math-fit-calibrate`) — panel MLE on [`analytics/survival.py`](../analytics/survival.py); reliability diagram, Brier/ECE, isotonic/Platt; tests against [`data/ground_truth.py`](../data/ground_truth.py).
+- [x] **Conformal risk and $ bands** (`math-conformal-cost`) — extend [`analytics/stochastic_economics.py`](../analytics/stochastic_economics.py); CI ribbons on Radar / Decision Card.
+- [x] **Decision-curve / net-benefit** (`math-decision-curves`) — threshold grid; operating point from `semantics.yaml`.
+- [x] **Intervention knapsack** (`math-intervention-knapsack`) — ILP under HITL capacity from [`analytics/queueing.py`](../analytics/queueing.py) + Pareto from [`analytics/pareto.py`](../analytics/pareto.py).
+- [x] **YAML bandit traffic + regret** (`math-bandit-yaml`) — policy from semantics; teaching regret on Version Compare.
+- [x] **SHAP / permutation attributions** (`math-shap-hazard`) — local on Decision Card; global in Math Lab.
 
 ### Tier 2 — strong differentiators
 
@@ -85,10 +85,10 @@ Every item ships as: pure `analytics/` function → unit + **ground-truth recove
 
 ### Engineering + packaging
 
-- [ ] **Unit + ground-truth tests** (`math-unit-tests`) — bandits, queueing, pareto, stochastic_economics, new modules.
-- [ ] **Math Lab pages + nav** (`math-labs-nav`) — Calibration, Decision Curves, Drift; update [`math/README.md`](math/README.md) module table.
-- [ ] **GenAI contract doc** (`genai-contract-doc`) — [`genai_for_math.md`](genai_for_math.md) + README link; portfolio bridge copy.
-- [ ] **Interview kit** (`interview-kit`) — 5-min talk track, clone/run one-pager, LICENSE/CI/branding.
+- [x] **Unit + ground-truth tests** (`math-unit-tests`) — bandits, queueing, pareto, stochastic_economics, new modules.
+- [x] **Math Lab pages + nav** (`math-labs-nav`) — Calibration, Decision Curves, Drift; update [`math/README.md`](math/README.md) module table.
+- [x] **GenAI contract doc** (`genai-contract-doc`) — [`genai_for_math.md`](genai_for_math.md) + README link; portfolio bridge copy.
+- [x] **Interview kit** (`interview-kit`) — 5-min talk track, clone/run one-pager, LICENSE/CI/branding.
 
 ### Tier 3 — stretch (after Tier 1–2)
 
