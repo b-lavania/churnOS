@@ -102,6 +102,7 @@ class Workspace:
     marketplace: pd.DataFrame = field(default_factory=pd.DataFrame)
     buyers: pd.DataFrame = field(default_factory=pd.DataFrame)
     marketing: pd.DataFrame = field(default_factory=pd.DataFrame)
+    agent_transactions: pd.DataFrame = field(default_factory=pd.DataFrame)
     default_experiment_id: str = "EXP-CAP-VERSION-001"
     meta: dict[str, Any] = field(default_factory=dict)
 
@@ -161,6 +162,14 @@ def build_workspace(
         )
     eval_results = pd.DataFrame(eval_rows) if eval_rows else EMPTY_EVAL_RESULTS.copy()
 
+    agent_transactions = pd.DataFrame()
+    if profile.get("preset_id") == "marketplace_agentic":
+        from data.marketplace_agentic_generator import generate_agent_transactions
+
+        agent_transactions = generate_agent_transactions(
+            runs, agentic["seats"], agentic["capabilities"], profile, seed=seed,
+        )
+
     legacy = generate_all_data(seed=seed)
     funnel = generate_funnel_events(n_sessions=n_sessions, seed=seed)
 
@@ -211,6 +220,7 @@ def build_workspace(
         marketplace=legacy["marketplace"],
         buyers=legacy["buyers"],
         marketing=legacy["marketing"],
+        agent_transactions=agent_transactions,
         meta=meta,
     )
 
@@ -255,6 +265,7 @@ def workspace_to_dict(ws: Workspace) -> dict[str, Any]:
         "marketplace": ws.marketplace,
         "buyers": ws.buyers,
         "marketing": ws.marketing,
+        "agent_transactions": ws.agent_transactions,
         "default_experiment_id": ws.default_experiment_id,
         "meta": ws.meta,
     }
@@ -303,7 +314,8 @@ def workspace_from_dict(data: dict[str, Any]) -> Workspace:
         funnel=data["funnel"],
         marketplace=data["marketplace"],
         buyers=data["buyers"],
-        marketing=data["marketing"],
+        marketing=data.get("marketing", pd.DataFrame()),
+        agent_transactions=data.get("agent_transactions", pd.DataFrame()),
         default_experiment_id=data.get("default_experiment_id", "EXP-CAP-VERSION-001"),
         meta=data.get("meta", {}),
     )

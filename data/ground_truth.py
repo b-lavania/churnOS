@@ -28,6 +28,12 @@ class GroundTruth:
     experiment_treatment_effect_success: float = 0.0  # absolute pp on success rate
     experiment_treatment_effect_cost_pct: float = 0.0
     churn_reason_codes: dict[str, str] = field(default_factory=dict)
+    planted_take_rate: float = 0.12
+    planted_assist_share: float = 0.45
+    planted_negative_margin_workflows: list[str] = field(default_factory=list)
+    planted_verification_gap_rate: float = 0.0
+    planted_eb_global_mean: float = 0.08
+    planted_change_point_week: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -42,6 +48,12 @@ class GroundTruth:
             "experiment_treatment_effect_success": self.experiment_treatment_effect_success,
             "experiment_treatment_effect_cost_pct": self.experiment_treatment_effect_cost_pct,
             "churn_reason_codes": dict(self.churn_reason_codes),
+            "planted_take_rate": self.planted_take_rate,
+            "planted_assist_share": self.planted_assist_share,
+            "planted_negative_margin_workflows": list(self.planted_negative_margin_workflows),
+            "planted_verification_gap_rate": self.planted_verification_gap_rate,
+            "planted_eb_global_mean": self.planted_eb_global_mean,
+            "planted_change_point_week": self.planted_change_point_week,
         }
 
 

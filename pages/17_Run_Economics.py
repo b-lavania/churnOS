@@ -127,6 +127,34 @@ if is_rigorous_mode(view_profile):
             subj = rec.get("subject", {})
             st.write(f"- `{subj.get('account_id', '—')}` · ${rec.get('economics', {}).get('primary_metric_usd', 0):,.0f}")
 
+    section_kicker("Token-cost tail risk")
+    from analytics.token_risk import (
+        budget_breach_probability,
+        daily_spend_series,
+        pricing_shock_simulation,
+        token_cost_var,
+    )
+
+    daily = daily_spend_series(ws)
+    shock_pct = st.slider("Oracle price shock %", 0, 100, 0, key="econ_shock") / 100.0
+    risk = pricing_shock_simulation(ws, shock_pct) if shock_pct else token_cost_var(daily)
+    mean_daily = float(daily.mean()) if not daily.empty else 0.0
+    budget = st.number_input("Daily budget USD", value=round(2 * mean_daily) if mean_daily else 500.0)
+    breach = budget_breach_probability(daily, budget) if not daily.empty else 0.0
+    v1, v2, v3 = st.columns(3)
+    v1.metric("Daily VaR 5%", f"${risk.get('var', 0):,.0f}")
+    v2.metric("Daily CVaR 5%", f"${risk.get('cvar', 0):,.0f}")
+    v3.metric("P(day > budget)", f"{breach:.0%}")
+    if not daily.empty:
+        import plotly.graph_objects as go
+
+        fig_hist = go.Figure(go.Histogram(x=daily.values, nbinsx=20))
+        fig_hist.add_vline(x=risk.get("var", 0), line_color="#dc2626", annotation_text="VaR")
+        fig_hist.add_vline(x=budget, line_color="#64748b", annotation_text="Budget")
+        fig_hist.update_layout(height=320, margin=dict(l=40, r=40, t=40, b=40))
+        st.plotly_chart(fig_hist, use_container_width=True)
+    st.caption("VaR = a bad day; CVaR = how bad the bad days are. Synthetic run costs.")
+
 section_kicker("Loop depth & waterfall")
 col_a, col_b = st.columns(2)
 with col_a:

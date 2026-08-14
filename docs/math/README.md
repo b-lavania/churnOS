@@ -35,6 +35,11 @@ Every rigorous method in churnOS ships as:
 | `analytics/clv_probabilistic.py` | BG/NBD CLV (legacy) | Math Lab CLV |
 | `analytics/queueing.py` | Erlang-C HITL wait | Run Economics |
 | `analytics/pareto.py` | success×cost×trust frontier | Radar (pareto mode) |
+| `analytics/inference/confidence_sequences.py` | always-valid proportion CS | Version Compare |
+| `analytics/drift.py` | KL/JS mix drift, CUSUM change-point | Math Lab Drift, classify |
+| `analytics/inference/empirical_bayes.py` | Beta–Binomial harm shrinkage | Binomial lab, classify harm |
+| `analytics/token_risk.py` | daily spend VaR/CVaR, price shock | Run Economics, Marketplace Radar |
+| `analytics/marketplace_economics.py` | platform margin after inference | Marketplace Radar |
 
 ## Acceptance per PR
 

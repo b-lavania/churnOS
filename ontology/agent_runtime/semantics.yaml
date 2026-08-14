@@ -41,6 +41,8 @@ classification:
     outcome_confirmation_gap:
       max_confirm_rate: 0.5
       min_success_rate: 0.45
+    outcome_mix_drift:
+      js_min: 0.08
 
 decision:
   verdict_default: needs_review

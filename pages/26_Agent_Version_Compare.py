@@ -6,6 +6,8 @@ import streamlit as st
 
 from analytics.agent_version_compare import compare_agent_versions
 from analytics.decisions import emit_capability_records
+from analytics.evidence import is_rigorous_mode
+from analytics.inference.confidence_sequences import cs_two_proportion
 from ontology.exception_taxonomy import ACTIONS
 from ui.evidence_chrome import render_underpowered_callout
 from ui.explain import page_help
@@ -36,6 +38,11 @@ st.markdown(f"### {lights.get(tl, '🟡')} {cmp.get('recommendation', 'hold').up
 
 if cmp.get("rows"):
     st.dataframe(cmp["rows"], use_container_width=True, hide_index=True)
+    js_val = cmp.get("js_outcome_mix", 0)
+    st.caption(
+        f"JS(outcome mix current vs previous) = {js_val:.3f}",
+        help="0 = same mix; ~0.1+ is a material shift.",
+    )
 else:
     st.info("Not enough version history on this seed.")
 
@@ -57,6 +64,49 @@ with st.expander("Evidence vs peeking (sequential test)", expanded=False):
             cmp.get("n_curr", 0) + cmp.get("n_prev", 0),
             60,
         )
+
+cs_expanded = is_rigorous_mode(ws.profile)
+with st.expander("Always-valid bounds (confidence sequence)", expanded=cs_expanded):
+    st.caption("This interval stays valid if you peek every day. The p-value above does not.")
+    cs = cs_two_proportion(
+        cmp.get("s_prev", 0),
+        cmp.get("n_prev", 0),
+        cmp.get("s_curr", 0),
+        cmp.get("n_curr", 0),
+    )
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Δ success (pp)", f"{cs.get('delta', 0) * 100:+.1f}")
+    m2.metric("CS 95% lo", f"{cs.get('lo', 0) * 100:+.1f}%")
+    m3.metric("CS 95% hi", f"{cs.get('hi', 0) * 100:+.1f}%")
+    series = cs.get("series") or []
+    if series:
+        import plotly.graph_objects as go
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=[p["n"] for p in series],
+            y=[p["delta"] for p in series],
+            mode="markers",
+            name="Δ",
+        ))
+        fig.add_trace(go.Scatter(
+            x=[p["n"] for p in series] + [p["n"] for p in series][::-1],
+            y=[p["hi"] for p in series] + [p["lo"] for p in series][::-1],
+            fill="toself",
+            fillcolor="rgba(59,130,246,0.2)",
+            line=dict(color="rgba(255,255,255,0)"),
+            name="CS band",
+        ))
+        fig.add_hline(y=0, line_dash="dash", line_color="#64748b")
+        fig.update_layout(
+            xaxis_title="Cumulative n",
+            yaxis_title="Δ success rate",
+            height=320,
+            margin=dict(l=40, r=40, t=40, b=40),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    if cs.get("lo", -1) <= 0 <= cs.get("hi", 1):
+        st.caption("Do not ship or rollback on this peek — sequence still includes no-difference.")
 
 with st.expander("Traffic allocation (YAML bandit policy)", expanded=False):
     from analytics.bandits import thompson_allocation

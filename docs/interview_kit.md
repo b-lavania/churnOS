@@ -30,6 +30,8 @@ Preset: `assistant_heavy` · `math_mode: rigorous` on Product Profile.
 4. **Outcome Flywheel** — write synthetic outcome (closes loop)
 5. If asked *"how do you know?"* → **Lab · Calibration** or **Lab · Decision Curves**
 
+**Marketplace preset (Q4):** `marketplace_agentic` → **Marketplace Radar** for agent-assisted GMV margin. **Lab · Drift** for mix-shift; Version Compare for confidence sequences.
+
 Knapsack line (Radar banner or Run Economics): *"With N HITL slots this week, review these accounts first."*
 
 ### 4:30–5:00 — Siblings
@@ -54,6 +56,9 @@ Knapsack line (Radar banner or Run Economics): *"With N HITL slots this week, re
 | `analytics/knapsack.py` | Intervention selection under capacity |
 | `analytics/bandits.py` | YAML-governed traffic + regret |
 | `tests/unit/test_interview_math.py` | Ground-truth recovery |
+| `tests/unit/test_marketplace_economics.py` | Marketplace margin economics |
+| `analytics/marketplace_economics.py` | Agent-mediated GMV margin |
+| `pages/35_Marketplace_Radar.py` | Marketplace DECIDE surface |
 
 ## License / access
 

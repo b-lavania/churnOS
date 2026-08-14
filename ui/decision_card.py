@@ -59,9 +59,20 @@ def render_decision_card(
             risk = record.get("risk_score")
             risk_part = f" · risk {risk:.2f}" if risk is not None else ""
         meta_line = f"Account · {record.get('vertical', '')}{risk_part}"
+        cost_label = "Cost of leaving live"
+    elif entity_type == "seller":
+        title = subject.get("seller_id", "—")
+        meta_line = f"Seller · {record.get('vertical', 'marketplace_commerce')}"
+        cost_label = "Platform margin at risk"
+    elif entity_type == "workflow":
+        title = subject.get("capability_id", cap_id)
+        assist = subject.get("assist_type", "agent_assist")
+        meta_line = f"Workflow · {assist}"
+        cost_label = "Platform margin at risk"
     else:
         title = cap_id
         meta_line = f"Version {cap_ver} · Capability · {record.get('vertical', '')}"
+        cost_label = "Cost of leaving live"
 
     summary = (
         f"{title}  ·  {verdict}  ·  ${cost:,.0f}  ·  "
@@ -82,7 +93,7 @@ def render_decision_card(
                 <p class="mag-evidence">{_evidence_line(record)}</p>
                 <p class="mag-card-deck">{decision.get('rationale', '')}</p>
                 <p class="mag-card-cost">${cost:,.0f}</p>
-                <p class="mag-card-cost-label">Cost of leaving live
+                <p class="mag-card-cost-label">{cost_label}
                   <span style="font-weight:400; text-transform:none; letter-spacing:0;">
                   — teaching estimate if you do nothing</span>
                 </p>

@@ -209,7 +209,13 @@ def classify(workspace: Workspace, profile: dict[str, Any], *, semantics_overlay
 
         harm_min = float(harm.get("harm_score_min", 0.08))
         check_corr = bool(harm.get("check_harm_correlation", True))
-        if cap["harm_score"] > harm_min or (check_corr and cap.get("harm_correlation", False)):
+        harm_score = cap["harm_score"]
+        from analytics.evidence import is_rigorous_mode
+        if is_rigorous_mode(profile):
+            from analytics.inference.empirical_bayes import capability_harm_eb_one
+            eb = capability_harm_eb_one(workspace, cap_id)
+            harm_score = eb.get("shrunk_rate", harm_score)
+        if harm_score > harm_min or (check_corr and cap.get("harm_correlation", False)):
             harm_extra: dict[str, Any] = {}
             from analytics.evidence import is_rigorous_mode, pack_evidence
             from analytics.causal_uplift import estimate_uplift
@@ -217,17 +223,22 @@ def classify(workspace: Workspace, profile: dict[str, Any], *, semantics_overlay
             if is_rigorous_mode(profile):
                 uplift = estimate_uplift(workspace)
                 ct = uplift.get("claim_type", "associational")
+                eb = capability_harm_eb_one(workspace, cap_id)
                 harm_extra["evidence"] = pack_evidence(
-                    model_id=uplift.get("model_id", "uplift_tlearner_v0"),
+                    model_id="empirical_bayes_beta_binomial_v0",
                     claim_type=ct,
-                    estimand="uplift_success_pp",
-                    posterior_mean=uplift.get("uplift_pp") or cap["harm_score"],
+                    estimand="harm_rate_shrunk",
+                    posterior_mean=eb.get("shrunk_rate", harm_score),
                     ci95=[
-                        max(-1, (uplift.get("uplift_pp") or cap["harm_score"]) - 0.05),
-                        min(1, (uplift.get("uplift_pp") or cap["harm_score"]) + 0.05),
+                        max(0, eb.get("shrunk_rate", harm_score) - 0.05),
+                        min(1, eb.get("shrunk_rate", harm_score) + 0.05),
                     ],
-                    n=uplift.get("n_control", 0) + uplift.get("n_variant", 0),
+                    n=eb.get("n", 0),
                     experiment_id=uplift.get("experiment_id"),
+                )
+                harm_extra["evidence"]["raw_rate"] = eb.get("raw_rate", cap["harm_score"])
+                harm_extra["evidence"]["caption"] = (
+                    f"raw {eb.get('raw_rate', cap['harm_score']):.1%} → shrunk {eb.get('shrunk_rate', harm_score):.1%}"
                 )
             _append_exception(
                 exceptions,
@@ -348,6 +359,36 @@ def classify(workspace: Workspace, profile: dict[str, Any], *, semantics_overlay
                             impact_cost=cap["run_count"] * arpu * 0.08,
                             capability_id=cap_id,
                         )
+
+    from analytics.evidence import is_rigorous_mode
+    if is_rigorous_mode(profile):
+        from analytics.drift import outcome_distribution_drift
+        from analytics.evidence import pack_evidence
+
+        od = outcome_distribution_drift(workspace)
+        js_thresh = float(thresh.get("outcome_mix_drift", {}).get("js_min", 0.08))
+        if od.get("js", 0) >= js_thresh:
+            _append_exception(
+                exceptions,
+                base={"workspace_id": workspace.workspaces["workspace_id"].iloc[0] if len(workspace.workspaces) else "WS-0000"},
+                category="outcome_mix_drift",
+                title="Outcome mix shifted vs prior window",
+                confidence=0.7,
+                rank=2,
+                impact_cost=arpu * 20,
+                capability_id=stats.iloc[0]["capability_id"] if len(stats) else "CAP-001",
+                extra={
+                    "evidence": pack_evidence(
+                        model_id="js_divergence_v0",
+                        claim_type="associational",
+                        estimand="outcome_mix_js",
+                        posterior_mean=od["js"],
+                        ci95=[max(0, od["js"] - 0.02), od["js"] + 0.02],
+                        n=od.get("baseline", [0.5, 0.5])[0] * 1000,
+                    ),
+                    "drift": od,
+                },
+            )
 
     graph = getattr(workspace, "connector_capability_graph", None)
     frag = thresh.get("connector_fragility", {})
@@ -736,6 +777,248 @@ def emit_records(
         merged.sort(key=lambda r: -r["economics"]["primary_metric_usd"])
         return merged
     return cap_recs
+
+
+def classify_marketplace(
+    workspace: Workspace,
+    profile: dict[str, Any],
+    *,
+    semantics_overlay: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Classify marketplace workflow/seller exceptions."""
+    from analytics.marketplace_economics import agent_gmv_attribution, seller_margin_table, workflow_unit_economics
+
+    txn = getattr(workspace, "agent_transactions", pd.DataFrame())
+    if txn.empty:
+        return []
+
+    vertical = profile.get("ontology_vertical", "marketplace_commerce")
+    semantics = load_rules_for_vertical(vertical, overlay=semantics_overlay)
+    thresh = get_classification_thresholds(semantics, profile)
+    exceptions: list[dict[str, Any]] = []
+    base = {"workspace_id": workspace.workspaces["workspace_id"].iloc[0] if len(workspace.workspaces) else "WS-0000"}
+
+    assisted = txn[txn["agent_assist_type"] != "none"]
+    manual = txn[txn["agent_assist_type"] == "none"]
+    if not assisted.empty and not manual.empty:
+        a_margin = (
+            assisted["platform_revenue_usd"].sum() - assisted["agent_inference_cost_usd"].sum()
+        ) / max(assisted["gmv_usd"].sum(), 1)
+        m_margin = (
+            manual["platform_revenue_usd"].sum() - manual["agent_inference_cost_usd"].sum()
+        ) / max(manual["gmv_usd"].sum(), 1)
+        gap_min = float(thresh.get("platform_margin_erosion", {}).get("margin_gap_min", 0.15))
+        if a_margin < m_margin - gap_min:
+            for cap_id in assisted["capability_id"].dropna().unique():
+                we = workflow_unit_economics(workspace, str(cap_id))
+                exceptions.append({
+                    **base,
+                    "category": "platform_margin_erosion",
+                    "title": f"Workflow {cap_id} — assisted margin below manual",
+                    "confidence": 0.75,
+                    "rank": 1,
+                    "impact": {"cost_usd": max(0, -we["net_margin"])},
+                    "capability_id": str(cap_id),
+                    "seller_id": None,
+                })
+
+    attr = agent_gmv_attribution(workspace)
+    if not attr.empty:
+        total_gmv = attr["gmv_usd"].sum()
+        max_share = float(thresh.get("agent_gmv_concentration", {}).get("max_share", 0.40))
+        top = attr.loc[attr["gmv_usd"].idxmax()]
+        if total_gmv > 0 and top["gmv_usd"] / total_gmv > max_share:
+            exceptions.append({
+                **base,
+                "category": "agent_gmv_concentration",
+                "title": f"GMV concentration in {top['assist_type']}",
+                "confidence": 0.7,
+                "rank": 2,
+                "impact": {"cost_usd": float(top["gmv_usd"] * 0.1)},
+                "capability_id": str(top["capability_id"]),
+            })
+
+    verify_min = float(thresh.get("transaction_verification_gap", {}).get("min_verify_rate", 0.55))
+    gap_txn = assisted[assisted["success"]]
+    if not gap_txn.empty:
+        vr = float(gap_txn["verified"].mean())
+        if vr < verify_min:
+            exceptions.append({
+                **base,
+                "category": "transaction_verification_gap",
+                "title": "Low verification rate on assisted successes",
+                "confidence": 0.72,
+                "rank": 2,
+                "impact": {"cost_usd": float(gap_txn["gmv_usd"].sum() * 0.05)},
+                "capability_id": str(gap_txn["capability_id"].mode().iloc[0]) if "capability_id" in gap_txn.columns else "CAP-001",
+            })
+
+    blow_min = float(thresh.get("inference_cost_blowout", {}).get("inference_over_take_min", 1.0))
+    for cap_id in assisted["capability_id"].dropna().unique():
+        we = workflow_unit_economics(workspace, str(cap_id))
+        if we["take_per_txn"] > 0 and we["cpso"] / we["take_per_txn"] > blow_min:
+            exceptions.append({
+                **base,
+                "category": "inference_cost_blowout",
+                "title": f"Workflow {cap_id} — inference exceeds take",
+                "confidence": 0.8,
+                "rank": 1,
+                "impact": {"cost_usd": max(0, -we["net_margin"])},
+                "capability_id": str(cap_id),
+            })
+
+    sellers = seller_margin_table(workspace)
+    if not sellers.empty:
+        worst = sellers.sort_values("net_margin").head(3)
+        for _, row in worst.iterrows():
+            if row["net_margin"] < 0:
+                exceptions.append({
+                    **base,
+                    "category": "platform_margin_erosion",
+                    "title": f"Seller {row['seller_id']} — negative platform margin",
+                    "confidence": 0.74,
+                    "rank": 2,
+                    "impact": {"cost_usd": abs(float(row["net_margin"]))},
+                    "seller_id": str(row["seller_id"]),
+                    "capability_id": None,
+                })
+
+    from analytics.evidence import is_rigorous_mode, pack_evidence
+    if is_rigorous_mode(profile):
+        from analytics.drift import outcome_distribution_drift
+        from analytics.token_risk import daily_spend_series, token_cost_var
+
+        od = outcome_distribution_drift(workspace)
+        js_min = float(thresh.get("outcome_mix_drift", {}).get("js_min", 0.08))
+        if od.get("js", 0) >= js_min:
+            exceptions.append({
+                **base,
+                "category": "outcome_mix_drift",
+                "title": "Outcome mix drift on marketplace runs",
+                "confidence": 0.68,
+                "rank": 3,
+                "impact": {"cost_usd": float(assisted["gmv_usd"].sum() * 0.02) if not assisted.empty else 0},
+                "capability_id": str(assisted["capability_id"].mode().iloc[0]) if not assisted.empty else "CAP-001",
+                "evidence": pack_evidence(
+                    model_id="js_divergence_v0",
+                    claim_type="associational",
+                    estimand="outcome_mix_js",
+                    posterior_mean=od["js"],
+                    ci95=[max(0, od["js"] - 0.02), od["js"] + 0.02],
+                    n=len(assisted),
+                ),
+            })
+        daily = daily_spend_series(workspace)
+        if not daily.empty:
+            var = token_cost_var(daily)
+            for exc in exceptions:
+                if exc.get("category") == "inference_cost_blowout":
+                    exc.setdefault("evidence", pack_evidence(
+                        model_id="token_var_bootstrap_v0",
+                        claim_type="simulated",
+                        estimand="daily_spend_var_5pct",
+                        posterior_mean=var["var"],
+                        ci95=[var["cvar"], var["var"]],
+                        n=len(daily),
+                    ))
+
+    return exceptions
+
+
+def _normalize_exceptions(exceptions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Ensure schema-required exception fields are present."""
+    out: list[dict[str, Any]] = []
+    for i, e in enumerate(exceptions):
+        cat = get_category(e["category"])
+        item = dict(e)
+        item.setdefault("exception_id", f"exc_{i + 1:04d}")
+        item.setdefault("description", cat["playbook_hint"])
+        item.setdefault("severity", cat["default_severity"])
+        item.setdefault("owner", cat["owner_role"])
+        if "impact" not in item and "impact_cost" in item:
+            item["impact"] = {"cost_usd": float(item.pop("impact_cost"))}
+        out.append(item)
+    return out
+
+
+def _price_marketplace_exceptions(exceptions: list[dict[str, Any]]) -> dict[str, Any]:
+    total = sum(e.get("impact", {}).get("cost_usd", 0) for e in exceptions)
+    breakdown = [
+        {"label": e["category"], "amount_usd": e.get("impact", {}).get("cost_usd", 0), "notes": e.get("title", "")}
+        for e in exceptions[:5]
+    ]
+    return {
+        "primary_metric_usd": round(total, 2),
+        "primary_metric_label": "platform_margin_at_risk_usd",
+        "currency": "USD",
+        "breakdown": breakdown,
+    }
+
+
+def emit_marketplace_records(
+    workspace: Workspace,
+    profile: dict[str, Any],
+    *,
+    entity_type: str = "workflow",
+    validate: bool = True,
+    semantics_overlay: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    raw = classify_marketplace(workspace, profile, semantics_overlay=semantics_overlay)
+    vertical = profile.get("ontology_vertical", "marketplace_commerce")
+    ontology_version = profile.get("ontology_version", f"{vertical}_v1")
+    semantics = load_rules_for_vertical(vertical, overlay=semantics_overlay)
+    ws_id = workspace.workspaces["workspace_id"].iloc[0] if len(workspace.workspaces) else "WS-0000"
+
+    group_key = "capability_id" if entity_type == "workflow" else "seller_id"
+    by_subject: dict[str, list[dict]] = {}
+    for e in raw:
+        key = e.get(group_key)
+        if key:
+            by_subject.setdefault(str(key), []).append(e)
+
+    records: list[dict[str, Any]] = []
+    for rec_idx, (subject_id, excs) in enumerate(by_subject.items(), start=1):
+        ranked = rank_exceptions(_normalize_exceptions(excs))
+        economics = _price_marketplace_exceptions(ranked)
+        verdict = resolve_verdict(ranked, semantics)
+        decision = resolve_action(verdict, semantics)
+        decision["rule_trace"] = build_rule_trace(ranked, semantics, verdict, decision)
+
+        if entity_type == "workflow":
+            assist = next((e.get("title", "") for e in ranked), "")
+            subject = {
+                "workspace_id": ws_id,
+                "entity_type": "workflow",
+                "capability_id": subject_id,
+                "assist_type": assist.split("—")[0].strip() if "—" in assist else "agent_assist",
+            }
+            strip_keys = ("capability_id", "seller_id")
+            prefix = "wfl"
+        else:
+            subject = {"workspace_id": ws_id, "entity_type": "seller", "seller_id": subject_id}
+            strip_keys = ("capability_id", "seller_id")
+            prefix = "sel"
+
+        record = {
+            "record_id": f"gdr_{prefix}_{rec_idx:04d}",
+            "vertical": vertical,
+            "schema_version": "1.0.0",
+            "ontology_version": ontology_version,
+            "evaluated_at": datetime.now(timezone.utc).isoformat(),
+            "evaluator_id": "churnos_emitter",
+            "subject": subject,
+            "exceptions": [{k: v for k, v in e.items() if k not in strip_keys} for e in ranked],
+            "economics": economics,
+            "decision": decision,
+        }
+        if validate:
+            errors = validate_record(record, vertical)
+            if errors:
+                raise ValueError(f"Invalid marketplace GDR {record['record_id']}: {errors}")
+        records.append(record)
+
+    records.sort(key=lambda r: -r["economics"]["primary_metric_usd"])
+    return records
 
 
 def apply_override(

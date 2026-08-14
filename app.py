@@ -183,6 +183,7 @@ nav_structure = {
         st.Page("pages/16_Trust_Approval.py", title="Trust & Approval", url_path="trust"),
         st.Page("pages/17_Run_Economics.py", title="Run Economics", url_path="run_economics"),
         st.Page("pages/18_Connector_Blast_Radius.py", title="Connectors", url_path="connectors"),
+        st.Page("pages/35_Marketplace_Radar.py", title="Marketplace Radar", url_path="marketplace_radar"),
         st.Page("pages/26_Agent_Version_Compare.py", title="Version Compare", url_path="version_compare"),
     ],
     "LEARN": [
@@ -194,6 +195,7 @@ nav_structure = {
         st.Page("pages/32_Math_Lab_CLV.py", title="Lab · CLV", url_path="math_clv"),
         st.Page("pages/33_Math_Lab_Decision_Curves.py", title="Lab · Decision Curves", url_path="math_decision_curves"),
         st.Page("pages/34_Math_Lab_Calibration.py", title="Lab · Calibration", url_path="math_calibration"),
+        st.Page("pages/36_Math_Lab_Drift.py", title="Lab · Drift", url_path="math_drift"),
         *_REFERENCE_PAGES,
         *_LEGACY_PAGES,
     ],

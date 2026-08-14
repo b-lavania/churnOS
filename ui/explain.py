@@ -21,9 +21,9 @@ SURFACE_EXPLAINERS: dict[str, dict[str, str]] = {
         "title": "What this screen is",
         "body": (
             "Pick a product shape — personal assistant, CRM workspace, ops missions, "
-            "or metered agent API. That choice switches ontology semantics and the "
-            "**fake** rates used to generate seats, runs, approvals, and churn. "
-            "Press **Generate workspace** before any other screen has data."
+            "metered agent API, or marketplace (agent-assisted GMV). That choice switches "
+            "ontology semantics and the **fake** rates used to generate seats, runs, "
+            "approvals, and churn. Press **Generate workspace** before any other screen has data."
         ),
     },
     "activation": {
@@ -48,7 +48,23 @@ SURFACE_EXPLAINERS: dict[str, dict[str, str]] = {
         "body": (
             "**$/successful run** vs **seat ARPU** — if run cost eats willingness to pay, "
             "the capability is uneconomic even if users like it. Cards filter for "
-            "`run_cost_blowout` and CAC/LTV-style contradictions."
+            "`run_cost_blowout` and CAC/LTV-style contradictions. Rigorous mode adds "
+            "token VaR/CVaR tail risk."
+        ),
+    },
+    "marketplace_radar": {
+        "title": "What this measures",
+        "body": (
+            "Agent-assisted marketplace transactions: GMV, platform take, inference cost, "
+            "and net margin per workflow/seller. Cards use `platform_margin_at_risk_usd` "
+            "and throttle uneconomic agent assists."
+        ),
+    },
+    "math_drift": {
+        "title": "What this measures",
+        "body": (
+            "Distributional drift (KL/JS) between outcome mix windows and a CUSUM "
+            "change-point on weekly success rate. Complements slope-based `quality_drift` on Radar."
         ),
     },
     "connector": {
@@ -123,6 +139,8 @@ FIELD_GLOSS = [
     ("Verdict", "Engine’s state call on this capability (see glossary below)."),
     ("Capability ID", "The shippable unit: skill, automation, agent, or tool policy."),
     ("Cost of leaving live", "Teaching estimate of $ at risk if you do nothing this window."),
+    ("Platform margin at risk", "Marketplace $ at risk when inference eats platform take."),
+    ("Verified GMV", "GMV with deterministic/webhook confirmation — not agent-claimed alone."),
     ("Exceptions", "Ranked reasons — activation leak, trust break, cost blowout, etc."),
     ("Recommended / Final", "What the engine suggests vs what you chose (override)."),
     ("Outcome", "Later write-back: retention Δ and whether churn happened (simulated today)."),

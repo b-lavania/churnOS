@@ -16,7 +16,7 @@
     "record_id": { "type": "string" },
     "vertical": {
       "type": "string",
-      "enum": ["capability_lifecycle", "agent_runtime", "orchestration", "eval_governance"]
+      "enum": ["capability_lifecycle", "agent_runtime", "orchestration", "eval_governance", "marketplace_commerce"]
     },
     "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
     "ontology_version": { "type": "string" },
@@ -27,7 +27,7 @@
       "properties": {
         "entity_type": {
           "type": "string",
-          "enum": ["account", "capability"]
+          "enum": ["account", "capability", "seller", "workflow"]
         },
         "workspace_id": { "type": "string" },
         "account_id": { "type": "string" },
@@ -36,11 +36,14 @@
         "agent_id": { "type": "string" },
         "connector_id": { "type": "string" },
         "cohort_id": { "type": "string" },
-        "experiment_id": { "type": "string" }
+        "experiment_id": { "type": "string" },
+        "seller_id": { "type": "string" },
+        "assist_type": { "type": "string" }
       },
       "anyOf": [
         { "required": ["account_id"] },
-        { "required": ["capability_id"] }
+        { "required": ["capability_id"] },
+        { "required": ["seller_id"] }
       ]
     },
     "exceptions": {

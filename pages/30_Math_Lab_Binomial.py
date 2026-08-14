@@ -56,3 +56,39 @@ Prior → likelihood → posterior. With uniform prior (α=β=1), the posterior 
 On Radar, use the **interval**, not only the point rate, to decide if a cohort is worse or noise.
     """
 )
+
+section_kicker("Empirical Bayes shrinkage")
+show_shrunk = st.toggle("Show shrunk harm rates", value=True)
+if show_shrunk:
+    from analytics.inference.empirical_bayes import capability_harm_eb
+    import plotly.graph_objects as go
+    import pandas as pd
+
+    eb_df = capability_harm_eb(ws)
+    if not eb_df.empty:
+        eb_df = eb_df.copy()
+        eb_df["delta"] = (eb_df["raw"] - eb_df["shrunk"]).abs()
+        st.dataframe(
+            eb_df[["capability_id", "n", "raw", "shrunk", "delta"]],
+            use_container_width=True,
+            hide_index=True,
+        )
+        fig = go.Figure()
+        for _, row in eb_df.iterrows():
+            fig.add_trace(go.Scatter(
+                x=[row["raw"], row["shrunk"]],
+                y=[row["capability_id"], row["capability_id"]],
+                mode="markers+lines",
+                name=row["capability_id"],
+                showlegend=False,
+            ))
+        prior_mean = eb_df["shrunk"].mean()
+        fig.add_vline(x=prior_mean, line_dash="dash", line_color="#64748b")
+        fig.update_layout(
+            xaxis_title="Harm rate",
+            yaxis_title="Capability",
+            height=max(280, 28 * len(eb_df)),
+            margin=dict(l=40, r=40, t=40, b=40),
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        st.caption("1/3 failures shrinks; 12/200 stays put. Radar uses shrunk rate in rigorous mode.")

@@ -131,6 +131,31 @@ CATEGORIES: dict[str, dict[str, Any]] = {
         "default_severity": "critical",
         "playbook_hint": "Irreversible negative agent action — immediate rollback and trust intervention.",
     },
+    "platform_margin_erosion": {
+        "owner_role": "finance",
+        "default_severity": "high",
+        "playbook_hint": "Agent-assisted margin below manual baseline — throttle or revisit take rate.",
+    },
+    "agent_gmv_concentration": {
+        "owner_role": "product",
+        "default_severity": "medium",
+        "playbook_hint": "Too much GMV through one workflow — diversify agent assists.",
+    },
+    "transaction_verification_gap": {
+        "owner_role": "engineering",
+        "default_severity": "high",
+        "playbook_hint": "Agent claims success without webhook/deterministic confirmation.",
+    },
+    "inference_cost_blowout": {
+        "owner_role": "finance",
+        "default_severity": "high",
+        "playbook_hint": "Per-transaction inference exceeds platform take revenue.",
+    },
+    "outcome_mix_drift": {
+        "owner_role": "data_science",
+        "default_severity": "medium",
+        "playbook_hint": "Outcome mix shifted — investigate version or policy change.",
+    },
 }
 
 CHURN_REASON_CODES = [

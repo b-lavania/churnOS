@@ -6,8 +6,9 @@ from typing import Any
 
 import pandas as pd
 from scipy.stats import norm
+import numpy as np
 
-from analytics.inference.sprt import sprt_two_proportion
+from analytics.drift import js_divergence
 from core.workspace import Workspace
 
 
@@ -77,6 +78,20 @@ def compare_agent_versions(workspace: Workspace) -> dict[str, Any]:
     delta_success = rate_curr - rate_prev
     delta_cost = cost_curr - cost_prev
 
+    js_mix = 0.0
+    if n_prev >= 5 and n_curr >= 5:
+        rp = runs[runs["capability_version_id"] == prev]
+        rc = runs[runs["capability_version_id"] == curr]
+        p_prev = np.array([
+            float(rp["success"].mean()) if len(rp) and "success" in rp.columns else 0.5,
+            1 - float(rp["success"].mean()) if len(rp) and "success" in rp.columns else 0.5,
+        ])
+        p_curr = np.array([
+            float(rc["success"].mean()) if len(rc) and "success" in rc.columns else 0.5,
+            1 - float(rc["success"].mean()) if len(rc) and "success" in rc.columns else 0.5,
+        ])
+        js_mix = js_divergence(p_prev, p_curr)
+
     recommendation = "monitor"
     reason = "Within policy band — continue monitoring."
     traffic_light = "yellow"
@@ -140,4 +155,9 @@ def compare_agent_versions(workspace: Workspace) -> dict[str, Any]:
         "traffic_light": traffic_light,
         "n_prev": n_prev,
         "n_curr": n_curr,
+        "s_prev": s_prev,
+        "s_curr": s_curr,
+        "rate_prev": rate_prev,
+        "rate_curr": rate_curr,
+        "js_outcome_mix": round(js_mix, 4),
     }
