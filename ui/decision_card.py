@@ -34,6 +34,7 @@ def render_decision_card(
     on_override: Callable[[dict, str, str], None] | None = None,
     show_override: bool = True,
     expanded: bool = False,
+    workspace: Any | None = None,
 ) -> None:
     """Render one GDR as a single expandable row — not a stack of section headers."""
     load_magazine_css()
@@ -165,7 +166,14 @@ def render_decision_card(
             viz = record.get("viz")
             if viz:
                 with st.expander("Visual receipt", expanded=False):
-                    st.json(viz)
+                    from ui.viz.viz_receipts import render_viz_receipt
+
+                    if workspace is not None:
+                        render_viz_receipt(viz, workspace)
+                    else:
+                        st.caption(f"Chart: `{viz.get('chart')}` · category `{viz.get('category')}`")
+                        if viz.get("headline"):
+                            st.json(viz["headline"])
 
             st.markdown("**Exceptions** (highest $ impact first)")
             harm_sort = sorted(

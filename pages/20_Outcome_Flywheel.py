@@ -13,7 +13,12 @@ from ui.decision_card import render_decision_card
 from ui.explain import page_help
 from ui.loop_chrome import render_loop_stepper
 from ui.magazine import load_magazine_css, masthead, section_kicker
-from ui.viz import flywheel_comparison_chart
+from ui.viz import (
+    coordination_overhead_chart,
+    flywheel_comparison_chart,
+    retention_feature_importance,
+    success_vs_complexity,
+)
 from ui.workspace_banner import require_workspace
 
 css_path = Path(__file__).parent.parent / "assets" / "style.css"
@@ -34,7 +39,7 @@ st.caption(f"**{len(awaiting)}** of {len(records)} records need outcome write-ba
 
 if awaiting:
     for i, rec in enumerate(awaiting[:5]):
-        render_decision_card(rec, key_prefix=f"await_{i}", show_override=False, expanded=(i == 0))
+        render_decision_card(rec, key_prefix=f"await_{i}", show_override=False, expanded=(i == 0), workspace=ws)
     if st.button("Simulate 14d outcome for top 8 awaiting", type="primary"):
         updated_all = list(st.session_state.get("growth_records", records))
         id_to_idx = {r["record_id"]: i for i, r in enumerate(updated_all)}
@@ -48,6 +53,25 @@ if awaiting:
         st.rerun()
 else:
     st.success("All records have outcomes — regenerate or override on Radar for new decisions.")
+
+section_kicker("Opaque success & multi-agent signals")
+c1, c2, c3 = st.columns(3)
+c1.metric("Verified success rate", resolve_metric("verified_outcome_success_rate", ws)["display"])
+c2.metric("Coordination overhead", resolve_metric("coordination_overhead", ws)["display"])
+c3.metric("Outcome drift WoW", resolve_metric("outcome_success_drift", ws)["display"])
+col_a, col_b, col_c = st.columns(3)
+with col_a:
+    fig_sc = success_vs_complexity(ws)
+    if fig_sc is not None:
+        st.plotly_chart(fig_sc, use_container_width=True)
+with col_b:
+    fig_co = coordination_overhead_chart(ws)
+    if fig_co is not None:
+        st.plotly_chart(fig_co, use_container_width=True)
+with col_c:
+    fig_rf = retention_feature_importance(ws)
+    if fig_rf is not None:
+        st.plotly_chart(fig_rf, use_container_width=True)
 
 section_kicker("Followed vs overridden")
 summary = flywheel_evaluation(records)
@@ -72,16 +96,7 @@ if summary.get("n"):
         "churn rate": [summary["followed"]["churn_rate"], summary["overridden"]["churn_rate"]],
     })
 
-with st.expander("Charts & agent stub", expanded=False):
-    from ui.viz import coordination_overhead_chart, retention_feature_importance, success_vs_complexity
-
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Verified success rate", resolve_metric("verified_outcome_success_rate", ws)["display"])
-    c2.metric("Coordination overhead", resolve_metric("coordination_overhead", ws)["display"])
-    c3.metric("Outcome drift WoW", resolve_metric("outcome_success_drift", ws)["display"])
-    fig_sc = success_vs_complexity(ws)
-    if fig_sc is not None:
-        st.plotly_chart(fig_sc, use_container_width=True)
+with st.expander("Agent stub", expanded=False):
     if records:
         sem = load_semantics(ws.profile.get("ontology_vertical", "capability_lifecycle"))
         action, rationale = propose_action(records[0], sem)
@@ -90,6 +105,6 @@ with st.expander("Charts & agent stub", expanded=False):
 section_kicker("Records with outcomes")
 for i, rec in enumerate(st.session_state.get("growth_records", records)[:5]):
     if rec.get("outcome"):
-        render_decision_card(rec, key_prefix=f"out_{i}", show_override=False)
+        render_decision_card(rec, key_prefix=f"out_{i}", show_override=False, workspace=ws)
 
 st.caption("Return to **Radar** from the sidebar after writing outcomes.")

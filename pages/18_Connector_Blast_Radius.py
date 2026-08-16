@@ -53,4 +53,4 @@ section_kicker("Decision records")
 if not records:
     empty_records_caption("connector_fragility")
 for i, rec in enumerate(records[:5]):
-    render_decision_card(rec, key_prefix=f"conn_{i}", show_override=False)
+    render_decision_card(rec, key_prefix=f"conn_{i}", show_override=False, workspace=ws)

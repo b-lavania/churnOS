@@ -16,6 +16,42 @@ _RED = "#a32a2a"
 _GREEN = "#0a5a46"
 
 
+def cpso_trend_line(ws: Workspace) -> go.Figure | None:
+    """Weekly cost-per-successful-outcome trend (finding #1)."""
+    runs = ws.runs
+    outcomes = ws.outcomes
+    if runs.empty or "started_at" not in runs.columns:
+        return None
+    df = runs.copy()
+    df["week"] = pd.to_datetime(df["started_at"]).dt.to_period("W").astype(str)
+    weekly = df.groupby("week").agg(cost=("run_cost_usd", "sum"), runs=("run_id", "count")).reset_index()
+    if not outcomes.empty and "verified" in outcomes.columns:
+        ok = outcomes[outcomes["verified"] & outcomes["success"]].copy()
+        if not ok.empty and "occurred_at" in ok.columns:
+            ok["week"] = pd.to_datetime(ok["occurred_at"]).dt.to_period("W").astype(str)
+            verified = ok.groupby("week").size().reset_index(name="verified")
+            weekly = weekly.merge(verified, on="week", how="left")
+            weekly["verified"] = weekly["verified"].fillna(1).clip(lower=1)
+        else:
+            weekly["verified"] = weekly["runs"].clip(lower=1)
+    else:
+        weekly["verified"] = weekly["runs"].clip(lower=1)
+    weekly["cpso"] = weekly["cost"] / weekly["verified"]
+    fig = px.line(weekly, x="week", y="cpso", markers=True, color_discrete_sequence=[_TEAL])
+    apply_plotly_theme(fig)
+    fig.update_layout(height=280, yaxis_title="CPSO (USD)", title="Cost per successful outcome (weekly)")
+    return fig
+
+
+def context_util_alert(ws: Workspace) -> dict[str, float | bool]:
+    """Return context-util summary for >80% alert chip (finding #3)."""
+    if ws.runs.empty or "context_util_pct" not in ws.runs.columns:
+        return {"mean_pct": 0.0, "high_share_pct": 0.0, "alert": False}
+    mean_pct = float(ws.runs["context_util_pct"].mean())
+    high_share = float((ws.runs["context_util_pct"] > 80).mean() * 100)
+    return {"mean_pct": mean_pct, "high_share_pct": high_share, "alert": high_share > 15}
+
+
 def cost_attribution_heatmap(ws: Workspace) -> go.Figure | None:
     df = getattr(ws, "spend_by_step", pd.DataFrame())
     if df.empty:
@@ -277,19 +313,35 @@ def feature_flag_impact(ws: Workspace, flag_id: str) -> go.Figure | None:
         return None
     rows = []
     for variant in ("control", "treatment"):
-        seat_ids = sub[sub["variant"] == variant]["seat_id"]
+        seat_ids = set(sub[sub["variant"] == variant]["seat_id"])
         runs = ws.runs[ws.runs["seat_id"].isin(seat_ids)]
         if runs.empty:
             continue
         cpso = runs["run_cost_usd"].sum() / max(len(runs[runs["success"]]), 1)
-        hitl = runs["human_intervened"].mean() * 100 if "human_intervened" in runs.columns else 0
-        rows.append({"variant": variant, "CPSO": cpso, "HITL %": hitl})
+        hitl = runs["human_intervened"].mean() * 100 if "human_intervened" in runs.columns else 0.0
+        depth = 0.0
+        if not ws.accounts.empty and not ws.seats.empty and "integration_depth_score" in ws.accounts.columns:
+            acc_ids = ws.seats.loc[ws.seats["seat_id"].isin(seat_ids), "workspace_id"].unique()
+            depth = float(ws.accounts[ws.accounts["account_id"].isin(acc_ids)]["integration_depth_score"].mean())
+        ttfv = 0.0
+        if not ws.outcomes.empty and not ws.seats.empty and "first_paid_at" in ws.seats.columns:
+            verified = ws.outcomes[ws.outcomes["verified"]].merge(
+                ws.seats[["seat_id", "first_paid_at"]], left_on="end_user_id", right_on="seat_id"
+            )
+            verified = verified[verified["seat_id"].isin(seat_ids)]
+            if not verified.empty:
+                ttfv = float(
+                    (
+                        pd.to_datetime(verified["occurred_at"]) - pd.to_datetime(verified["first_paid_at"])
+                    ).dt.days.median()
+                )
+        rows.append({"variant": variant, "CPSO": cpso, "HITL %": hitl, "TTFV (d)": ttfv, "Depth": depth})
     if not rows:
         return None
     df = pd.DataFrame(rows)
     fig = go.Figure()
-    for col, color in [("CPSO", _TEAL), ("HITL %", _AMBER)]:
+    for col, color in [("CPSO", _TEAL), ("HITL %", _AMBER), ("TTFV (d)", _BLUE), ("Depth", "#6b4fa0")]:
         fig.add_trace(go.Bar(name=col, x=df["variant"], y=df[col], marker_color=color))
     apply_plotly_theme(fig)
-    fig.update_layout(height=300, title=f"Flag: {flag_id}", barmode="group")
+    fig.update_layout(height=320, title=f"Flag: {flag_id}", barmode="group")
     return fig

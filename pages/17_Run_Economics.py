@@ -12,9 +12,11 @@ from ui.explain import page_help
 from ui.magazine import load_magazine_css, masthead, section_kicker
 from ui.viz import (
     cm_nrr_teaching_chart,
+    context_util_alert,
     context_util_histogram,
     cost_attribution_heatmap,
     cost_waterfall_sample,
+    cpso_trend_line,
     jevons_elasticity_chart,
     loop_histogram,
     power_user_margin_table,
@@ -50,6 +52,18 @@ c2.metric("Power-user margin", resolve_metric("power_user_margin_leakage", ws)["
 c3.metric("Retry amplification", resolve_metric("retry_amplification_factor", ws)["display"])
 c4.metric("Unattributed spend", resolve_metric("unattributed_spend_percentage", ws)["display"])
 c5.metric("Static routing age", resolve_metric("static_decision_age_median", ws)["display"])
+
+section_kicker("CPSO trend")
+fig_cpso = cpso_trend_line(ws)
+if fig_cpso is not None:
+    st.plotly_chart(fig_cpso, use_container_width=True)
+
+ctx_alert = context_util_alert(ws)
+if ctx_alert["alert"]:
+    st.warning(
+        f"Context alert: {ctx_alert['high_share_pct']:.0f}% of runs exceed 80% context utilization "
+        f"(mean {ctx_alert['mean_pct']:.0f}%)."
+    )
 
 section_kicker("Cost attribution heatmap")
 fig_hm = cost_attribution_heatmap(ws)
@@ -187,4 +201,4 @@ section_kicker("Decision records")
 if not records:
     empty_records_caption("run_cost_blowout / margin_leakage")
 for i, rec in enumerate(records[:5]):
-    render_decision_card(rec, key_prefix=f"econ_{i}", show_override=False)
+    render_decision_card(rec, key_prefix=f"econ_{i}", show_override=False, workspace=ws)

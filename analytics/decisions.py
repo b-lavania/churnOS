@@ -698,6 +698,9 @@ def _emit_subject_records(
             record["p_churn_30d"] = record_stub["p_churn_30d"]
         if record_stub.get("evidence"):
             record["evidence"] = record_stub["evidence"]
+        from ui.viz.viz_receipts import attach_viz_receipt
+
+        attach_viz_receipt(record, workspace)
         if validate:
             errors = validate_record(record, vertical)
             if errors:

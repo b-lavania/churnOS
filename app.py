@@ -119,6 +119,7 @@ def capability_risk_radar():
                 key_prefix=f"radar_acc_{i}",
                 on_override=_apply_override,
                 expanded=(i == 0),
+                workspace=ws,
             )
 
     with tab_caps:
@@ -141,6 +142,7 @@ def capability_risk_radar():
                 key_prefix=f"radar_cap_{i}",
                 on_override=_apply_override,
                 expanded=(i == 0),
+                workspace=ws,
             )
 
 
