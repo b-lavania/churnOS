@@ -7,7 +7,7 @@ import yaml
 
 from ontology.exception_taxonomy import CATEGORIES
 from ontology.semantics import load_all_semantics
-from ui.explain import page_help
+from ui.explain import competitive_faq, page_help, tool_stack_explainer
 from ui.magazine import load_magazine_css, masthead, section_kicker
 
 css_path = Path(__file__).parent.parent / "assets" / "style.css"
@@ -21,6 +21,8 @@ masthead(
     "Agent-readable product language from semantics.yaml and governed metrics.",
 )
 page_help("concepts")
+tool_stack_explainer(expanded=False)
+competitive_faq(expanded=False)
 
 lexicon_path = Path(__file__).parent.parent / "metrics" / "lexicon.yaml"
 lexicon = yaml.safe_load(lexicon_path.read_text()) if lexicon_path.exists() else {"metrics": {}}

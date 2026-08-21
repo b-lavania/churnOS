@@ -10,7 +10,7 @@ from core.workspace import ensure_growth_records
 from ontology.semantics import load_semantics
 from ontology.store import append_record
 from ui.decision_card import render_decision_card
-from ui.explain import page_help
+from ui.explain import page_help, render_tool_split_caption
 from ui.loop_chrome import render_loop_stepper
 from ui.magazine import load_magazine_css, masthead, section_kicker
 from ui.viz import (
@@ -28,6 +28,7 @@ if css_path.exists():
 load_magazine_css()
 masthead("Learn", "Outcome Flywheel", "Decisions awaiting outcome → write-back → intervention effectiveness.")
 page_help("flywheel", show_card_glossary=True)
+render_tool_split_caption("flywheel")
 render_loop_stepper(st.session_state, highlight="flywheel")
 
 ws = require_workspace(st.session_state, page_label="Outcome Flywheel")

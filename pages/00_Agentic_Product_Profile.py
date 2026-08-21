@@ -8,7 +8,7 @@ from analytics.agentic_profile import PRESETS, get_preset, list_presets
 from analytics.decisions import classify, emit_capability_records
 from analytics.metrics import resolve_metric
 from core.workspace import build_workspace, get_workspace_from_session, sync_workspace_to_session
-from ui.explain import page_help
+from ui.explain import page_help, tool_stack_explainer
 from ui.instrumentation_checklist import render_instrumentation_checklist
 from ui.loop_chrome import render_loop_stepper
 from ui.magazine import load_magazine_css, masthead, section_kicker
@@ -24,6 +24,7 @@ masthead(
     "Choose a product shape. This switches ontology semantics and synthetic warehouse priors.",
 )
 page_help("profile", show_notice=True)
+tool_stack_explainer(expanded=False)
 render_loop_stepper(st.session_state, highlight="profile")
 
 st.info(

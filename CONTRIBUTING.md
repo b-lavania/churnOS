@@ -89,9 +89,9 @@ All warehouse data is **synthetic** unless you plug in real telemetry. Read [`do
 
 ## Math / analytics PRs
 
-Follow [`docs/math/README.md`](docs/math/README.md): pure function → tests → Math Lab → DECIDE/LEARN hook.
+Follow [`docs/ideas/README.md`](docs/ideas/README.md): pure function → tests → Math Lab → DECIDE/LEARN hook.
 
-Tier 1 interview math modules have dedicated tests under `tests/unit/`.
+Rigorous math modules have dedicated tests under `tests/unit/`.
 
 ---
 

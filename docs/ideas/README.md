@@ -1,7 +1,5 @@
 # Math dojo contributor guide
 
-**Active build plan:** [`../interview_showcase_plan.md`](../interview_showcase_plan.md) — hiring showcase math tranche (Tier 1–3 checklist).
-
 Every rigorous method in churnOS ships as:
 
 1. **Pure function** in `analytics/` (no Streamlit)
@@ -44,7 +42,3 @@ Every rigorous method in churnOS ships as:
 ## Acceptance per PR
 
 Analytics + tests + at least one DECIDE/LEARN surface + estimand gloss in `ui/explain.py`.
-
-## Portfolio
-
-See [`../genai_for_math.md`](../genai_for_math.md) for the Moovez ↔ churnOS split and [`../interview_kit.md`](../interview_kit.md) for the 5-minute demo.

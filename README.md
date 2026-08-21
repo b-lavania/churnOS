@@ -10,9 +10,9 @@ The first version of this was a bunch of spreadsheets. Retention curves, churn c
 
 Those spreadsheets turned into a Python project. I built out a causal waterfall, survival models, experimentation scaffolding, even a full Bayesian MMM pipeline with PyMC. It worked, in the sense that the math was sound, but it was still fundamentally about customers and transactions. Traditional SaaS/ecomm retention.
 
-Then I started paying attention to agentic products (AI assistants, CRM copilots, ops agents) and realized the retention problem is completely different there. You're not retaining *customers* in the old sense. You're shipping *capabilities* (skills, automations, agent tools) and the question becomes: is this capability helping or hurting? Is it worth the inference cost? Should we throttle it, roll it back, or kill it entirely? The old spreadsheet models didn't have a place for that.
+Then I started paying attention to agentic products (AI assistants, CRM copilots, ops agents) and realized the retention problem is completely different there: you're not retaining customers in the old sense, instead you're shipping features (skills, automations, agent tools).
 
-So I rebuilt the whole thing around capabilities instead of customers. That's what churnOS is now.
+So, the question becomes: is this capability helping or hurting? Is it worth the inference cost? Should we throttle it, roll it back, or kill it entirely? The old spreadsheet models didn't have a place for that; I rebuilt the whole thing around capabilities instead of customers and that's ***churnOS***.
 
 ---
 
@@ -44,20 +44,22 @@ The loop, step by step:
 
 This is the part I'm most stubborn about. Verdicts and recommended actions are **not hardcoded in Python**. The profile's vertical loads a `semantics.yaml` file, and that file governs policy. Same exception signal, different product context, different action:
 
-| Exception | Vertical (profile) | Verdict | Recommended action |
-| --- | --- | --- | --- |
-| `capability_harm` | `agent_runtime` (`assistant_heavy`) | destructive | **rollback** |
-| `capability_harm` | `capability_lifecycle` (`workspace_crm`) | destructive | **throttle** |
+
+| Exception         | Vertical (profile)                       | Verdict     | Recommended action |
+| ----------------- | ---------------------------------------- | ----------- | ------------------ |
+| `capability_harm` | `agent_runtime` (`assistant_heavy`)      | destructive | **rollback**       |
+| `capability_harm` | `capability_lifecycle` (`workspace_crm`) | destructive | **throttle**       |
+
 
 I wanted the rules to live in config, not buried in Python, so anyone could change what "destructive" means without touching code. Edit sample values in YAML, regenerate workspace, Radar cards update. No deploy needed.
 
 What you tune in `semantics.yaml`:
 
-- **`classification.thresholds`** when does `classify()` fire? (e.g. `harm_score_min: 0.08`)
-- **`decision.verdict_rules`** first match wins (categories to verdict)
-- **`decision.action_map`** verdict to `recommended_action` + `requires_review`
+- `classification.thresholds` when does `classify()` fire? (e.g. `harm_score_min: 0.08`)
+- `decision.verdict_rules` first match wins (categories to verdict)
+- `decision.action_map` verdict to `recommended_action` + `requires_review`
 
-The ontology has a few verticals: `capability_lifecycle`, `agent_runtime`, `marketplace_commerce`, `orchestration`, `eval_governance`. The first three are the active ones. Details in [`ontology/README.md`](ontology/README.md).
+The ontology has a few verticals: `capability_lifecycle`, `agent_runtime`, `marketplace_commerce`, `orchestration`, `eval_governance`. The first three are the active ones. Details in `[ontology/README.md](ontology/README.md)`.
 
 ---
 
@@ -69,7 +71,7 @@ The ontology has a few verticals: `capability_lifecycle`, `agent_runtime`, `mark
 
 **MMM and multi-touch attribution.** I spent a lot of time on these. The Bayesian MMM pipeline with PyMC, adstock curves, diminishing returns, the whole thing. But honestly, it's not the main event here. I left it in for anyone who wants to explore it (`pip install -r requirements-mmm.txt`, then the Attribution page), but I'm not going to pretend it's polished or that it's the point of this repo.
 
-**Everything is synthetic.** All the numbers come from authored generators, not production telemetry. The math is real, the data is not. I tried to be upfront about this everywhere (there's a synthetic notice on every page, and [`docs/honesty.md`](docs/honesty.md) spells out exactly what's real vs simulated). If you plug real event data into the same warehouse schema, the analytics work the same way. I just haven't done that yet.
+**Everything is synthetic.** All the numbers come from authored generators, not production telemetry. The math is real, the data is not. I tried to be upfront about this everywhere (there's a synthetic notice on every page, and `[docs/honesty.md](docs/honesty.md)` spells out exactly what's real vs simulated). If you plug real event data into the same warehouse schema, the analytics work the same way. I just haven't done that yet.
 
 **Harm scores are associational**, not causal, unless there's an `experiment_id` on the record. I want to be careful about that distinction.
 
@@ -94,11 +96,11 @@ pytest tests/ -m "not slow" --hypothesis-profile=dev
 3. Drill into DECIDE surfaces or override on Record Inspector
 4. **Outcome Flywheel** writes synthetic outcomes back to close the loop
 
-If you want to play with policy: change the `agent_runtime` destructive action from `rollback` to `shadow` in [`ontology/agent_runtime/semantics.yaml`](ontology/agent_runtime/semantics.yaml), regenerate with `assistant_heavy`, and watch the Radar cards update.
+If you want to play with policy: change the `agent_runtime` destructive action from `rollback` to `shadow` in `[ontology/agent_runtime/semantics.yaml](ontology/agent_runtime/semantics.yaml)`, regenerate with `assistant_heavy`, and watch the Radar cards update.
 
 CI: [.github/workflows/ci.yml](.github/workflows/ci.yml)
 
-Further reading: [Methodology](docs/methodology.md), [Honesty and limits](docs/honesty.md), [Ontology package](ontology/README.md), [Interview kit](docs/interview_kit.md)
+Further reading: [Methodology](docs/methodology.md), [Honesty and limits](docs/honesty.md), [Ontology package](ontology/README.md), [Ideas](docs/ideas/README.md)
 
 ---
 
@@ -139,13 +141,15 @@ churnOS/
 
 ## Tooling
 
-| What | Packages |
-| --- | --- |
-| App shell | Streamlit, Plotly |
-| Core analytics | pandas, NumPy, SciPy, scikit-learn, lifelines |
-| Ontology | jsonschema, PyYAML |
-| Attribution (legacy) | pymc, arviz |
-| Quality | pytest, Hypothesis |
+
+| What                 | Packages                                      |
+| -------------------- | --------------------------------------------- |
+| App shell            | Streamlit, Plotly                             |
+| Core analytics       | pandas, NumPy, SciPy, scikit-learn, lifelines |
+| Ontology             | jsonschema, PyYAML                            |
+| Attribution (legacy) | pymc, arviz                                   |
+| Quality              | pytest, Hypothesis                            |
+
 
 ---
 

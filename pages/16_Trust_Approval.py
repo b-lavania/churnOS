@@ -7,7 +7,7 @@ import streamlit as st
 from analytics.decisions import emit_capability_records
 from analytics.metrics import resolve_metric
 from ui.decision_card import render_decision_card
-from ui.explain import page_help
+from ui.explain import page_help, render_tool_split_caption
 from ui.magazine import load_magazine_css, masthead, section_kicker
 from ui.viz import (
     autonomy_ratio_strip,
@@ -26,6 +26,7 @@ if css_path.exists():
 load_magazine_css()
 masthead("Decisions", "Trust & Approval", "Catastrophic reliability shocks (synthetic).")
 page_help("trust", show_card_glossary=True)
+render_tool_split_caption("trust")
 
 ws = require_workspace(st.session_state, page_label="Trust & Approval")
 

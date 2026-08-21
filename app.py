@@ -13,7 +13,7 @@ from analytics.knapsack import hitl_review_slots, select_interventions_gdr
 from analytics.pareto import rank_capability_records
 from core.workspace import get_workspace_from_session
 from ui.decision_card import render_decision_card
-from ui.explain import measurement_honesty, page_help
+from ui.explain import how_it_works, measurement_honesty, page_help, tool_stack_explainer
 from ui.magazine import load_magazine_css, masthead, section_kicker
 from ui.weekly_report import render_meta_chips, render_weekly_account_report
 from ui.workspace_banner import (
@@ -41,7 +41,11 @@ def capability_risk_radar():
     if ws is None:
         empty_workspace_panel(page_label="Radar")
         page_help("radar", show_card_glossary=False)
+        how_it_works(expanded=False)
+        tool_stack_explainer(expanded=False)
         return
+
+    how_it_works(expanded=False)
 
     overlay = st.session_state.get("semantics_overlay")
     acc_records = enrich_account_records(

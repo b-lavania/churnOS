@@ -8,7 +8,7 @@ import streamlit as st
 from analytics.flag_segments import flag_segment_table
 from analytics.metrics import resolve_metric
 from data.challenge_seed import FEATURE_FLAGS
-from ui.explain import page_help
+from ui.explain import page_help, render_tool_split_caption
 from ui.magazine import load_magazine_css, masthead, section_kicker
 from ui.viz import feature_flag_impact
 from ui.workspace_banner import require_workspace
@@ -20,6 +20,7 @@ if css_path.exists():
 load_magazine_css()
 masthead("Experiment", "Agentic Flags", "Treatment vs control on cost, activation, and trust (dummy-seeded).")
 page_help("experiments", show_card_glossary=True)
+render_tool_split_caption("experiments")
 st.info("Dual-layer story: measurement → decision → flywheel. Flags instrument CPSO, TTFV, HITL on synthetic cohorts.", icon="ℹ️")
 
 ws = require_workspace(st.session_state, page_label="Agentic Flags")

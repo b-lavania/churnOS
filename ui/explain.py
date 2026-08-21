@@ -14,7 +14,8 @@ SURFACE_EXPLAINERS: dict[str, dict[str, str]] = {
             "The weekly meeting, rendered. Each card is a **GrowthDecisionRecord** for one "
             "capability (skill, automation, agent tool): what’s wrong, what it may cost to "
             "leave live, and what to do. Numbers come from the synthetic workspace — not "
-            "production agents — until you connect real event data."
+            "production agents — until you connect real event data. "
+            "Not a trace explorer and not an NRR dashboard — the join."
         ),
     },
     "profile": {
@@ -23,7 +24,9 @@ SURFACE_EXPLAINERS: dict[str, dict[str, str]] = {
             "Pick a product shape — personal assistant, CRM workspace, ops missions, "
             "metered agent API, or marketplace (agent-assisted GMV). That choice switches "
             "ontology semantics and the **fake** rates used to generate seats, runs, "
-            "approvals, and churn. Press **Generate workspace** before any other screen has data."
+            "approvals, and churn. Press **Generate workspace** before any other screen has data. "
+            "In production this warehouse would be LangSmith-class traces + ChartMogul-class billing. "
+            "Today it is authored priors."
         ),
     },
     "activation": {
@@ -135,6 +138,105 @@ ACTION_GLOSS = {
     "revise": "Change prompt/tool/policy; re-enter eval.",
 }
 
+PAIN_MAP_ROWS: list[tuple[str, str, str, str]] = [
+    (
+        "Cost / margin",
+        "Cost per span / user; no ARPU join",
+        "MRR looks fine while serving cost explodes",
+        "CPSO vs seat ARPU; power-user margin leakage; ship/throttle uneconomic capabilities",
+    ),
+    (
+        "Visibility",
+        "“What did this trace cost?”",
+        "“What is NRR?”",
+        "Unattributed spend; static routing age; cost heatmap by step × cohort",
+    ),
+    (
+        "Activation",
+        "Run success ≠ first win",
+        "Paying customer still in “trial”",
+        "TTFV payment→verified; paying-but-dormant; tourist / activation_failure GDRs",
+    ),
+    (
+        "Switching costs",
+        "Tool-call graph, not rip-out risk",
+        "Churn reason = “unknown” / competitor",
+        "Integration depth; rebuild/competitor share; connector blast radius",
+    ),
+    (
+        "Trust / reliability",
+        "Evals and user scores on traces",
+        "Health score drops after the fact",
+        "Catastrophic event rate; HITL trend; trust_break → rollback",
+    ),
+    (
+        "Opaque success",
+        "Completed trace ≠ trusted SOP",
+        "Login/usage health",
+        "Verified outcome rate; coordination overhead; flywheel write-back",
+    ),
+]
+
+OUTPUT_CONTRAST_ROWS: list[tuple[str, str, str]] = [
+    (
+        "LangSmith",
+        "Trace URL, span tree, eval score",
+        "Should we kill this capability? What’s the $ of leaving it live?",
+    ),
+    (
+        "Langfuse",
+        "Cost per user/session, latency",
+        "Did this account churn because of agent quality or price?",
+    ),
+    (
+        "ChartMogul",
+        "MRR, NRR, cohort charts",
+        "CPSO, retry amplification, verified activation",
+    ),
+    (
+        "ChurnZero",
+        "Health score, playbooks",
+        "Which agent capability caused the health drop?",
+    ),
+    (
+        "churnOS",
+        "`GrowthDecisionRecord`: verdict, action, `$` impact, exceptions",
+        "(Demo: synthetic; production: needs your exports)",
+    ),
+]
+
+TOOL_SPLIT_CAPTIONS: dict[str, str] = {
+    "activation": "Paying in ChartMogul ≠ verified win in traces.",
+    "trust": "Eval score ≠ post-failure churn.",
+    "run_economics": "ChartMogul will not show CPSO; LangSmith will not show ARPU.",
+    "connector": "LangSmith shows connector errors; ChurnZero will not show rebuild / competitor rip-out risk.",
+    "flywheel": "Neither tool writes the decision back to retention Δ.",
+    "experiments": "Quality flags live in LangSmith / Braintrust; these flags measure CPSO / TTFV on synthetic cohorts.",
+}
+
+COMPETITIVE_FAQ: list[tuple[str, str]] = [
+    (
+        "Can’t I join this in Looker/dbt?",
+        "You can SQL the join; churnOS’s IP is the **exception taxonomy**, **YAML policy**, "
+        "and **auditable decision record**, not the warehouse.",
+    ),
+    (
+        "Is this observability?",
+        "No. Use LangSmith for traces. churnOS consumes trace-shaped *facts* (runs, outcomes, cost) "
+        "and emits *decisions*.",
+    ),
+    (
+        "Is this a BI churn tool?",
+        "No. ChartMogul tells you churn happened; churnOS ranks **interventions** on capabilities "
+        "and accounts with playbook hints.",
+    ),
+    (
+        "Do you replace my stack?",
+        "No — ingest later; decide now on a teaching model. Keep LangSmith for debugging; "
+        "keep ChartMogul for board NRR.",
+    ),
+]
+
 FIELD_GLOSS = [
     ("Verdict", "Engine’s state call on this capability (see glossary below)."),
     ("Capability ID", "The shippable unit: skill, automation, agent, or tool policy."),
@@ -185,6 +287,8 @@ def how_it_works(*, expanded: bool = True) -> None:
 3. **Decision engine** — finds exceptions per capability, prices *cost of leaving live*  
 4. **This Radar** — ranked Decision Cards → you override ship / hold / throttle…  
 5. **Outcome Flywheel** — write retention Δ / churn back onto the record (simulated)
+
+In production the warehouse is LangSmith-class traces + ChartMogul-class billing; today it is authored so you can learn the decision object.
 
 **What is real vs demo**
 
@@ -243,10 +347,73 @@ def measurement_honesty() -> None:
 - Harm scores are teaching correlations, not causal proof  
 - Seat Retention / Unit Economics pages are still partly the old purchase story  
 - Outcome write-back is simulated for the portfolio demo  
+- GDR dollar impact is priced from synthetic **runs + seat ARPU** today; spans, outcomes, and subscriptions exist in the warehouse for metrics and a future ingest path — not yet the core of `classify()`
 
 The durable idea: ranked, dollar-weighted judgments with human override and outcome feedback — not another vanity dashboard.
+
+**Where this sits vs LangSmith / ChartMogul**
+
+| Layer | What you already have | What this Radar adds |
+| --- | --- | --- |
+| Traces | LangSmith / Langfuse: runs, spans, evals | Warehouse models the join; GDRs use synthetic runs + accounts today |
+| Revenue / CS | ChartMogul NRR; ChurnZero health (usage proxies) | Agent-native exceptions + $ cost of leaving live |
+| This screen | — | `GrowthDecisionRecord`: ship / throttle / kill |
+| Honesty | — | Synthetic until you plug extracts; no live connectors |
             """
         )
+
+
+def _pain_map_markdown() -> str:
+    header = "| Challenge | Traces (LangSmith / Langfuse) | Revenue (ChartMogul / ChurnZero) | churnOS alternative |\n"
+    header += "| --- | --- | --- | --- |\n"
+    rows = "\n".join(
+        f"| {a} | {b} | {c} | {d} |"
+        for a, b, c, d in PAIN_MAP_ROWS
+    )
+    return header + rows
+
+
+def _output_contrast_markdown() -> str:
+    header = "| Tool | Typical output | What you still can’t answer |\n"
+    header += "| --- | --- | --- |\n"
+    rows = "\n".join(f"| {a} | {b} | {c} |" for a, b, c in OUTPUT_CONTRAST_ROWS)
+    return header + rows
+
+
+def tool_stack_explainer(*, expanded: bool = False) -> None:
+    """Six-row pain map + output contrast — LangSmith/ChartMogul complement positioning."""
+    with st.expander("Where churnOS sits vs LangSmith / ChartMogul", expanded=expanded):
+        st.markdown(
+            "**Traces** (LangSmith, Langfuse, Braintrust) tell you what the agent did. "
+            "**Revenue / CS** (ChartMogul NRR, ChurnZero health scores) tell you that money moved. "
+            "churnOS is the weekly join: Account → Run → Outcome → Subscription → "
+            "`GrowthDecisionRecord` (ship / throttle / kill)."
+        )
+        section_kicker("Pain map")
+        st.markdown(_pain_map_markdown())
+        section_kicker("What each tool returns")
+        st.markdown(_output_contrast_markdown())
+        st.caption(
+            "Product analytics (PostHog / Amplitude) sit in the same gap: sessions and funnels, "
+            "no agent internals. Eval tools improve quality; they do not run your weekly business review. "
+            "Demo today: the warehouse scaffolds Account→Run→Outcome→Subscription; "
+            "Radar economics come from synthetic runs and seat priors until you plug exports."
+        )
+
+
+def competitive_faq(*, expanded: bool = False) -> None:
+    """Objection handling for traces-vs-revenue positioning."""
+    with st.expander("Common questions (not LangSmith, not ChartMogul)", expanded=expanded):
+        for question, answer in COMPETITIVE_FAQ:
+            st.markdown(f"**{question}**")
+            st.markdown(answer)
+
+
+def render_tool_split_caption(surface_key: str) -> None:
+    """One-line kicker: what LangSmith / ChartMogul still cannot answer on this surface."""
+    caption = TOOL_SPLIT_CAPTIONS.get(surface_key)
+    if caption:
+        st.caption(caption)
 
 
 def page_help(surface_key: str, *, show_notice: bool = True, show_card_glossary: bool = False) -> None:

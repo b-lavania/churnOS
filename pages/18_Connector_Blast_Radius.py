@@ -7,7 +7,7 @@ import streamlit as st
 from analytics.decisions import emit_capability_records
 from analytics.metrics import resolve_metric
 from ui.decision_card import render_decision_card
-from ui.explain import page_help
+from ui.explain import page_help, render_tool_split_caption
 from ui.magazine import load_magazine_css, masthead, section_kicker
 from ui.viz import churn_reason_stacked, connector_blast_radius, connector_fail_rates, integration_depth_chart
 from ui.workspace_banner import empty_records_caption, require_workspace
@@ -19,6 +19,7 @@ if css_path.exists():
 load_magazine_css()
 masthead("Decisions", "Connectors", "Integration depth and rip-out risk (synthetic).")
 page_help("connector", show_card_glossary=True)
+render_tool_split_caption("connector")
 
 ws = require_workspace(st.session_state, page_label="Connectors")
 

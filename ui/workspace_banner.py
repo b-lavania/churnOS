@@ -28,7 +28,8 @@ def empty_workspace_panel(*, page_label: str | None = None) -> None:
         f"""
         <div class="mag-empty-workspace">
             <p class="mag-deck">
-                Generate a workspace before using <strong>{target}</strong>.
+                Generate a teaching warehouse that simulates the traces × revenue join before using
+                <strong>{target}</strong>.
                 Open <strong>Product Profile</strong>, pick a preset, then
                 <strong>Generate workspace</strong>.
             </p>

@@ -8,7 +8,7 @@ from analytics.decisions import emit_account_records, emit_capability_records
 from analytics.economics import seat_margins
 from analytics.metrics import resolve_metric
 from ui.decision_card import render_decision_card
-from ui.explain import page_help
+from ui.explain import page_help, render_tool_split_caption
 from ui.magazine import load_magazine_css, masthead, section_kicker
 from ui.viz import (
     cm_nrr_teaching_chart,
@@ -33,6 +33,7 @@ if css_path.exists():
 load_magazine_css()
 masthead("Decisions", "Run Economics", "Cost opacity, Jevons paradox, and margin leakage (synthetic).")
 page_help("run_economics", show_card_glossary=True)
+render_tool_split_caption("run_economics")
 st.caption("Synthetic teaching data — see docs/honesty.md")
 
 ws = require_workspace(st.session_state, page_label="Run Economics")
